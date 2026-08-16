@@ -36,7 +36,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        (Provider.of<DocumentProvider>(context, listen: false) as dynamic).loadDocuments();
+        (Provider.of<DocumentProvider>(context, listen: false) as dynamic)
+            .loadDocuments();
       } catch (_) {}
 
       Provider.of<InsuranceProvider>(context, listen: false).loadCards();

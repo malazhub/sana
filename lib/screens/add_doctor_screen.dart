@@ -101,13 +101,9 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (val) =>
-                    val == null || val.trim().isEmpty
-                        ? 'Required'
-                        : null,
+                    val == null || val.trim().isEmpty ? 'Required' : null,
               ),
-
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _specialtyController,
                 style: const TextStyle(fontSize: 18),
@@ -121,9 +117,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _phoneController,
                 style: const TextStyle(fontSize: 18),
@@ -138,9 +132,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                 ),
                 keyboardType: TextInputType.phone,
               ),
-
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _addressController,
                 style: const TextStyle(fontSize: 18),
@@ -154,9 +146,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 28),
-
               SizedBox(
                 height: 54,
                 child: ElevatedButton.icon(

@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -35,8 +35,8 @@ class NotificationService {
     );
 
     if (!kIsWeb && Platform.isAndroid) {
-      final android = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
+      final android =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
 
       await android?.requestNotificationsPermission();

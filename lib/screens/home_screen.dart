@@ -134,19 +134,18 @@ class HomeScreen extends StatelessWidget {
     String shareLabel = 'Share Records';
     String activeText = 'Active';
     String selectText = 'Select';
-
     String subHeader = 'Your smart health';
 
     if (code == 'ar') {
       medLabel = 'الأدوية';
       docLabel = 'الأطباء';
       pharmLabel = 'الصيدليات';
-      reminderLabel = 'المنبهات';
+      reminderLabel = 'التذكيرات';
       docsLabel = 'المستندات';
       insuranceLabel = 'بطاقات التأمين';
       shareLabel = 'مشاركة السجلات';
       activeText = 'نشط';
-      selectText = 'اختر';
+      selectText = 'تحديد';
       subHeader = 'صحتك الذكية';
     } else if (code == 'es') {
       medLabel = 'Medicamentos';
@@ -193,16 +192,16 @@ class HomeScreen extends StatelessWidget {
       selectText = 'Seç';
       subHeader = 'Akıllı sağlığınız';
     } else if (code == 'hi') {
-      medLabel = 'दवाइयाँ';
+      medLabel = 'दवाएं';
       docLabel = 'डॉक्टर';
       pharmLabel = 'फार्मेसी';
-      reminderLabel = 'अलार्म';
+      reminderLabel = 'अनुस्मारक';
       docsLabel = 'दस्तावेज़';
       insuranceLabel = 'बीमा कार्ड';
-      shareLabel = 'साझा करें';
+      shareLabel = 'रिकॉर्ड साझा करें';
       activeText = 'सक्रिय';
       selectText = 'चुनें';
-      subHeader = 'आपकी स्मार्ट सेहत';
+      subHeader = 'आपका स्मार्ट स्वास्थ्य';
     } else if (code == 'zh') {
       medLabel = '药物';
       docLabel = '医生';
@@ -210,8 +209,8 @@ class HomeScreen extends StatelessWidget {
       reminderLabel = '提醒';
       docsLabel = '文档';
       insuranceLabel = '保险卡';
-      shareLabel = '分享';
-      activeText = '活跃';
+      shareLabel = '共享记录';
+      activeText = '活动';
       selectText = '选择';
       subHeader = '您的智能健康';
     }
@@ -224,9 +223,9 @@ class HomeScreen extends StatelessWidget {
     } else if (code == 'tr') {
       buttonText = '🔓 Kendi kopyanızı alın';
     } else if (code == 'hi') {
-      buttonText = '🔓 अपनी खुद की कॉपी प्राप्त करें';
+      buttonText = '🔓 अपनी खुद की प्रति प्राप्त करें';
     } else if (code == 'zh') {
-      buttonText = '🔓 获取您的副本';
+      buttonText = '🔓 获取您自己的副本';
     } else if (code == 'es') {
       buttonText = '🔓 Obtén tu propia copia';
     } else if (code == 'fr') {
@@ -317,9 +316,9 @@ class HomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE0F2FE), // Soft Sky Blue
-              Color(0xFFE0F7FA), // Calm Sea Teal
-              Color(0xFFFFF8E1), // Gentle Sunrise Gold
+              Color(0xFFE0F2FE),
+              Color(0xFFE0F7FA),
+              Color(0xFFFFF8E1),
             ],
           ),
         ),
@@ -339,7 +338,6 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header area containing SANA and inline Share button on the right
                           Stack(
                             alignment: Alignment.center,
                             children: [
@@ -379,15 +377,14 @@ class HomeScreen extends StatelessWidget {
                                   icon: Icon(Icons.share,
                                       size: 26, color: Colors.teal.shade900),
                                   onPressed: () {
-                                    Share.share('https://malazhub.github.io/sana/');
+                                    Share.share(
+                                        'https://malazhub.github.io/sana/');
                                   },
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
-
-                          // Centered "Your smart health" subtitle
                           Center(
                             child: Text(
                               subHeader,
@@ -400,7 +397,6 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-
                           Expanded(
                             child: Column(
                               children: [
@@ -592,32 +588,32 @@ class HomeScreen extends StatelessWidget {
     String close = 'Close';
 
     if (code == 'ar') {
-      title = 'المنبهات النشطة';
-      noData = 'لا توجد منبهات نشطة';
+      title = 'التذكيرات النشطة';
+      noData = 'لا توجد تذكيرات نشطة.';
       close = 'إغلاق';
     } else if (code == 'es') {
       title = 'Recordatorios Activos';
-      noData = 'No hay recordatorios activos';
+      noData = 'No hay recordatorios activos.';
       close = 'Cerrar';
     } else if (code == 'fr') {
       title = 'Rappels Actifs';
-      noData = 'Aucun rappel actif';
+      noData = 'Aucun rappel actif.';
       close = 'Fermer';
     } else if (code == 'de') {
       title = 'Aktive Erinnerungen';
-      noData = 'Keine aktiven Erinnerungen';
+      noData = 'Keine aktiven Erinnerungen.';
       close = 'Schließen';
     } else if (code == 'tr') {
       title = 'Aktif Hatırlatıcılar';
-      noData = 'Aktif hatırlatıcı yok';
+      noData = 'Aktif hatırlatıcı yok.';
       close = 'Kapat';
     } else if (code == 'hi') {
-      title = 'अलार्म';
-      noData = 'कोई अलार्म नहीं';
+      title = 'सक्रिय अनुस्मारक';
+      noData = 'कोई सक्रिय अनुस्मारक नहीं।';
       close = 'बंद करें';
     } else if (code == 'zh') {
-      title = '活跃提醒';
-      noData = '没有提醒';
+      title = '活动提醒';
+      noData = '暂无活动提醒。';
       close = '关闭';
     }
 
@@ -757,7 +753,7 @@ class MedicationListScreen extends StatelessWidget {
       addBtn = '+ إضافة دواء';
       emptyText = 'لم يتم إضافة أدوية بعد.';
       dosageLbl = 'الجرعة';
-      remindersLbl = 'المنبهات';
+      remindersLbl = 'التذكيرات';
       repeatLbl = 'التكرار';
     } else if (code == 'es') {
       title = 'Medicamentos';
@@ -788,12 +784,12 @@ class MedicationListScreen extends StatelessWidget {
       remindersLbl = 'Hatırlatıcılar';
       repeatLbl = 'Tekrar';
     } else if (code == 'hi') {
-      title = 'दवाइयाँ';
+      title = 'दवाएं';
       addBtn = '+ दवा जोड़ें';
-      emptyText = 'अभी कोई दवा नहीं जोड़ी गई।';
+      emptyText = 'अभी तक कोई दवा नहीं जोड़ी गई है।';
       dosageLbl = 'खुराक';
-      remindersLbl = 'अलार्म';
-      repeatLbl = 'दोहराव';
+      remindersLbl = 'अनुस्मारक';
+      repeatLbl = 'दोहराना';
     } else if (code == 'zh') {
       title = '药物';
       addBtn = '+ 添加药物';
@@ -931,7 +927,7 @@ class DoctorListScreen extends StatelessWidget {
     if (code == 'ar') {
       specLbl = 'التخصص';
       phoneLbl = 'رقم الهاتف';
-      callBtn = 'الاتصال بالطبيب';
+      callBtn = 'اتصال بالطبيب';
       closeBtn = 'إغلاق';
     } else if (code == 'es') {
       specLbl = 'Especialidad';
@@ -954,12 +950,12 @@ class DoctorListScreen extends StatelessWidget {
       callBtn = 'Doktoru Ara';
       closeBtn = 'Kapat';
     } else if (code == 'hi') {
-      specLbl = 'विशेषज्ञता';
-      phoneLbl = 'फोन नंबर';
+      specLbl = 'विशेषता';
+      phoneLbl = 'फ़ोन नंबर';
       callBtn = 'डॉक्टर को कॉल करें';
       closeBtn = 'बंद करें';
     } else if (code == 'zh') {
-      specLbl = '专科';
+      specLbl = '专业';
       phoneLbl = '电话号码';
       callBtn = '呼叫医生';
       closeBtn = '关闭';
@@ -1006,7 +1002,7 @@ class DoctorListScreen extends StatelessWidget {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text('📞 ${doc.phone}',
+              Text('${doc.phone}',
                   style: const TextStyle(
                       fontSize: 16,
                       color: Colors.teal,
@@ -1067,7 +1063,8 @@ class DoctorListScreen extends StatelessWidget {
       nameLabel = 'Nom du Médecin *';
       specLabel = 'Spécialité';
       phoneLabel = 'Téléphone';
-      cancelLabel = 'Enregistrer';
+      cancelLabel = 'Annuler';
+      saveLabel = 'Enregistrer';
     } else if (code == 'de') {
       dialogTitle = 'Arzt hinzufügen';
       nameLabel = 'Name des Arztes *';
@@ -1085,14 +1082,14 @@ class DoctorListScreen extends StatelessWidget {
     } else if (code == 'hi') {
       dialogTitle = 'डॉक्टर जोड़ें';
       nameLabel = 'डॉक्टर का नाम *';
-      specLabel = 'विशेषज्ञता';
-      phoneLabel = 'फोन नंबर';
+      specLabel = 'विशेषता';
+      phoneLabel = 'फ़ोन नंबर';
       cancelLabel = 'रद्द करें';
       saveLabel = 'सहेजें';
     } else if (code == 'zh') {
       dialogTitle = '添加医生';
       nameLabel = '医生姓名 *';
-      specLabel = '专科';
+      specLabel = '专业';
       phoneLabel = '电话号码';
       cancelLabel = '取消';
       saveLabel = '保存';
@@ -1190,13 +1187,13 @@ class DoctorListScreen extends StatelessWidget {
     } else if (code == 'hi') {
       title = 'डॉक्टर';
       addBtn = '+ डॉक्टर जोड़ें';
-      emptyText = 'अभी कोई डॉक्टर नहीं जोड़ा गया।';
-      specLbl = 'विशेषज्ञता';
+      emptyText = 'अभी तक कोई डॉक्टर नहीं जोड़ा गया है।';
+      specLbl = 'विशेषता';
     } else if (code == 'zh') {
       title = '医生';
       addBtn = '+ 添加医生';
       emptyText = '尚未添加医生。';
-      specLbl = '专科';
+      specLbl = '专业';
     }
 
     return Scaffold(
@@ -1252,8 +1249,7 @@ class DoctorListScreen extends StatelessWidget {
                       children: [
                         if (spec != null && spec.isNotEmpty)
                           Text('$specLbl: $spec'),
-                        if (phone != null && phone.isNotEmpty)
-                          Text('📞 $phone'),
+                        if (phone != null && phone.isNotEmpty) Text('$phone'),
                       ],
                     ),
                     trailing: Row(
@@ -1261,8 +1257,7 @@ class DoctorListScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           tooltip: 'Call Doctor',
-                          icon:
-                              const Icon(Icons.phone, color: Colors.green),
+                          icon: const Icon(Icons.phone, color: Colors.green),
                           onPressed: () async {
                             if (phone != null && phone.isNotEmpty) {
                               final uri = Uri.parse('tel:$phone');
@@ -1307,7 +1302,7 @@ class PharmacyListScreen extends StatelessWidget {
     if (code == 'ar') {
       addrLbl = 'العنوان';
       phoneLbl = 'رقم الهاتف';
-      callBtn = 'الاتصال بالصيدلية';
+      callBtn = 'اتصال بالصيدلية';
       closeBtn = 'إغلاق';
     } else if (code == 'es') {
       addrLbl = 'Dirección';
@@ -1331,7 +1326,7 @@ class PharmacyListScreen extends StatelessWidget {
       closeBtn = 'Kapat';
     } else if (code == 'hi') {
       addrLbl = 'पता';
-      phoneLbl = 'फोन नंबर';
+      phoneLbl = 'फ़ोन नंबर';
       callBtn = 'फार्मेसी को कॉल करें';
       closeBtn = 'बंद करें';
     } else if (code == 'zh') {
@@ -1372,7 +1367,7 @@ class PharmacyListScreen extends StatelessWidget {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text('📍 ${pharm.address!}',
+              Text('${pharm.address!}',
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
@@ -1382,7 +1377,7 @@ class PharmacyListScreen extends StatelessWidget {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text('📞 ${pharm.phone!}',
+              Text('${pharm.phone!}',
                   style: const TextStyle(
                       fontSize: 16,
                       color: Colors.teal,
@@ -1443,7 +1438,8 @@ class PharmacyListScreen extends StatelessWidget {
       nameLabel = 'Nom de la Pharmacie *';
       addrLabel = 'Adresse';
       phoneLabel = 'Téléphone';
-      cancelLabel = 'Enregistrer';
+      cancelLabel = 'Annuler';
+      saveLabel = 'Enregistrer';
     } else if (code == 'de') {
       dialogTitle = 'Apotheke hinzufügen';
       nameLabel = 'Name der Apotheke *';
@@ -1462,7 +1458,7 @@ class PharmacyListScreen extends StatelessWidget {
       dialogTitle = 'फार्मेसी जोड़ें';
       nameLabel = 'फार्मेसी का नाम *';
       addrLabel = 'पता';
-      phoneLabel = 'फोन नंबर';
+      phoneLabel = 'फ़ोन नंबर';
       cancelLabel = 'रद्द करें';
       saveLabel = 'सहेजें';
     } else if (code == 'zh') {
@@ -1560,7 +1556,7 @@ class PharmacyListScreen extends StatelessWidget {
     } else if (code == 'hi') {
       title = 'फार्मेसी';
       addBtn = '+ फार्मेसी जोड़ें';
-      emptyText = 'अभी कोई फार्मेसी नहीं जोड़ी गई।';
+      emptyText = 'अभी तक कोई फार्मेसी नहीं जोड़ी गई है।';
     } else if (code == 'zh') {
       title = '药房';
       addBtn = '+ 添加药房';
@@ -1620,9 +1616,8 @@ class PharmacyListScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (address != null && address.isNotEmpty)
-                          Text('📍 $address'),
-                        if (phone != null && phone.isNotEmpty)
-                          Text('📞 $phone'),
+                          Text('$address'),
+                        if (phone != null && phone.isNotEmpty) Text('$phone'),
                       ],
                     ),
                     trailing: Row(
@@ -1630,8 +1625,7 @@ class PharmacyListScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           tooltip: 'Call Pharmacy',
-                          icon:
-                              const Icon(Icons.phone, color: Colors.green),
+                          icon: const Icon(Icons.phone, color: Colors.green),
                           onPressed: () async {
                             if (phone != null && phone.isNotEmpty) {
                               final uri = Uri.parse('tel:$phone');

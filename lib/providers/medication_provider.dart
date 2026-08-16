@@ -52,7 +52,8 @@ class MedicationProvider with ChangeNotifier {
         final response = await _supabase!.from('medications').select();
         if (response.isNotEmpty) {
           for (final item in response) {
-            final cloudMed = Medication.fromMap(Map<String, dynamic>.from(item));
+            final cloudMed =
+                Medication.fromMap(Map<String, dynamic>.from(item));
             final idx = _medications.indexWhere((m) => m.id == cloudMed.id);
             if (idx >= 0) {
               _medications[idx] = cloudMed;
@@ -105,7 +106,8 @@ class MedicationProvider with ChangeNotifier {
   Future<void> _saveToLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> maps = _medications.map((m) => m.toMap()).toList();
+      final List<Map<String, dynamic>> maps =
+          _medications.map((m) => m.toMap()).toList();
       await prefs.setString('saved_medications', jsonEncode(maps));
     } catch (e) {
       debugPrint('Error saving medications locally: ');

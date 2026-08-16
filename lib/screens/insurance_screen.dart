@@ -54,7 +54,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an insurance provider name.')),
+        const SnackBar(
+            content: Text('Please enter an insurance provider name.')),
       );
       return;
     }
@@ -204,7 +205,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                 height: 160,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => const Icon(Icons.broken_image, size: 50),
+                errorBuilder: (c, e, s) =>
+                    const Icon(Icons.broken_image, size: 50),
               ),
             );
           }
@@ -351,7 +353,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
               ),
             ),
           ],
@@ -366,17 +369,26 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                 const Divider(height: 20),
                 Text(
                   policyLbl,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.grey),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   policy,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo),
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   viewLbl,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -510,7 +522,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
           children: [
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -518,7 +531,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                   children: [
                     Text(
                       addTitle,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 14),
                     TextField(
@@ -552,13 +566,18 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                             ),
                             onPressed: () => _pickImage(true),
                             icon: Icon(
-                              _frontImageBytes != null ? Icons.check_circle : Icons.camera_alt,
-                              color: _frontImageBytes != null ? Colors.green : Colors.teal,
+                              _frontImageBytes != null
+                                  ? Icons.check_circle
+                                  : Icons.camera_alt,
+                              color: _frontImageBytes != null
+                                  ? Colors.green
+                                  : Colors.teal,
                               size: 24,
                             ),
                             label: Text(
                               frontBtn,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -570,13 +589,18 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                             ),
                             onPressed: () => _pickImage(false),
                             icon: Icon(
-                              _backImageBytes != null ? Icons.check_circle : Icons.camera_alt,
-                              color: _backImageBytes != null ? Colors.green : Colors.teal,
+                              _backImageBytes != null
+                                  ? Icons.check_circle
+                                  : Icons.camera_alt,
+                              color: _backImageBytes != null
+                                  ? Colors.green
+                                  : Colors.teal,
                               size: 24,
                             ),
                             label: Text(
                               backBtn,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -591,7 +615,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                         icon: const Icon(Icons.save, size: 26),
                         label: Text(
                           saveBtn,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.teal,
@@ -617,11 +642,13 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                           padding: const EdgeInsets.all(24.0),
                           child: Column(
                             children: [
-                              Icon(Icons.credit_card, size: 72, color: Colors.grey[400]),
+                              Icon(Icons.credit_card,
+                                  size: 72, color: Colors.grey[400]),
                               const SizedBox(height: 12),
                               Text(
                                 emptyText,
-                                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.grey[600]),
                               ),
                             ],
                           ),
@@ -643,7 +670,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                               leading: const CircleAvatar(
                                 radius: 24,
                                 backgroundColor: Colors.indigoAccent,
-                                child: Icon(Icons.credit_card, color: Colors.white, size: 28),
+                                child: Icon(Icons.credit_card,
+                                    color: Colors.white, size: 28),
                               ),
                               title: Text(
                                 _getCardTitle(card),
@@ -667,12 +695,15 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                                   ),
                                   IconButton(
                                     tooltip: 'Enlarge / Inspect',
-                                    icon: const Icon(Icons.visibility, color: Colors.teal, size: 28),
-                                    onPressed: () => _showEnlargedCard(card, code),
+                                    icon: const Icon(Icons.visibility,
+                                        color: Colors.teal, size: 28),
+                                    onPressed: () =>
+                                        _showEnlargedCard(card, code),
                                   ),
                                   IconButton(
                                     tooltip: 'Delete',
-                                    icon: const Icon(Icons.delete, color: Colors.red, size: 28),
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red, size: 28),
                                     onPressed: () {
                                       if (card.id != null) {
                                         provider.deleteCard(card.id!);

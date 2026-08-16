@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,10 +28,30 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   String? _photoName;
 
   static const List<String> _hourlyTimes = [
-    '12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM',
-    '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
-    '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM',
+    '12:00 AM',
+    '1:00 AM',
+    '2:00 AM',
+    '3:00 AM',
+    '4:00 AM',
+    '5:00 AM',
+    '6:00 AM',
+    '7:00 AM',
+    '8:00 AM',
+    '9:00 AM',
+    '10:00 AM',
+    '11:00 AM',
+    '12:00 PM',
+    '1:00 PM',
+    '2:00 PM',
+    '3:00 PM',
+    '4:00 PM',
+    '5:00 PM',
+    '6:00 PM',
+    '7:00 PM',
+    '8:00 PM',
+    '9:00 PM',
+    '10:00 PM',
+    '11:00 PM',
   ];
 
   Future<void> _pickPhoto() async {
@@ -76,7 +96,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     if (_formKey.currentState!.validate()) {
       if (_selectedTimes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select at least one reminder time.')),
+          const SnackBar(
+              content: Text('Please select at least one reminder time.')),
         );
         return;
       }
@@ -99,7 +120,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
         photoUrl: photoDataUrl,
       );
 
-      Provider.of<MedicationProvider>(context, listen: false).addMedication(newMed);
+      Provider.of<MedicationProvider>(context, listen: false)
+          .addMedication(newMed);
       Navigator.pop(context);
     }
   }
@@ -219,7 +241,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.medication),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -229,7 +252,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.straighten),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -240,7 +264,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.numbers),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
 
@@ -276,7 +301,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
               // Repeat Pattern Choices: Daily vs Select Date
               Text(
                 repeatLabel,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Row(
@@ -316,7 +342,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
               const SizedBox(height: 16),
               Text(
                 timesLabel,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -353,7 +380,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   ),
                   child: Text(
                     saveBtn,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

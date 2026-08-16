@@ -56,8 +56,7 @@ class MedicationHistoryScreen extends StatelessWidget {
     for (final log in logs) {
       grouped.putIfAbsent(_dateKey(log.takenAt), () => []).add(log);
     }
-    final orderedKeys = grouped.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final orderedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
       padding: const EdgeInsets.all(12),
@@ -90,9 +89,8 @@ class MedicationHistoryScreen extends StatelessWidget {
                         log.status == 'taken'
                             ? Icons.check_circle
                             : Icons.cancel,
-                        color: log.status == 'taken'
-                            ? Colors.green
-                            : Colors.red,
+                        color:
+                            log.status == 'taken' ? Colors.green : Colors.red,
                       ),
                     ),
                     title: Text(log.medicationName),
@@ -105,9 +103,8 @@ class MedicationHistoryScreen extends StatelessWidget {
                       log.status == 'taken' ? 'Taken' : 'Not Taken',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: log.status == 'taken'
-                            ? Colors.green
-                            : Colors.red,
+                        color:
+                            log.status == 'taken' ? Colors.green : Colors.red,
                       ),
                     ),
                   ),

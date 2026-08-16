@@ -15,7 +15,8 @@ class Doctor {
     return Doctor(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
-      specialty: map['specialty']?.toString() ?? map['speciality']?.toString() ?? '',
+      specialty:
+          map['specialty']?.toString() ?? map['speciality']?.toString() ?? '',
       phone: map['phone']?.toString() ?? map['phoneNumber']?.toString() ?? '',
     );
   }

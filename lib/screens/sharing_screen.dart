@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -39,7 +39,8 @@ class _SharingScreenState extends State<SharingScreen> {
 
       try {
         final insP = Provider.of<InsuranceProvider>(context, listen: false);
-        _selectedInsurIds.addAll(insP.cards.map((c) => c.id).whereType<String>());
+        _selectedInsurIds
+            .addAll(insP.cards.map((c) => c.id).whereType<String>());
       } catch (_) {}
     });
   }
@@ -59,7 +60,8 @@ class _SharingScreenState extends State<SharingScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         content: SizedBox(
           width: double.maxFinite,
           child: InteractiveViewer(
@@ -128,7 +130,8 @@ class _SharingScreenState extends State<SharingScreen> {
                 bottom: 8,
                 right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(12),
@@ -138,7 +141,11 @@ class _SharingScreenState extends State<SharingScreen> {
                     children: [
                       Icon(Icons.zoom_in, color: Colors.white, size: 14),
                       SizedBox(width: 4),
-                      Text('Tap to Enlarge', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text('Tap to Enlarge',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -160,7 +167,8 @@ class _SharingScreenState extends State<SharingScreen> {
 
     if (totalSelected == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one item to share.')),
+        const SnackBar(
+            content: Text('Please select at least one item to share.')),
       );
       return;
     }
@@ -170,15 +178,22 @@ class _SharingScreenState extends State<SharingScreen> {
     final pharmP = Provider.of<PharmacyProvider>(context, listen: false);
     final docsP = Provider.of<DocumentProvider>(context, listen: false);
 
-    final selMeds = medP.medications.where((m) => _selectedMedIds.contains(m.id)).toList();
-    final selDocs = docP.doctors.where((d) => _selectedDocIds.contains(d.id)).toList();
-    final selPharms = pharmP.pharmacies.where((p) => _selectedPharmIds.contains(p.id)).toList();
-    final selDocus = docsP.documents.where((d) => _selectedDocuIds.contains(d.id)).toList();
+    final selMeds =
+        medP.medications.where((m) => _selectedMedIds.contains(m.id)).toList();
+    final selDocs =
+        docP.doctors.where((d) => _selectedDocIds.contains(d.id)).toList();
+    final selPharms = pharmP.pharmacies
+        .where((p) => _selectedPharmIds.contains(p.id))
+        .toList();
+    final selDocus =
+        docsP.documents.where((d) => _selectedDocuIds.contains(d.id)).toList();
 
     List<InsuranceCard> selIns = [];
     try {
       final insP = Provider.of<InsuranceProvider>(context, listen: false);
-      selIns = insP.cards.where((c) => c.id != null && _selectedInsurIds.contains(c.id)).toList();
+      selIns = insP.cards
+          .where((c) => c.id != null && _selectedInsurIds.contains(c.id))
+          .toList();
     } catch (_) {}
 
     // System share execution
@@ -206,11 +221,16 @@ class _SharingScreenState extends State<SharingScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (selMeds.isNotEmpty) ...[
-                  const Text('💊 MEDICATIONS:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
+                  const Text('💊 MEDICATIONS:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.blue)),
                   const SizedBox(height: 6),
                   ...selMeds.map((m) {
                     Uint8List? bytes;
-                    if (m.photoUrl != null && m.photoUrl!.startsWith('data:image')) {
+                    if (m.photoUrl != null &&
+                        m.photoUrl!.startsWith('data:image')) {
                       try {
                         bytes = Uri.parse(m.photoUrl!).data?.contentAsBytes();
                       } catch (_) {}
@@ -220,8 +240,13 @@ class _SharingScreenState extends State<SharingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('• ${m.name} - Dosage: ${m.dosage} (${m.repeatType})', style: const TextStyle(fontWeight: FontWeight.w600)),
-                          if (bytes != null) _buildItemPhotoWidget(bytes, 'Medication: ${m.name}'),
+                          Text(
+                              '• ${m.name} - Dosage: ${m.dosage} (${m.repeatType})',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          if (bytes != null)
+                            _buildItemPhotoWidget(
+                                bytes, 'Medication: ${m.name}'),
                         ],
                       ),
                     );
@@ -229,29 +254,43 @@ class _SharingScreenState extends State<SharingScreen> {
                 ],
                 if (selDocs.isNotEmpty) ...[
                   const Divider(),
-                  const Text('👨‍⚕️ DOCTORS:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                  const Text('👨‍⚕️ DOCTORS:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.green)),
                   const SizedBox(height: 6),
                   ...selDocs.map((d) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text('• ${d.name} ${d.specialty != null && d.specialty!.isNotEmpty ? "(${d.specialty})" : ""} ${d.phone != null && d.phone!.isNotEmpty ? "📞 ${d.phone}" : ""}'),
+                      child: Text(
+                          '• ${d.name} ${d.specialty != null && d.specialty!.isNotEmpty ? "(${d.specialty})" : ""} ${d.phone != null && d.phone!.isNotEmpty ? "📞 ${d.phone}" : ""}'),
                     );
                   }),
                 ],
                 if (selPharms.isNotEmpty) ...[
                   const Divider(),
-                  const Text('🏥 PHARMACIES:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange)),
+                  const Text('🏥 PHARMACIES:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.orange)),
                   const SizedBox(height: 6),
                   ...selPharms.map((p) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text('• ${p.name} ${p.address != null && p.address!.isNotEmpty ? "📍 ${p.address}" : ""} ${p.phone != null && p.phone!.isNotEmpty ? "📞 ${p.phone}" : ""}'),
+                      child: Text(
+                          '• ${p.name} ${p.address != null && p.address!.isNotEmpty ? "📍 ${p.address}" : ""} ${p.phone != null && p.phone!.isNotEmpty ? "📞 ${p.phone}" : ""}'),
                     );
                   }),
                 ],
                 if (selDocus.isNotEmpty) ...[
                   const Divider(),
-                  const Text('📁 MEDICAL DOCUMENTS:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.purple)),
+                  const Text('📁 MEDICAL DOCUMENTS:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.purple)),
                   const SizedBox(height: 6),
                   ...selDocus.map((d) {
                     return Padding(
@@ -259,8 +298,12 @@ class _SharingScreenState extends State<SharingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('• ${d.name} (${d.fileType.toUpperCase()})', style: const TextStyle(fontWeight: FontWeight.w600)),
-                          if (d.bytes != null && d.bytes!.isNotEmpty) _buildItemPhotoWidget(d.bytes!, 'Document: ${d.name}'),
+                          Text('• ${d.name} (${d.fileType.toUpperCase()})',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600)),
+                          if (d.bytes != null && d.bytes!.isNotEmpty)
+                            _buildItemPhotoWidget(
+                                d.bytes!, 'Document: ${d.name}'),
                         ],
                       ),
                     );
@@ -268,12 +311,17 @@ class _SharingScreenState extends State<SharingScreen> {
                 ],
                 if (selIns.isNotEmpty) ...[
                   const Divider(),
-                  const Text('💳 INSURANCE CARDS:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.indigo)),
+                  const Text('💳 INSURANCE CARDS:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.indigo)),
                   const SizedBox(height: 6),
                   ...selIns.map((c) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text('• ${c.providerName} - Policy: ${_getInsPolicy(c)}'),
+                      child: Text(
+                          '• ${c.providerName} - Policy: ${_getInsPolicy(c)}'),
                     );
                   }),
                 ],
@@ -283,7 +331,8 @@ class _SharingScreenState extends State<SharingScreen> {
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Close'),
           ),
@@ -422,11 +471,14 @@ class _SharingScreenState extends State<SharingScreen> {
               children: [
                 TextButton(
                   onPressed: _selectAll,
-                  child: Text(selectAllBtn, style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)),
+                  child: Text(selectAllBtn,
+                      style: const TextStyle(
+                          color: Colors.teal, fontWeight: FontWeight.bold)),
                 ),
                 TextButton(
                   onPressed: _deselectAll,
-                  child: Text(deselectAllBtn, style: const TextStyle(color: Colors.grey)),
+                  child: Text(deselectAllBtn,
+                      style: const TextStyle(color: Colors.grey)),
                 ),
               ],
             ),
@@ -435,12 +487,14 @@ class _SharingScreenState extends State<SharingScreen> {
             // Medications Expansion
             ExpansionTile(
               leading: const Icon(Icons.medication, color: Colors.blue),
-              title: Text('$medsCategory (${_selectedMedIds.length}/${medP.medications.length})'),
+              title: Text(
+                  '$medsCategory (${_selectedMedIds.length}/${medP.medications.length})'),
               children: medP.medications.isEmpty
                   ? [const ListTile(title: Text('No medications available'))]
                   : medP.medications.map((m) {
                       return CheckboxListTile(
-                        secondary: const Icon(Icons.photo_library, color: Colors.blue),
+                        secondary:
+                            const Icon(Icons.photo_library, color: Colors.blue),
                         title: Text(m.name),
                         subtitle: Text('Dosage: ${m.dosage}'),
                         value: _selectedMedIds.contains(m.id),
@@ -460,7 +514,8 @@ class _SharingScreenState extends State<SharingScreen> {
             // Doctors Expansion
             ExpansionTile(
               leading: const Icon(Icons.person, color: Colors.green),
-              title: Text('$docsCategory (${_selectedDocIds.length}/${docP.doctors.length})'),
+              title: Text(
+                  '$docsCategory (${_selectedDocIds.length}/${docP.doctors.length})'),
               children: docP.doctors.isEmpty
                   ? [const ListTile(title: Text('No doctors available'))]
                   : docP.doctors.map((d) {
@@ -484,7 +539,8 @@ class _SharingScreenState extends State<SharingScreen> {
             // Pharmacies Expansion
             ExpansionTile(
               leading: const Icon(Icons.local_pharmacy, color: Colors.orange),
-              title: Text('$pharmsCategory (${_selectedPharmIds.length}/${pharmP.pharmacies.length})'),
+              title: Text(
+                  '$pharmsCategory (${_selectedPharmIds.length}/${pharmP.pharmacies.length})'),
               children: pharmP.pharmacies.isEmpty
                   ? [const ListTile(title: Text('No pharmacies available'))]
                   : pharmP.pharmacies.map((p) {
@@ -508,12 +564,14 @@ class _SharingScreenState extends State<SharingScreen> {
             // Documents Expansion
             ExpansionTile(
               leading: const Icon(Icons.folder, color: Colors.purple),
-              title: Text('$docusCategory (${_selectedDocuIds.length}/${docsP.documents.length})'),
+              title: Text(
+                  '$docusCategory (${_selectedDocuIds.length}/${docsP.documents.length})'),
               children: docsP.documents.isEmpty
                   ? [const ListTile(title: Text('No documents available'))]
                   : docsP.documents.map((d) {
                       return CheckboxListTile(
-                        secondary: const Icon(Icons.file_present, color: Colors.purple),
+                        secondary: const Icon(Icons.file_present,
+                            color: Colors.purple),
                         title: Text(d.name),
                         subtitle: Text(d.fileType.toUpperCase()),
                         value: _selectedDocuIds.contains(d.id),
@@ -534,7 +592,8 @@ class _SharingScreenState extends State<SharingScreen> {
             if (insCards.isNotEmpty)
               ExpansionTile(
                 leading: const Icon(Icons.credit_card, color: Colors.indigo),
-                title: Text('$insuranceCategory (${_selectedInsurIds.length}/${insCards.length})'),
+                title: Text(
+                    '$insuranceCategory (${_selectedInsurIds.length}/${insCards.length})'),
                 children: insCards.map((c) {
                   final cardId = c.id;
                   if (cardId == null) return const SizedBox();
@@ -565,7 +624,8 @@ class _SharingScreenState extends State<SharingScreen> {
                 icon: const Icon(Icons.share),
                 label: Text(
                   shareBtn,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,

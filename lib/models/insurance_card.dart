@@ -32,8 +32,10 @@ class InsuranceCard {
           map['card_number']?.toString() ??
           map['policyNo']?.toString() ??
           'N/A',
-      frontImageUrl: map['frontImageUrl']?.toString() ?? map['front_image_url']?.toString(),
-      backImageUrl: map['backImageUrl']?.toString() ?? map['back_image_url']?.toString(),
+      frontImageUrl: map['frontImageUrl']?.toString() ??
+          map['front_image_url']?.toString(),
+      backImageUrl:
+          map['backImageUrl']?.toString() ?? map['back_image_url']?.toString(),
       userId: map['userId']?.toString() ?? map['user_id']?.toString(),
       createdAt: map['createdAt']?.toString() ?? map['created_at']?.toString(),
     );

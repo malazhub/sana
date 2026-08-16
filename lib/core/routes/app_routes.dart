@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../../screens/splash_screen.dart';
@@ -28,11 +27,8 @@ class AppRoutes {
 
   static final Map<String, WidgetBuilder> routes = {
     splash: (context) => const SplashScreen(),
-
     home: (context) => const HomeScreen(),
-
     addMedication: (context) => const AddMedicationScreen(),
-
     history: (context) => Scaffold(
           appBar: AppBar(
             title: const Text('Medication History'),
@@ -41,15 +37,10 @@ class AppRoutes {
           ),
           body: const MedicationHistoryScreen(),
         ),
-
     profile: (context) => const ProfileScreen(),
-
     addDoctor: (context) => const AddDoctorScreen(),
-
     addPharmacy: (context) => const AddPharmacyScreen(),
-
     documents: (context) => const DocumentsScreen(),
-
     insurance: (context) => const InsuranceScreen(),
   };
 
@@ -61,9 +52,7 @@ class AppRoutes {
     final parts = path.split('/');
 
     // Share links: /share/TOKEN
-    if (parts.length == 3 &&
-        parts[1] == 'share' &&
-        parts[2].isNotEmpty) {
+    if (parts.length == 3 && parts[1] == 'share' && parts[2].isNotEmpty) {
       final token = parts[2];
 
       return MaterialPageRoute(
@@ -89,4 +78,3 @@ class AppRoutes {
     );
   }
 }
-

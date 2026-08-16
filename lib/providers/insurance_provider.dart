@@ -29,7 +29,8 @@ class InsuranceProvider with ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final String? localData = prefs.getString('saved_insurance_cards_v2') ?? prefs.getString('saved_insurance_cards');
+      final String? localData = prefs.getString('saved_insurance_cards_v2') ??
+          prefs.getString('saved_insurance_cards');
       if (localData != null && localData.isNotEmpty) {
         final List<dynamic> decoded = jsonDecode(localData);
         for (final item in decoded) {
@@ -50,7 +51,8 @@ class InsuranceProvider with ChangeNotifier {
         final response = await _supabase!.from('insurance_cards').select();
         if (response.isNotEmpty) {
           for (final item in response) {
-            final cloudCard = InsuranceCard.fromMap(Map<String, dynamic>.from(item));
+            final cloudCard =
+                InsuranceCard.fromMap(Map<String, dynamic>.from(item));
             final idx = _cards.indexWhere((c) => c.id == cloudCard.id);
             if (idx >= 0) {
               _cards[idx] = cloudCard;
@@ -105,7 +107,8 @@ class InsuranceProvider with ChangeNotifier {
   Future<void> _saveToLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> maps = _cards.map((c) => c.toMap()).toList();
+      final List<Map<String, dynamic>> maps =
+          _cards.map((c) => c.toMap()).toList();
       await prefs.setString('saved_insurance_cards_v2', jsonEncode(maps));
     } catch (e) {
       debugPrint('Error saving insurance cards locally: $e');

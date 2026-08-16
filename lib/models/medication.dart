@@ -38,7 +38,9 @@ class Medication {
       dosage: map['dosage']?.toString() ?? '',
       quantity: int.tryParse(map['quantity']?.toString() ?? '1') ?? 1,
       reminderTimes: parseTimes(map['reminder_times'] ?? map['reminderTimes']),
-      repeatType: map['repeat_type']?.toString() ?? map['repeatType']?.toString() ?? 'Daily',
+      repeatType: map['repeat_type']?.toString() ??
+          map['repeatType']?.toString() ??
+          'Daily',
       photoUrl: map['photo_url']?.toString() ?? map['photoUrl']?.toString(),
     );
   }

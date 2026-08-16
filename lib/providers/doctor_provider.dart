@@ -102,7 +102,8 @@ class DoctorProvider with ChangeNotifier {
   Future<void> _saveToLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> maps = _doctors.map((d) => d.toMap()).toList();
+      final List<Map<String, dynamic>> maps =
+          _doctors.map((d) => d.toMap()).toList();
       await prefs.setString('saved_doctors', jsonEncode(maps));
     } catch (e) {
       debugPrint('Error saving doctors locally: ');

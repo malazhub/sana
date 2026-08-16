@@ -48,7 +48,8 @@ class MedicalDocument {
       fileUrl: map['file_url'] ?? '',
       fileType: map['file_type'] ?? '',
       date: DateTime.tryParse(map['date']?.toString() ?? '') ?? DateTime.now(),
-      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '') ??
+          DateTime.now(),
       isPublic: map['is_public'] ?? false,
     );
   }

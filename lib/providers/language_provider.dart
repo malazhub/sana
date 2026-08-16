@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class LanguageProvider extends ChangeNotifier {
   Locale _locale = const Locale('en');
@@ -11,12 +11,14 @@ class LanguageProvider extends ChangeNotifier {
   }
 
   void toggleLanguage() {
-    _locale = _locale.languageCode == 'en' ? const Locale('ar') : const Locale('en');
+    _locale =
+        _locale.languageCode == 'en' ? const Locale('ar') : const Locale('en');
     notifyListeners();
   }
 
-  List<String> getSupportedLanguages() => ['en', 'ar', 'es', 'fr', 'de', 'tr', 'hi', 'zh'];
-  
+  List<String> getSupportedLanguages() =>
+      ['en', 'ar', 'es', 'fr', 'de', 'tr', 'hi', 'zh'];
+
   String getLanguageName(String code) {
     final names = {
       'en': 'English 🇺🇸',

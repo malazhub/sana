@@ -1,0 +1,102 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+/build/
+/android/app/build/
+/android/app/intermediates/
+/android/app/outputs/
+/ios/Pods/
+/ios/.symlinks/
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.podspec
+/web/
+*.flat
+*.aab
+*.apk
+<<<<<<< HEAD
+=======
+
+android/.cxx/
+>>>>>>> 6d8e569d26b844e812eca21336e2c8cea3822b5a
+
+# Local backup files
+*.bak
+*.bak_*
+*.backup_*
+backup_sana_subscription_*/
+
+# Flutter/Dart generated files
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+
+# Android generated/build files
+android/.gradle/
+android/app/build/
+android/app/intermediates/
+android/app/generated/
+android/app/.cxx/
+android/build/
+android/app/outputs/
+android/.kotlin/
+
+# Local backup files
+*.bak
+*.bak_*
+*.backup_*
+backup_sana_subscription_*/
+build/
+**/.dart_tool/
+android/app/intermediates/
+android/app/generated/
+android/app/outputs/
+*.aab
+*.apk
+*.so
+*.aab
+*.iml
+.idea/

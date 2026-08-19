@@ -1,18 +1,12 @@
 class MedicationLog {
   final String? id;
   final String medicationId;
-
-  /// Snapshot of the medication's name/dosage at the moment this log was
-  /// created, so history entries stay meaningful and unchanged even if the
-  /// medication itself is edited, its schedule changes, or it's deleted.
   final String medicationName;
   final String dosage;
-
-  /// 'taken' | 'not_taken'
   final String status;
   final DateTime takenAt;
 
-  MedicationLog({
+  const MedicationLog({
     this.id,
     required this.medicationId,
     required this.medicationName,
@@ -21,9 +15,33 @@ class MedicationLog {
     required this.takenAt,
   });
 
+  factory MedicationLog.fromMap(
+    Map<String, dynamic> map,
+  ) {
+    return MedicationLog(
+      id: _nullableString(map['id']),
+      medicationId:
+          map['medication_id']?.toString() ??
+          map['medicationId']?.toString() ??
+          '',
+      medicationName:
+          map['medication_name']?.toString() ??
+          map['medicationName']?.toString() ??
+          'Medication',
+      dosage:
+          map['dosage']?.toString() ?? '',
+      status:
+          map['status']?.toString().trim().toLowerCase() ??
+          'not_taken',
+      takenAt: _parseDateTime(
+        map['taken_at'] ?? map['takenAt'],
+      ),
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id != null && id!.isNotEmpty) 'id': id,
       'medication_id': medicationId,
       'medication_name': medicationName,
       'dosage': dosage,
@@ -32,14 +50,49 @@ class MedicationLog {
     };
   }
 
-  factory MedicationLog.fromMap(Map<String, dynamic> map) {
+  Map<String, dynamic> toJson() => toMap();
+
+  MedicationLog copyWith({
+    String? id,
+    String? medicationId,
+    String? medicationName,
+    String? dosage,
+    String? status,
+    DateTime? takenAt,
+  }) {
     return MedicationLog(
-      id: map['id'],
-      medicationId: map['medication_id'],
-      medicationName: map['medication_name'] ?? 'Medication',
-      dosage: map['dosage'] ?? '',
-      status: map['status'],
-      takenAt: DateTime.parse(map['taken_at']),
+      id: id ?? this.id,
+      medicationId: medicationId ?? this.medicationId,
+      medicationName: medicationName ?? this.medicationName,
+      dosage: dosage ?? this.dosage,
+      status: status ?? this.status,
+      takenAt: takenAt ?? this.takenAt,
     );
+  }
+
+  bool get isTaken => status == 'taken';
+
+  bool get isNotTaken => status == 'not_taken';
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is DateTime) {
+      return value;
+    }
+
+    final parsed = DateTime.tryParse(
+      value?.toString() ?? '',
+    );
+
+    return parsed ?? DateTime.now();
+  }
+
+  static String? _nullableString(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    final result = value.toString().trim();
+
+    return result.isEmpty ? null : result;
   }
 }

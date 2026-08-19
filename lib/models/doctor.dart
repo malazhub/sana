@@ -4,7 +4,7 @@ class Doctor {
   final String? specialty;
   final String? phone;
 
-  Doctor({
+  const Doctor({
     required this.id,
     required this.name,
     this.specialty,
@@ -15,9 +15,12 @@ class Doctor {
     return Doctor(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
-      specialty:
-          map['specialty']?.toString() ?? map['speciality']?.toString() ?? '',
-      phone: map['phone']?.toString() ?? map['phoneNumber']?.toString() ?? '',
+      specialty: _nullableString(
+        map['specialty'] ?? map['speciality'],
+      ),
+      phone: _nullableString(
+        map['phone'] ?? map['phoneNumber'],
+      ),
     );
   }
 
@@ -31,4 +34,28 @@ class Doctor {
   }
 
   Map<String, dynamic> toJson() => toMap();
+
+  Doctor copyWith({
+    String? id,
+    String? name,
+    String? specialty,
+    String? phone,
+  }) {
+    return Doctor(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      specialty: specialty ?? this.specialty,
+      phone: phone ?? this.phone,
+    );
+  }
+
+  static String? _nullableString(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    final result = value.toString().trim();
+
+    return result.isEmpty ? null : result;
+  }
 }

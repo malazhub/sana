@@ -1,10 +1,24 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin plugin =
+  NotificationService._();
+
+  static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
+
+  static const String _channelId = 'medication_channel';
+  static const String _channelName = 'Medication Alerts';
+  static const String _channelDescription =
+      'Medication reminder notifications';
+
+  // ===========================================================================
+  // INITIALIZATION
+  // ===========================================================================
 
   static Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -17,47 +31,115 @@ class NotificationService {
       android: androidSettings,
     );
 
-    await plugin.initialize(settings: settings);
+    await _notifications.initialize(
+      settings: settings,
+    );
 
-    final androidPlugin = plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin =
+        _notifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     await androidPlugin?.requestNotificationsPermission();
   }
+
+  // ===========================================================================
+  // SCHEDULE MEDICATION REMINDER
+  // ===========================================================================
 
   static Future<void> scheduleMedicationReminder({
     required int id,
     required String medicineName,
     required String quantity,
     required DateTime time,
-    required String image,
+    String image = '',
   }) async {
     final scheduledDate = tz.TZDateTime.from(
       time,
       tz.local,
     );
 
-    const notificationDetails = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'medication_channel',
-        'Medication Alerts',
-        channelDescription: 'Medication reminder notifications',
-        importance: Importance.max,
-        priority: Priority.high,
-      ),
-    );
+    final now = tz.TZDateTime.now(tz.local);
 
-    await plugin.zonedSchedule(
+    if (scheduledDate.isBefore(now)) {
+      debugPrint(
+        'Medication reminder not scheduled because '
+        'the requested time has already passed.',
+      );
+      return;
+    }
+
+    final notificationDetails =
+        await _buildNotificationDetails(image);
+
+    await _notifications.zonedSchedule(
       id: id,
       title: 'Medication Reminder',
       body: '$medicineName - Quantity: $quantity',
       scheduledDate: scheduledDate,
       notificationDetails: notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode:
+          AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
 
-  static Future<void> cancelReminder(int id) async {
-    await plugin.cancel(id: id);
+  // ===========================================================================
+  // NOTIFICATION DETAILS
+  // ===========================================================================
+
+  static Future<NotificationDetails> _buildNotificationDetails(
+    String image,
+  ) async {
+    StyleInformation styleInformation;
+
+    final imagePath = image.trim();
+
+    if (!kIsWeb &&
+        imagePath.isNotEmpty &&
+        File(imagePath).existsSync()) {
+      styleInformation = BigPictureStyleInformation(
+        FilePathAndroidBitmap(imagePath),
+        largeIcon: FilePathAndroidBitmap(imagePath),
+        contentTitle: 'Medication Reminder',
+        summaryText: 'Time to take your medication',
+      );
+    } else {
+      styleInformation = const BigTextStyleInformation(
+        'Time to take your medication.',
+      );
+    }
+
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        styleInformation: styleInformation,
+        icon: '@mipmap/ic_launcher',
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // CANCEL ONE REMINDER
+  // ===========================================================================
+
+  static Future<void> cancelReminder(
+    int id,
+  ) async {
+    await _notifications.cancel(
+      id: id,
+    );
+  }
+
+  // ===========================================================================
+  // CANCEL ALL REMINDERS
+  // ===========================================================================
+
+  static Future<void> cancelAllReminders() async {
+    await _notifications.cancelAll();
   }
 }

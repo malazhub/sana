@@ -8,6 +8,7 @@ import '../models/document.dart';
 
 class DocumentProvider extends ChangeNotifier {
   static const String _localStorageKey = 'saved_documents_v2';
+  static const String _legacyStorageKey = 'saved_documents';
   static const String _storageBucket = 'documents';
 
   final List<DocumentModel> _documents = [];
@@ -15,8 +16,11 @@ class DocumentProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  List<DocumentModel> get documents => List.unmodifiable(_documents);
+  List<DocumentModel> get documents =>
+      List.unmodifiable(_documents);
+
   bool get isLoading => _isLoading;
+
   String? get errorMessage => _errorMessage;
 
   SupabaseClient? get _supabase {
@@ -33,6 +37,10 @@ class DocumentProvider extends ChangeNotifier {
     loadDocuments();
   }
 
+  // ============================================================
+  // LOAD DOCUMENTS
+  // ============================================================
+
   Future<void> loadDocuments() async {
     if (_isLoading) {
       return;
@@ -41,9 +49,9 @@ class DocumentProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
-    try {
-      _documents.clear();
+    _documents.clear();
 
+    try {
       final user = _currentUser;
 
       if (user == null) {
@@ -62,7 +70,10 @@ class DocumentProvider extends ChangeNotifier {
           .from('documents')
           .select()
           .eq('user_id', user.id)
-          .order('upload_date', ascending: false);
+          .order(
+            'upload_date',
+            ascending: false,
+          );
 
       for (final item in response) {
         try {
@@ -70,30 +81,49 @@ class DocumentProvider extends ChangeNotifier {
             Map<String, dynamic>.from(item),
           );
 
-          if (document.id.isNotEmpty) {
-            _documents.add(document);
+          if (document.id.isEmpty) {
+            continue;
           }
+
+          // Never allow another user's document into memory.
+          if (document.userId != user.id) {
+            continue;
+          }
+
+          _documents.add(document);
         } catch (error) {
-          debugPrint('Invalid Supabase document: $error');
+          debugPrint(
+            'Invalid Supabase document: $error',
+          );
         }
       }
 
       await _saveToLocal();
     } catch (error, stackTrace) {
       debugPrint(
-        'Failed to load documents: $error\n$stackTrace',
+        'Failed to load documents: '
+        '$error\n$stackTrace',
       );
 
-      _setError('Unable to load your documents.');
+      _setError(
+        'Unable to load your documents.',
+      );
 
       // Local cache is only a fallback.
+      _documents.clear();
       await _loadLocalDocuments();
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<void> addDocument(DocumentModel document) async {
+  // ============================================================
+  // ADD / UPDATE DOCUMENT
+  // ============================================================
+
+  Future<void> addDocument(
+    DocumentModel document,
+  ) async {
     final user = _currentUser;
 
     if (user == null) {
@@ -110,6 +140,7 @@ class DocumentProvider extends ChangeNotifier {
       );
     }
 
+    // A document belonging to another user must never be saved.
     if (document.userId.isNotEmpty &&
         document.userId != user.id) {
       throw StateError(
@@ -117,15 +148,16 @@ class DocumentProvider extends ChangeNotifier {
       );
     }
 
-    DocumentModel documentToSave = document.copyWith(
+    _clearError();
+
+    var documentToSave = document.copyWith(
       userId: user.id,
     );
 
-    _clearError();
-
     try {
       if (_shouldUploadToStorage(documentToSave)) {
-        documentToSave = await _uploadDocumentToStorage(
+        documentToSave =
+            await _uploadDocumentToStorage(
           documentToSave,
         );
       }
@@ -144,22 +176,36 @@ class DocumentProvider extends ChangeNotifier {
       if (index >= 0) {
         _documents[index] = documentToSave;
       } else {
-        _documents.insert(0, documentToSave);
+        _documents.insert(
+          0,
+          documentToSave,
+        );
       }
 
       await _saveToLocal();
+
       notifyListeners();
     } catch (error, stackTrace) {
       debugPrint(
-        'Failed to save document: $error\n$stackTrace',
+        'Failed to save document: '
+        '$error\n$stackTrace',
       );
 
-      _setError('Unable to save the document.');
+      _setError(
+        'Unable to save the document.',
+      );
+
       rethrow;
     }
   }
 
-  Future<void> deleteDocument(String id) async {
+  // ============================================================
+  // DELETE DOCUMENT
+  // ============================================================
+
+  Future<void> deleteDocument(
+    String id,
+  ) async {
     final user = _currentUser;
 
     if (user == null) {
@@ -195,32 +241,61 @@ class DocumentProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      if (document.storagePath != null &&
-          document.storagePath!.trim().isNotEmpty) {
-        await client.storage
-            .from(_storageBucket)
-            .remove([document.storagePath!]);
+      final storagePath =
+          document.storagePath?.trim();
+
+      if (storagePath != null &&
+          storagePath.isNotEmpty) {
+        try {
+          await client.storage
+              .from(_storageBucket)
+              .remove([
+            storagePath,
+          ]);
+        } catch (error) {
+          debugPrint(
+            'Failed to remove document file: '
+            '$error',
+          );
+
+          // Continue with database deletion.
+        }
       }
 
       await client
           .from('documents')
           .delete()
-          .eq('id', id)
-          .eq('user_id', user.id);
+          .eq(
+            'id',
+            id,
+          )
+          .eq(
+            'user_id',
+            user.id,
+          );
 
       _documents.removeAt(index);
 
       await _saveToLocal();
+
       notifyListeners();
     } catch (error, stackTrace) {
       debugPrint(
-        'Failed to delete document: $error\n$stackTrace',
+        'Failed to delete document: '
+        '$error\n$stackTrace',
       );
 
-      _setError('Unable to delete the document.');
+      _setError(
+        'Unable to delete the document.',
+      );
+
       rethrow;
     }
   }
+
+  // ============================================================
+  // SIGNED DOCUMENT URL
+  // ============================================================
 
   Future<String?> getSignedDocumentUrl(
     DocumentModel document, {
@@ -228,20 +303,21 @@ class DocumentProvider extends ChangeNotifier {
   }) async {
     final user = _currentUser;
 
-    if (user == null || document.userId != user.id) {
+    if (user == null ||
+        document.userId != user.id) {
       return null;
     }
 
-    final path = document.storagePath;
+    final path = document.storagePath?.trim();
 
-    if (path == null || path.trim().isEmpty) {
+    if (path == null || path.isEmpty) {
       return document.fileUrl;
     }
 
     final client = _supabase;
 
     if (client == null) {
-      return null;
+      return document.fileUrl;
     }
 
     try {
@@ -257,28 +333,157 @@ class DocumentProvider extends ChangeNotifier {
         '$error\n$stackTrace',
       );
 
-      return null;
+      // If the document already has a public URL,
+      // keep it available as a fallback.
+      return document.fileUrl;
     }
   }
+
+  // ============================================================
+  // LOCAL CACHE
+  // ============================================================
 
   Future<void> clearLocalDocuments() async {
     _documents.clear();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_localStorageKey);
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.remove(
+      _localStorageKey,
+    );
+
+    await prefs.remove(
+      _legacyStorageKey,
+    );
 
     notifyListeners();
   }
 
-  bool _shouldUploadToStorage(DocumentModel document) {
+  Future<void> _loadLocalDocuments() async {
+    try {
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      final localData =
+          prefs.getString(
+                _localStorageKey,
+              ) ??
+              prefs.getString(
+                _legacyStorageKey,
+              );
+
+      if (localData == null ||
+          localData.trim().isEmpty) {
+        return;
+      }
+
+      final decoded = jsonDecode(localData);
+
+      if (decoded is! List) {
+        return;
+      }
+
+      final user = _currentUser;
+
+      for (final item in decoded) {
+        if (item is! Map) {
+          continue;
+        }
+
+        try {
+          final document =
+              DocumentModel.fromMap(
+            Map<String, dynamic>.from(item),
+          );
+
+          if (document.id.isEmpty) {
+            continue;
+          }
+
+          // If signed in, only load this user's cache.
+          if (user != null) {
+            if (document.userId.isEmpty ||
+                document.userId != user.id) {
+              continue;
+            }
+          }
+
+          final exists = _documents.any(
+            (existing) =>
+                existing.id == document.id,
+          );
+
+          if (!exists) {
+            _documents.add(document);
+          }
+        } catch (error) {
+          debugPrint(
+            'Invalid local document: '
+            '$error',
+          );
+        }
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Failed to load local documents: '
+        '$error\n$stackTrace',
+      );
+    }
+  }
+
+  Future<void> _saveToLocal() async {
+    try {
+      final user = _currentUser;
+
+      if (user == null) {
+        return;
+      }
+
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      final maps = _documents
+          .where(
+            (document) =>
+                document.userId == user.id,
+          )
+          .map(
+            (document) => document.toMap(),
+          )
+          .toList();
+
+      await prefs.setString(
+        _localStorageKey,
+        jsonEncode(maps),
+      );
+    } catch (error) {
+      debugPrint(
+        'Failed to cache documents: '
+        '$error',
+      );
+    }
+  }
+
+  // ============================================================
+  // STORAGE
+  // ============================================================
+
+  bool _shouldUploadToStorage(
+    DocumentModel document,
+  ) {
     final bytes = document.bytes;
 
-    if (bytes == null || bytes.isEmpty) {
+    if (bytes == null ||
+        bytes.isEmpty) {
       return false;
     }
 
-    if (document.storagePath != null &&
-        document.storagePath!.trim().isNotEmpty) {
+    final storagePath =
+        document.storagePath?.trim();
+
+    if (storagePath != null &&
+        storagePath.isNotEmpty) {
       return false;
     }
 
@@ -298,11 +503,13 @@ class DocumentProvider extends ChangeNotifier {
 
     final bytes = document.bytes;
 
-    if (bytes == null || bytes.isEmpty) {
+    if (bytes == null ||
+        bytes.isEmpty) {
       return document;
     }
 
-    final extension = _normalizeExtension(
+    final extension =
+        _normalizeExtension(
       document.fileType,
     );
 
@@ -315,7 +522,10 @@ class DocumentProvider extends ChangeNotifier {
           storagePath,
           bytes,
           fileOptions: FileOptions(
-            contentType: _contentTypeForExtension(extension),
+            contentType:
+                _contentTypeForExtension(
+              extension,
+            ),
             upsert: true,
           ),
         );
@@ -326,83 +536,9 @@ class DocumentProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> _loadLocalDocuments() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final localData =
-          prefs.getString(_localStorageKey) ??
-          prefs.getString('saved_documents');
-
-      if (localData == null || localData.trim().isEmpty) {
-        return;
-      }
-
-      final decoded = jsonDecode(localData);
-
-      if (decoded is! List) {
-        return;
-      }
-
-      for (final item in decoded) {
-        if (item is! Map) {
-          continue;
-        }
-
-        try {
-          final document = DocumentModel.fromMap(
-            Map<String, dynamic>.from(item),
-          );
-
-          if (document.id.isEmpty) {
-            continue;
-          }
-
-          final user = _currentUser;
-
-          // Never expose another user's cached documents.
-          if (user != null &&
-              document.userId.isNotEmpty &&
-              document.userId != user.id) {
-            continue;
-          }
-
-          if (_documents.every(
-            (existing) => existing.id != document.id,
-          )) {
-            _documents.add(document);
-          }
-        } catch (error) {
-          debugPrint(
-            'Invalid local document: $error',
-          );
-        }
-      }
-    } catch (error) {
-      debugPrint(
-        'Failed to load local documents: $error',
-      );
-    }
-  }
-
-  Future<void> _saveToLocal() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final maps = _documents
-          .map((document) => document.toMap())
-          .toList();
-
-      await prefs.setString(
-        _localStorageKey,
-        jsonEncode(maps),
-      );
-    } catch (error) {
-      debugPrint(
-        'Failed to cache documents: $error',
-      );
-    }
-  }
+  // ============================================================
+  // STATE
+  // ============================================================
 
   void _setLoading(bool value) {
     if (_isLoading == value) {
@@ -427,50 +563,75 @@ class DocumentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String _normalizeExtension(String fileType) {
+  // ============================================================
+  // FILE TYPES
+  // ============================================================
+
+  String _normalizeExtension(
+    String fileType,
+  ) {
     switch (fileType.trim().toLowerCase()) {
       case 'jpeg':
       case 'jpg':
         return 'jpg';
+
       case 'png':
         return 'png';
+
       case 'webp':
         return 'webp';
+
       case 'gif':
         return 'gif';
+
       case 'pdf':
         return 'pdf';
+
       case 'mp4':
         return 'mp4';
+
       case 'mov':
         return 'mov';
+
       case 'avi':
         return 'avi';
+
       case 'image':
         return 'jpg';
+
       default:
         return 'bin';
     }
   }
 
-  String _contentTypeForExtension(String extension) {
+  String _contentTypeForExtension(
+    String extension,
+  ) {
     switch (extension) {
       case 'jpg':
         return 'image/jpeg';
+
       case 'png':
         return 'image/png';
+
       case 'webp':
         return 'image/webp';
+
       case 'gif':
         return 'image/gif';
+
       case 'pdf':
         return 'application/pdf';
+
       case 'mp4':
         return 'video/mp4';
+
       case 'mov':
         return 'video/quicktime';
+
       case 'avi':
         return 'video/x-msvideo';
+
       default:
         return 'application/octet-stream';
     }

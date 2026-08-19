@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/notification_service.dart';
-
+import 'providers/admin_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/doctor_provider.dart';
 import 'providers/document_provider.dart';
@@ -11,7 +11,6 @@ import 'providers/insurance_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/medication_provider.dart';
 import 'providers/pharmacy_provider.dart';
-
 import 'screens/home_screen.dart';
 
 Future<void> main() async {
@@ -32,7 +31,7 @@ Future<void> main() async {
     await Supabase.initialize(
       url: 'https://emvadnooxyspfsfnzlmb.supabase.co',
       publishableKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtdmFkbm9veHlzcGZzZm56bG1iIiwicm9sZSI6ImFub25',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFub9veHlzcGZzZm56bG1iIiwicm9sZSI6ImFub24',
     );
   } catch (error, stackTrace) {
     debugPrint(
@@ -45,9 +44,7 @@ Future<void> main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({
-    super.key,
-  });
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +67,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => InsuranceProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AdminProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(),

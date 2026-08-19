@@ -22,69 +22,46 @@ class DocumentModel {
     this.bytes,
   });
 
-  factory DocumentModel.fromMap(Map<String, dynamic> map) {
-    Uint8List? parsedBytes;
+  // ============================================================
+  // FROM MAP
+  // ============================================================
 
-    final rawBytes = map['bytes_data'] ?? map['bytes'];
-
-    try {
-      if (rawBytes is Uint8List) {
-        parsedBytes = rawBytes;
-      } else if (rawBytes is List) {
-        parsedBytes = Uint8List.fromList(
-          rawBytes.whereType<int>().toList(),
-        );
-      } else if (rawBytes != null) {
-        final value = rawBytes.toString().trim();
-
-        if (value.isNotEmpty) {
-          if (value.startsWith('data:')) {
-            final data = Uri.parse(value).data;
-
-            if (data != null) {
-              parsedBytes = data.contentAsBytes();
-            }
-          } else {
-            parsedBytes = base64Decode(value);
-          }
-        }
-      }
-    } catch (_) {
-      parsedBytes = null;
-    }
-
+  factory DocumentModel.fromMap(
+    Map<String, dynamic> map,
+  ) {
     return DocumentModel(
       id: map['id']?.toString() ?? '',
-      userId: map['user_id']?.toString() ??
-          map['userId']?.toString() ??
-          '',
+      userId: map['user_id']?.toString() ?? map['userId']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
-      fileType: map['file_type']?.toString() ??
-          map['fileType']?.toString() ??
-          'file',
+      fileType:
+          map['file_type']?.toString() ?? map['fileType']?.toString() ?? 'file',
       fileUrl: _nullableString(
         map['file_url'] ?? map['fileUrl'] ?? map['path'],
       ),
       storagePath: _nullableString(
         map['storage_path'] ?? map['storagePath'],
       ),
-      date: DateTime.tryParse(
-            map['date']?.toString() ??
-                map['upload_date']?.toString() ??
-                '',
-          ) ??
-          DateTime.now(),
-      bytes: parsedBytes,
+      date: _parseDate(
+        map['date'] ?? map['upload_date'],
+      ),
+      bytes: _parseBytes(
+        map['bytes_data'] ?? map['bytes'],
+      ),
     );
   }
+
+  // ============================================================
+  // LOCAL MAP
+  // ============================================================
 
   Map<String, dynamic> toMap() {
     String bytesData = '';
 
     // Keep large files out of SharedPreferences.
-    if (bytes != null &&
-        bytes!.isNotEmpty &&
-        bytes!.length <= 300000) {
+    //
+    // Actual document files are stored in Supabase Storage.
+    // Small byte arrays are retained only for local compatibility.
+    if (bytes != null && bytes!.isNotEmpty && bytes!.length <= 300000) {
       bytesData = base64Encode(bytes!);
     }
 
@@ -100,7 +77,14 @@ class DocumentModel {
     };
   }
 
+  // ============================================================
+  // SUPABASE MAP
+  // ============================================================
+
   /// Payload matching the Supabase `documents` table.
+  ///
+  /// The actual file is stored in the `documents` Storage bucket.
+  /// `path` remains compatible with the existing database schema.
   Map<String, dynamic> toSupabaseMap() {
     return {
       'id': id,
@@ -111,6 +95,10 @@ class DocumentModel {
       'upload_date': date.toIso8601String(),
     };
   }
+
+  // ============================================================
+  // COPY
+  // ============================================================
 
   DocumentModel copyWith({
     String? id,
@@ -136,7 +124,82 @@ class DocumentModel {
 
   Map<String, dynamic> toJson() => toMap();
 
-  static String? _nullableString(dynamic value) {
+  // ============================================================
+  // PARSING HELPERS
+  // ============================================================
+
+  static Uint8List? _parseBytes(
+    dynamic rawBytes,
+  ) {
+    if (rawBytes == null) {
+      return null;
+    }
+
+    try {
+      if (rawBytes is Uint8List) {
+        return rawBytes;
+      }
+
+      if (rawBytes is List) {
+        final values = rawBytes
+            .whereType<int>()
+            .where(
+              (value) => value >= 0 && value <= 255,
+            )
+            .toList();
+
+        if (values.isEmpty) {
+          return null;
+        }
+
+        return Uint8List.fromList(values);
+      }
+
+      final value = rawBytes.toString().trim();
+
+      if (value.isEmpty) {
+        return null;
+      }
+
+      // Supports data URLs such as:
+      // data:image/png;base64,...
+      if (value.startsWith('data:')) {
+        final data = Uri.tryParse(value)?.data;
+
+        if (data != null) {
+          final result = data.contentAsBytes();
+
+          return result.isEmpty ? null : result;
+        }
+
+        return null;
+      }
+
+      final result = base64Decode(value);
+
+      return result.isEmpty ? null : result;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static DateTime _parseDate(
+    dynamic value,
+  ) {
+    if (value is DateTime) {
+      return value;
+    }
+
+    final parsed = DateTime.tryParse(
+      value?.toString() ?? '',
+    );
+
+    return parsed ?? DateTime.now();
+  }
+
+  static String? _nullableString(
+    dynamic value,
+  ) {
     if (value == null) {
       return null;
     }

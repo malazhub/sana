@@ -23,7 +23,12 @@ class SanaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer2<SettingsProvider, LanguageProvider>(
-      builder: (context, settings, language, _) {
+      builder: (
+        context,
+        settings,
+        language,
+        child,
+      ) {
         return MaterialApp(
           title: 'SANA',
           debugShowCheckedModeBanner: false,

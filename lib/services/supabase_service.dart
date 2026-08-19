@@ -1,5 +1,3 @@
-//import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,9 +6,9 @@ class SupabaseService {
 
   static final SupabaseClient _supabase = Supabase.instance.client;
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // AUTHENTICATION
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static Future<AuthResponse> signUp({
     required String email,
@@ -19,7 +17,7 @@ class SupabaseService {
     required String phone,
   }) async {
     try {
-      final response = await _supabase.auth.signUp(
+      return await _supabase.auth.signUp(
         email: email.trim(),
         password: password,
         data: {
@@ -29,10 +27,10 @@ class SupabaseService {
           'is_active': false,
         },
       );
-
-      return response;
-    } catch (e) {
-      debugPrint('Supabase signUp error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Supabase signUp error: $error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -46,8 +44,10 @@ class SupabaseService {
         email: email.trim(),
         password: password,
       );
-    } catch (e) {
-      debugPrint('Supabase signIn error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Supabase signIn error: $error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -55,8 +55,10 @@ class SupabaseService {
   static Future<void> signOut() async {
     try {
       await _supabase.auth.signOut();
-    } catch (e) {
-      debugPrint('Supabase signOut error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Supabase signOut error: $error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -73,17 +75,21 @@ class SupabaseService {
     return _supabase.auth.currentSession != null;
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // USER DATA
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static Future<Map<String, dynamic>?> getUserData(
     String userId,
   ) async {
+    if (userId.trim().isEmpty) {
+      return null;
+    }
+
     try {
       final response = await _supabase
           .from('users')
-          .select('*')
+          .select()
           .eq('id', userId)
           .maybeSingle();
 
@@ -92,8 +98,10 @@ class SupabaseService {
       }
 
       return Map<String, dynamic>.from(response);
-    } catch (e) {
-      debugPrint('Get user data error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Get user data error: $error\n$stackTrace',
+      );
       return null;
     }
   }
@@ -101,7 +109,7 @@ class SupabaseService {
   static Future<Map<String, dynamic>?> getCurrentUserData() async {
     final userId = currentUserId;
 
-    if (userId == null) {
+    if (userId == null || userId.isEmpty) {
       return null;
     }
 
@@ -113,14 +121,19 @@ class SupabaseService {
       final response = await _supabase
           .from('users')
           .select(
-            'id, name, email, phone, created_at, is_active, '
-            'expiry_date, role',
+            'id, name, email, phone, created_at, '
+            'is_active, expiry_date, role',
           )
-          .order('created_at', ascending: false);
+          .order(
+            'created_at',
+            ascending: false,
+          );
 
       return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Fetch all users error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Fetch all users error: $error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -130,6 +143,10 @@ class SupabaseService {
     required bool isActive,
     DateTime? expiryDate,
   }) async {
+    if (userId.trim().isEmpty) {
+      throw ArgumentError('User ID cannot be empty.');
+    }
+
     try {
       await _supabase
           .from('users')
@@ -138,13 +155,20 @@ class SupabaseService {
             'expiry_date': expiryDate?.toIso8601String(),
           })
           .eq('id', userId);
-    } catch (e) {
-      debugPrint('Update user activation error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Update user activation error: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
   }
 
   static Future<bool> isAdmin(String userId) async {
+    if (userId.trim().isEmpty) {
+      return false;
+    }
+
     try {
       final response = await _supabase
           .from('users')
@@ -156,9 +180,15 @@ class SupabaseService {
         return false;
       }
 
-      return response['role']?.toString().toLowerCase() == 'admin';
-    } catch (e) {
-      debugPrint('isAdmin error: $e');
+      return response['role']
+              ?.toString()
+              .trim()
+              .toLowerCase() ==
+          'admin';
+    } catch (error, stackTrace) {
+      debugPrint(
+        'isAdmin error: $error\n$stackTrace',
+      );
       return false;
     }
   }
@@ -166,6 +196,10 @@ class SupabaseService {
   static Future<bool> isSubscriptionExpired(
     String userId,
   ) async {
+    if (userId.trim().isEmpty) {
+      return true;
+    }
+
     try {
       final response = await _supabase
           .from('users')
@@ -197,16 +231,19 @@ class SupabaseService {
         return true;
       }
 
-      return expiryDate.isBefore(DateTime.now());
-    } catch (e) {
-      debugPrint('Subscription check error: $e');
+      return !expiryDate.isAfter(DateTime.now());
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Subscription check error: '
+        '$error\n$stackTrace',
+      );
       return true;
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // GENERIC DATABASE OPERATIONS
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static Future<void> insert(
     String table,
@@ -218,8 +255,11 @@ class SupabaseService {
       await _supabase
           .from(table)
           .insert(cleanData);
-    } catch (e) {
-      debugPrint('Insert error [$table]: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Insert error [$table]: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -229,15 +269,36 @@ class SupabaseService {
     Map<String, dynamic> data,
     String id,
   ) async {
+    if (id.trim().isEmpty) {
+      throw ArgumentError('Record ID cannot be empty.');
+    }
+
     try {
       final cleanData = Map<String, dynamic>.from(data);
 
-      await _supabase
+      var query = _supabase
           .from(table)
           .update(cleanData)
           .eq('id', id);
-    } catch (e) {
-      debugPrint('Update error [$table/$id]: $e');
+
+      // If the record belongs to a user, make the update user-scoped.
+      //
+      // This keeps the existing DoctorProvider/PharmacyProvider API
+      // while preventing accidental cross-user updates.
+      final userId = currentUserId;
+
+      if (cleanData.containsKey('user_id') &&
+          userId != null &&
+          userId.isNotEmpty) {
+        query = query.eq('user_id', userId);
+      }
+
+      await query;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Update error [$table/$id]: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -246,15 +307,45 @@ class SupabaseService {
     String table,
     String id,
   ) async {
+    if (id.trim().isEmpty) {
+      throw ArgumentError('Record ID cannot be empty.');
+    }
+
     try {
-      await _supabase
+      var query = _supabase
           .from(table)
           .delete()
           .eq('id', id);
-    } catch (e) {
-      debugPrint('Delete error [$table/$id]: $e');
+
+      final userId = currentUserId;
+
+      // User-owned tables should only delete the current user's record.
+      if (userId != null &&
+          userId.isNotEmpty &&
+          _isUserOwnedTable(table)) {
+        query = query.eq('user_id', userId);
+      }
+
+      await query;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Delete error [$table/$id]: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
+  }
+
+  static bool _isUserOwnedTable(String table) {
+    const userOwnedTables = {
+      'doctors',
+      'pharmacies',
+      'medications',
+      'documents',
+      'insurance_cards',
+    };
+
+    return userOwnedTables.contains(table);
   }
 
   static Future<List<Map<String, dynamic>>> fetchAll(
@@ -266,8 +357,11 @@ class SupabaseService {
           .select();
 
       return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Fetch all error [$table]: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Fetch all error [$table]: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -277,6 +371,10 @@ class SupabaseService {
     String column,
     String value,
   ) async {
+    if (value.trim().isEmpty) {
+      return [];
+    }
+
     try {
       final response = await _supabase
           .from(table)
@@ -284,22 +382,32 @@ class SupabaseService {
           .eq(column, value);
 
       return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
+    } catch (error, stackTrace) {
       debugPrint(
-        'Fetch filtered error [$table/$column=$value]: $e',
+        'Fetch filtered error '
+        '[$table/$column=$value]: '
+        '$error\n$stackTrace',
       );
       rethrow;
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // FILE / PHOTO STORAGE
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static Future<String> uploadPhoto(
     Uint8List bytes,
     String path,
   ) async {
+    if (bytes.isEmpty) {
+      throw ArgumentError('Photo data cannot be empty.');
+    }
+
+    if (path.trim().isEmpty) {
+      throw ArgumentError('Photo path cannot be empty.');
+    }
+
     try {
       final storage = _supabase.storage.from('photos');
 
@@ -312,8 +420,11 @@ class SupabaseService {
       );
 
       return storage.getPublicUrl(path);
-    } catch (e) {
-      debugPrint('Upload photo error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Upload photo error: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -323,6 +434,14 @@ class SupabaseService {
     String path,
     String fileType,
   ) async {
+    if (bytes.isEmpty) {
+      throw ArgumentError('File data cannot be empty.');
+    }
+
+    if (path.trim().isEmpty) {
+      throw ArgumentError('File path cannot be empty.');
+    }
+
     try {
       final storage = _supabase.storage.from('documents');
 
@@ -336,8 +455,11 @@ class SupabaseService {
       );
 
       return storage.getPublicUrl(path);
-    } catch (e) {
-      debugPrint('Upload file error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Upload file error: '
+        '$error\n$stackTrace',
+      );
       rethrow;
     }
   }
@@ -345,6 +467,10 @@ class SupabaseService {
   static Future<Uint8List?> downloadFile(
     String url,
   ) async {
+    if (url.trim().isEmpty) {
+      return null;
+    }
+
     try {
       final uri = Uri.tryParse(url);
 
@@ -367,20 +493,24 @@ class SupabaseService {
           return await _supabase.storage
               .from('documents')
               .download(path);
-        } catch (e) {
-          debugPrint('Storage download error: $e');
+        } catch (error, stackTrace) {
+          debugPrint(
+            'Storage download error: '
+            '$error\n$stackTrace',
+          );
           return null;
         }
       }
-    } catch (e) {
-      debugPrint('Download file error: $e');
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Download file error: '
+        '$error\n$stackTrace',
+      );
       return null;
     }
   }
 
-  static String? _extractStoragePath(
-    Uri uri,
-  ) {
+  static String? _extractStoragePath(Uri uri) {
     final segments = uri.pathSegments;
 
     final objectIndex = segments.indexOf('object');
@@ -412,9 +542,9 @@ class SupabaseService {
     return null;
   }
 
-  // ---------------------------------------------------------------------------
-  // ACTIVATION / EXPIRY NOTIFICATION SUPPORT
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // ACTIVATION / EXPIRY NOTIFICATIONS
+  // ===========================================================================
 
   static Future<void> sendActivationNotifications({
     required String userId,
@@ -430,8 +560,7 @@ class SupabaseService {
           '${expiryDate.month.toString().padLeft(2, '0')}/'
           '${expiryDate.year}';
 
-      final subject =
-          'SANA Account Activated';
+      const subject = 'SANA Account Activated';
 
       final body = '''
 Dear $userName,
@@ -443,29 +572,29 @@ Status: Active
 Expiry date: $formattedDate
 Duration: 1 year
 
-You can now use your SANA medical records and medication reminder features.
+You can now use your SANA medical records
+and medication reminder features.
 
 SANA
 ''';
 
-      // These methods are intentionally kept as service hooks.
-      // The actual email/SMS provider can be connected later
-      // without changing the admin/user code.
       await _sendEmail(
         email,
         subject,
         body,
       );
 
-      if (phone != null && phone.trim().isNotEmpty) {
+      if (phone != null &&
+          phone.trim().isNotEmpty) {
         await _sendSms(
           phone.trim(),
           'SANA: Your account is active until $formattedDate.',
         );
       }
-    } catch (e) {
+    } catch (error, stackTrace) {
       debugPrint(
-        'Activation notification error: $e',
+        'Activation notification error: '
+        '$error\n$stackTrace',
       );
       rethrow;
     }
@@ -492,11 +621,7 @@ SANA
     String subject,
     String body,
   ) async {
-    // Email delivery requires a Supabase Edge Function
-    // or another configured email provider.
-    //
-    // Keep this method here so the application has one
-    // central notification interface.
+    // Hook for Supabase Edge Function / email provider.
     debugPrint(
       'EMAIL -> $to | $subject\n$body',
     );
@@ -506,22 +631,29 @@ SANA
     String phone,
     String message,
   ) async {
-    // SMS delivery requires a configured SMS provider.
+    // Hook for SMS provider.
     debugPrint(
       'SMS -> $phone | $message',
     );
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // EXPIRY HELPERS
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static Future<List<Map<String, dynamic>>>
       fetchUsersExpiringWithin(
     int days,
   ) async {
+    if (days < 0) {
+      throw ArgumentError(
+        'Days cannot be negative.',
+      );
+    }
+
     try {
       final now = DateTime.now();
+
       final limit = now.add(
         Duration(days: days),
       );
@@ -546,10 +678,13 @@ SANA
             ascending: true,
           );
 
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
+      return List<Map<String, dynamic>>.from(
+        response,
+      );
+    } catch (error, stackTrace) {
       debugPrint(
-        'Fetch expiring users error: $e',
+        'Fetch expiring users error: '
+        '$error\n$stackTrace',
       );
       rethrow;
     }
@@ -574,10 +709,13 @@ SANA
             ascending: true,
           );
 
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
+      return List<Map<String, dynamic>>.from(
+        response,
+      );
+    } catch (error, stackTrace) {
       debugPrint(
-        'Fetch expired users error: $e',
+        'Fetch expired users error: '
+        '$error\n$stackTrace',
       );
       rethrow;
     }
@@ -595,17 +733,18 @@ SANA
             'expiry_date',
             DateTime.now().toIso8601String(),
           );
-    } catch (e) {
+    } catch (error, stackTrace) {
       debugPrint(
-        'Deactivate expired users error: $e',
+        'Deactivate expired users error: '
+        '$error\n$stackTrace',
       );
       rethrow;
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // RAW CLIENT ACCESS
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
 
   static SupabaseClient get client {
     return _supabase;

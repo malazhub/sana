@@ -2,88 +2,121 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminProvider extends ChangeNotifier {
-  static const String adminEmail = 'malazjanbeih@gmail.com';
+  static const String adminEmail =
+      'malazjanbeih@gmail.com';
+
+  final List<Map<String, dynamic>> _users = [];
 
   bool _isAdmin = false;
   bool _isLoading = false;
   String? _errorMessage;
 
-  List<Map<String, dynamic>> _users = [];
-
   bool get isAdmin => _isAdmin;
+
   bool get isLoading => _isLoading;
+
   String? get errorMessage => _errorMessage;
+
   List<Map<String, dynamic>> get users =>
       List.unmodifiable(_users);
 
   SupabaseClient get _supabase =>
       Supabase.instance.client;
 
-  // ---------------------------------------------------------------------------
+  // ============================================================
   // ADMIN CHECK
-  // ---------------------------------------------------------------------------
+  // ============================================================
 
-  Future<bool> checkAdminStatus(String userId) async {
+  bool checkCurrentUserIsAdmin() {
+    final user =
+        _supabase.auth.currentUser;
+
+    final email =
+        user?.email?.trim().toLowerCase();
+
+    final result =
+        user != null &&
+        email == adminEmail.toLowerCase();
+
+    if (_isAdmin != result) {
+      _isAdmin = result;
+      notifyListeners();
+    }
+
+    return result;
+  }
+
+  Future<bool> checkAdminStatus(
+    String userId,
+  ) async {
+    final requestedUserId = userId.trim();
+
+    if (requestedUserId.isEmpty) {
+      _setAdmin(false);
+      return false;
+    }
+
     try {
       final currentUser =
           _supabase.auth.currentUser;
 
       if (currentUser == null ||
-          currentUser.id != userId) {
-        _isAdmin = false;
-        notifyListeners();
+          currentUser.id != requestedUserId) {
+        _setAdmin(false);
         return false;
       }
 
       final email =
           currentUser.email?.trim().toLowerCase();
 
-      _isAdmin = email == adminEmail;
+      final result =
+          email == adminEmail.toLowerCase();
 
-      notifyListeners();
+      _setAdmin(result);
 
-      return _isAdmin;
-    } catch (e) {
+      return result;
+    } catch (error, stackTrace) {
       debugPrint(
-        'Admin status check error: $e',
+        'Admin status check error: '
+        '$error\n$stackTrace',
       );
 
-      _isAdmin = false;
-      notifyListeners();
+      _setAdmin(false);
 
       return false;
     }
   }
 
-  bool checkCurrentUserIsAdmin() {
-    final email =
-        _supabase.auth.currentUser?.email
-            ?.trim()
-            .toLowerCase();
-
-    _isAdmin = email == adminEmail;
-
-    notifyListeners();
-
-    return _isAdmin;
-  }
-
-  // ---------------------------------------------------------------------------
-  // LOAD USERS
-  // ---------------------------------------------------------------------------
-
-  Future<void> loadUsers() async {
-    if (!checkCurrentUserIsAdmin()) {
-      _users = [];
-      _errorMessage =
-          'Administrator access required.';
-      notifyListeners();
+  void _setAdmin(bool value) {
+    if (_isAdmin == value) {
       return;
     }
 
-    _isLoading = true;
-    _errorMessage = null;
+    _isAdmin = value;
     notifyListeners();
+  }
+
+  // ============================================================
+  // LOAD USERS
+  // ============================================================
+
+  Future<void> loadUsers() async {
+    if (!checkCurrentUserIsAdmin()) {
+      _users.clear();
+
+      _setError(
+        'Administrator access required.',
+      );
+
+      return;
+    }
+
+    if (_isLoading) {
+      return;
+    }
+
+    _setLoading(true);
+    _clearError();
 
     try {
       final response = await _supabase
@@ -94,25 +127,42 @@ class AdminProvider extends ChangeNotifier {
             ascending: false,
           );
 
-      _users = List<Map<String, dynamic>>.from(
-        response,
-      );
-    } catch (e) {
-      _errorMessage =
-          'Unable to load users: $e';
+      final loadedUsers =
+          <Map<String, dynamic>>[];
 
+      for (final item in response) {
+        try {
+          loadedUsers.add(
+            Map<String, dynamic>.from(item),
+          );
+        } catch (error) {
+          debugPrint(
+            'Invalid user subscription record: '
+            '$error',
+          );
+        }
+      }
+
+      _users
+        ..clear()
+        ..addAll(loadedUsers);
+    } catch (error, stackTrace) {
       debugPrint(
-        'Admin loadUsers error: $e',
+        'Admin loadUsers error: '
+        '$error\n$stackTrace',
+      );
+
+      _setError(
+        'Unable to load users.',
       );
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // ACTIVATE USER FOR ONE YEAR
-  // ---------------------------------------------------------------------------
+  // ============================================================
+  // ACTIVATE USER
+  // ============================================================
 
   Future<bool> activateUser(
     String userId,
@@ -120,63 +170,81 @@ class AdminProvider extends ChangeNotifier {
     String phone,
   ) async {
     if (!checkCurrentUserIsAdmin()) {
+      _setError(
+        'Administrator access required.',
+      );
+
       return false;
     }
 
-    if (userId.trim().isEmpty) {
-      _errorMessage =
-          'Invalid user ID.';
-      notifyListeners();
+    final targetUserId = userId.trim();
+
+    if (targetUserId.isEmpty) {
+      _setError(
+        'Invalid user ID.',
+      );
+
       return false;
     }
 
     try {
-      _errorMessage = null;
+      _clearError();
 
+      /*
+       * The database RPC owns the annual subscription rule.
+       * Flutter does not calculate or forge the expiry date.
+       */
       await _supabase.rpc(
         'activate_annual_subscription',
         params: {
-          'target_user_id': userId,
+          'target_user_id': targetUserId,
         },
       );
 
       await loadUsers();
 
       return true;
-    } catch (e) {
-      _errorMessage =
-          'Unable to activate user: $e';
-
+    } catch (error, stackTrace) {
       debugPrint(
-        'Admin activateUser error: $e',
+        'Admin activateUser error: '
+        '$error\n$stackTrace',
       );
 
-      notifyListeners();
+      _setError(
+        'Unable to activate user.',
+      );
 
       return false;
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ============================================================
   // DEACTIVATE USER
-  // ---------------------------------------------------------------------------
+  // ============================================================
 
   Future<bool> deactivateUser(
     String userId,
   ) async {
     if (!checkCurrentUserIsAdmin()) {
+      _setError(
+        'Administrator access required.',
+      );
+
       return false;
     }
 
-    if (userId.trim().isEmpty) {
-      _errorMessage =
-          'Invalid user ID.';
-      notifyListeners();
+    final targetUserId = userId.trim();
+
+    if (targetUserId.isEmpty) {
+      _setError(
+        'Invalid user ID.',
+      );
+
       return false;
     }
 
     try {
-      _errorMessage = null;
+      _clearError();
 
       await _supabase
           .from('user_subscriptions')
@@ -185,34 +253,36 @@ class AdminProvider extends ChangeNotifier {
           })
           .eq(
             'user_id',
-            userId,
+            targetUserId,
           );
 
       await loadUsers();
 
       return true;
-    } catch (e) {
-      _errorMessage =
-          'Unable to deactivate user: $e';
-
+    } catch (error, stackTrace) {
       debugPrint(
-        'Admin deactivateUser error: $e',
+        'Admin deactivateUser error: '
+        '$error\n$stackTrace',
       );
 
-      notifyListeners();
+      _setError(
+        'Unable to deactivate user.',
+      );
 
       return false;
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // ============================================================
   // ACTIVE USER CHECK
-  // ---------------------------------------------------------------------------
+  // ============================================================
 
   Future<bool> isUserActive(
     String userId,
   ) async {
-    if (userId.trim().isEmpty) {
+    final targetUserId = userId.trim();
+
+    if (targetUserId.isEmpty) {
       return false;
     }
 
@@ -224,7 +294,7 @@ class AdminProvider extends ChangeNotifier {
           )
           .eq(
             'user_id',
-            userId,
+            targetUserId,
           )
           .maybeSingle();
 
@@ -235,23 +305,15 @@ class AdminProvider extends ChangeNotifier {
       final status =
           response['status']
               ?.toString()
+              .trim()
               .toLowerCase();
 
       if (status != 'active') {
         return false;
       }
 
-      final rawExpiry =
-          response['expires_at'];
-
-      if (rawExpiry == null) {
-        return false;
-      }
-
       final expiresAt =
-          DateTime.tryParse(
-        rawExpiry.toString(),
-      );
+          _parseDate(response['expires_at']);
 
       if (expiresAt == null) {
         return false;
@@ -260,40 +322,35 @@ class AdminProvider extends ChangeNotifier {
       return expiresAt.isAfter(
         DateTime.now(),
       );
-    } catch (e) {
+    } catch (error, stackTrace) {
       debugPrint(
-        'isUserActive error: $e',
+        'isUserActive error: '
+        '$error\n$stackTrace',
       );
 
       return false;
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // EXPIRY / WARNING HELPERS
-  // ---------------------------------------------------------------------------
+  // ============================================================
+  // EXPIRATION
+  // ============================================================
 
   bool isExpired(
     Map<String, dynamic> user,
   ) {
     final status =
-        user['status']?.toString().toLowerCase();
+        user['status']
+            ?.toString()
+            .trim()
+            .toLowerCase();
 
     if (status != 'active') {
       return true;
     }
 
-    final rawExpiry =
-        user['expires_at'];
-
-    if (rawExpiry == null) {
-      return true;
-    }
-
     final expiry =
-        DateTime.tryParse(
-      rawExpiry.toString(),
-    );
+        _parseDate(user['expires_at']);
 
     if (expiry == null) {
       return true;
@@ -308,23 +365,17 @@ class AdminProvider extends ChangeNotifier {
     Map<String, dynamic> user,
   ) {
     final status =
-        user['status']?.toString().toLowerCase();
+        user['status']
+            ?.toString()
+            .trim()
+            .toLowerCase();
 
     if (status != 'active') {
       return false;
     }
 
-    final rawExpiry =
-        user['expires_at'];
-
-    if (rawExpiry == null) {
-      return false;
-    }
-
     final expiry =
-        DateTime.tryParse(
-      rawExpiry.toString(),
-    );
+        _parseDate(user['expires_at']);
 
     if (expiry == null) {
       return false;
@@ -336,27 +387,76 @@ class AdminProvider extends ChangeNotifier {
         expiry.difference(now);
 
     return !difference.isNegative &&
-        difference.inDays <= 20;
+        difference <=
+            const Duration(days: 20);
   }
 
-  // ---------------------------------------------------------------------------
-  // CLEAR ERROR
-  // ---------------------------------------------------------------------------
+  DateTime? _parseDate(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    final text =
+        value.toString().trim();
+
+    if (text.isEmpty) {
+      return null;
+    }
+
+    return DateTime.tryParse(text);
+  }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
 
   void clearError() {
+    _clearError();
+  }
+
+  void _clearError() {
+    if (_errorMessage == null) {
+      return;
+    }
+
     _errorMessage = null;
     notifyListeners();
   }
 
-  // ---------------------------------------------------------------------------
+  void _setError(
+    String message,
+  ) {
+    _errorMessage = message;
+    notifyListeners();
+  }
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
+  void _setLoading(
+    bool value,
+  ) {
+    if (_isLoading == value) {
+      return;
+    }
+
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  // ============================================================
   // RESET
-  // ---------------------------------------------------------------------------
+  // ============================================================
 
   void reset() {
     _isAdmin = false;
     _isLoading = false;
     _errorMessage = null;
-    _users = [];
+    _users.clear();
+
     notifyListeners();
   }
 }

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-
-import '../../screens/splash_screen.dart';
-import '../../screens/home_screen.dart';
-import '../../screens/add_medication_screen.dart';
-import '../../screens/medication_history_screen.dart';
-import '../../screens/profile_screen.dart';
+import '../../screens/auth_screen.dart';
 import '../../screens/add_doctor_screen.dart';
+import '../../screens/add_medication_screen.dart';
 import '../../screens/add_pharmacy_screen.dart';
 import '../../screens/documents_screen.dart';
+import '../../screens/home_screen.dart';
 import '../../screens/insurance_screen.dart';
+import '../../screens/medication_history_screen.dart';
+import '../../screens/profile_screen.dart';
 import '../../screens/share_screen.dart';
+import '../../screens/splash_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
-
+  static const String auth = '/auth';
   static const String splash = '/splash';
   static const String home = '/home';
   static const String addMedication = '/add-medication';
@@ -26,43 +26,48 @@ class AppRoutes {
   static const String insurance = '/insurance';
 
   static final Map<String, WidgetBuilder> routes = {
-    splash: (context) => const SplashScreen(),
-    home: (context) => const HomeScreen(),
-    addMedication: (context) => const AddMedicationScreen(),
-    history: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Medication History'),
-            backgroundColor: Colors.teal,
-            foregroundColor: Colors.white,
-          ),
-          body: const MedicationHistoryScreen(),
-        ),
-    profile: (context) => const ProfileScreen(),
-    addDoctor: (context) => const AddDoctorScreen(),
-    addPharmacy: (context) => const AddPharmacyScreen(),
-    documents: (context) => const DocumentsScreen(),
-    insurance: (context) => const InsuranceScreen(),
+    splash: (_) => const SplashScreen(),
+    auth: (_) => const AuthScreen(),
+    home: (_) => const HomeScreen(),
+    addMedication: (_) => const AddMedicationScreen(),
+    history: (_) => const MedicationHistoryScreen(),
+    profile: (_) => const ProfileScreen(),
+    addDoctor: (_) => const AddDoctorScreen(),
+    addPharmacy: (_) => const AddPharmacyScreen(),
+    documents: (_) => const DocumentsScreen(),
+    insurance: (_) => const InsuranceScreen(),
   };
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    final uri = Uri.parse(settings.name ?? '');
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    final name = settings.name ?? '';
 
-    final path = uri.fragment.isNotEmpty ? uri.fragment : uri.path;
+    // Dynamic share route:
+    // /share/TOKEN
+    final uri = Uri.tryParse(name);
 
-    final parts = path.split('/');
+    if (uri != null) {
+      final path = uri.fragment.isNotEmpty
+          ? uri.fragment
+          : uri.path;
 
-    // Share links: /share/TOKEN
-    if (parts.length == 3 && parts[1] == 'share' && parts[2].isNotEmpty) {
-      final token = parts[2];
+      final parts = path
+          .split('/')
+          .where((part) => part.isNotEmpty)
+          .toList();
 
-      return MaterialPageRoute(
-        builder: (_) => ShareScreen(token: token),
-        settings: settings,
-      );
+      if (parts.length == 2 &&
+          parts[0] == 'share' &&
+          parts[1].isNotEmpty) {
+        return MaterialPageRoute(
+          builder: (_) => ShareScreen(
+            token: parts[1],
+          ),
+          settings: settings,
+        );
+      }
     }
 
-    // Normal registered routes.
-    final builder = routes[path];
+    final builder = routes[name];
 
     if (builder != null) {
       return MaterialPageRoute(
@@ -71,10 +76,33 @@ class AppRoutes {
       );
     }
 
-    // Unknown route.
     return MaterialPageRoute(
-      builder: (_) => const HomeScreen(),
+      builder: (_) => const _UnknownRouteScreen(),
       settings: settings,
+    );
+  }
+}
+
+class _UnknownRouteScreen extends StatelessWidget {
+  const _UnknownRouteScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Page not found'),
+      ),
+      body: Center(
+        child: FilledButton(
+          onPressed: () {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              AppRoutes.home,
+              (route) => false,
+            );
+          },
+          child: const Text('Go to Home'),
+        ),
+      ),
     );
   }
 }

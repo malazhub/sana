@@ -1,113 +1,73 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/pharmacy.dart';
+import '../services/supabase_service.dart';
 
-class PharmacyProvider with ChangeNotifier {
-  final List<Pharmacy> _pharmacies = [];
+class PharmacyProvider extends ChangeNotifier {
+  List<Pharmacy> _pharmacies = [];
   bool _isLoading = false;
+  String _userId = '';
 
-  List<Pharmacy> get pharmacies => List.unmodifiable(_pharmacies);
+  List<Pharmacy> get pharmacies => _pharmacies;
   bool get isLoading => _isLoading;
 
-  SupabaseClient? get _supabase {
-    try {
-      return Supabase.instance.client;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  PharmacyProvider() {
-    loadPharmacies();
+  void setUserId(String userId) {
+    _userId = userId;
   }
 
   Future<void> loadPharmacies() async {
+    if (_userId.isEmpty) return;
+    
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? localData = prefs.getString('saved_pharmacies');
-      if (localData != null && localData.isNotEmpty) {
-        final List<dynamic> decoded = jsonDecode(localData);
-        for (final item in decoded) {
-          if (item is Map<String, dynamic>) {
-            final pharm = Pharmacy.fromMap(item);
-            if (!_pharmacies.any((p) => p.id == pharm.id)) {
-              _pharmacies.add(pharm);
-            }
-          }
-        }
-      }
+      final data = await SupabaseService.fetchFiltered('pharmacies', 'user_id', _userId);
+      _pharmacies = data.map((map) => Pharmacy.fromMap(map)).toList();
     } catch (e) {
-      debugPrint('Error loading local pharmacies: ');
+      debugPrint('Load pharmacies error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    if (_supabase != null) {
-      try {
-        final response = await _supabase!.from('pharmacies').select();
-        if (response.isNotEmpty) {
-          for (final item in response) {
-            final cloudPharm =
-                Pharmacy.fromMap(Map<String, dynamic>.from(item));
-            final idx = _pharmacies.indexWhere((p) => p.id == cloudPharm.id);
-            if (idx >= 0) {
-              _pharmacies[idx] = cloudPharm;
-            } else {
-              _pharmacies.add(cloudPharm);
-            }
-          }
-          await _saveToLocal();
-        }
-      } catch (e) {
-        debugPrint('Failed to load pharmacies from Supabase: ');
-      }
-    }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
-  Future<void> addPharmacy(Pharmacy pharm) async {
-    if (!_pharmacies.any((p) => p.id == pharm.id)) {
-      _pharmacies.add(pharm);
+  Future<void> addPharmacy(Pharmacy pharmacy) async {
+    try {
+      final map = pharmacy.toMap();
+      map['user_id'] = _userId;
+      await SupabaseService.insert('pharmacies', map);
+      _pharmacies.add(pharmacy);
       notifyListeners();
-      await _saveToLocal();
+    } catch (e) {
+      debugPrint('Add pharmacy error: $e');
+      rethrow;
     }
+  }
 
-    if (_supabase != null) {
-      try {
-        await _supabase!.from('pharmacies').insert(pharm.toMap());
-      } catch (e) {
-        debugPrint('Failed to sync added pharmacy to Supabase: ');
+  Future<void> updatePharmacy(Pharmacy pharmacy) async {
+    try {
+      final map = pharmacy.toMap();
+      map['user_id'] = _userId;
+      await SupabaseService.update('pharmacies', map, pharmacy.id);
+      final index = _pharmacies.indexWhere((p) => p.id == pharmacy.id);
+      if (index != -1) {
+        _pharmacies[index] = pharmacy;
+        notifyListeners();
       }
+    } catch (e) {
+      debugPrint('Update pharmacy error: $e');
+      rethrow;
     }
   }
 
   Future<void> deletePharmacy(String id) async {
-    _pharmacies.removeWhere((p) => p.id == id);
-    notifyListeners();
-    await _saveToLocal();
-
-    if (_supabase != null) {
-      try {
-        await _supabase!.from('pharmacies').delete().eq('id', id);
-      } catch (e) {
-        debugPrint('Failed to delete pharmacy from Supabase: ');
-      }
-    }
-  }
-
-  Future<void> _saveToLocal() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<Map<String, dynamic>> maps =
-          _pharmacies.map((p) => p.toMap()).toList();
-      await prefs.setString('saved_pharmacies', jsonEncode(maps));
+      await SupabaseService.delete('pharmacies', id);
+      _pharmacies.removeWhere((p) => p.id == id);
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error saving pharmacies locally: ');
+      debugPrint('Delete pharmacy error: $e');
+      rethrow;
     }
   }
 }

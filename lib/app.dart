@@ -3,60 +3,64 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/routes/app_routes.dart';
-import 'providers/settings_provider.dart';
 import 'providers/language_provider.dart';
+import 'providers/settings_provider.dart';
 
-class MediTrackApp extends StatefulWidget {
-  const MediTrackApp({super.key});
+class SanaApp extends StatelessWidget {
+  const SanaApp({super.key});
 
-  @override
-  State<MediTrackApp> createState() => _MediTrackAppState();
-}
+  static const List<Locale> supportedLocales = [
+    Locale('en'),
+    Locale('ar'),
+    Locale('fr'),
+    Locale('es'),
+    Locale('de'),
+    Locale('tr'),
+    Locale('hi'),
+    Locale('zh'),
+  ];
 
-class _MediTrackAppState extends State<MediTrackApp> {
   @override
   Widget build(BuildContext context) {
     return Consumer2<SettingsProvider, LanguageProvider>(
-      builder: (context, settings, language, child) {
+      builder: (context, settings, language, _) {
         return MaterialApp(
-          title: 'MediTrack',
+          title: 'SANA',
           debugShowCheckedModeBanner: false,
-          themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue, brightness: Brightness.light),
-            scaffoldBackgroundColor: Colors.white,
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blueGrey, brightness: Brightness.dark),
-            scaffoldBackgroundColor: Colors.black,
-            useMaterial3: true,
-          ),
+
+          theme: _lightTheme,
+          darkTheme: _darkTheme,
+          themeMode: settings.isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light,
+
+          locale: language.locale,
+          supportedLocales: supportedLocales,
+
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          locale: language.locale,
-          supportedLocales: const [
-            Locale('en'),
-            Locale('ar'),
-            Locale('fr'),
-            Locale('es'),
-            Locale('de'),
-            Locale('tr'),
-          ],
-          localeResolutionCallback: (locale, supportedLocales) {
-            if (locale == null) return supportedLocales.first;
-            for (final supported in supportedLocales) {
-              if (supported.languageCode == locale.languageCode) {
-                return supported;
+
+          localeResolutionCallback: (
+            deviceLocale,
+            supportedLocales,
+          ) {
+            if (deviceLocale == null) {
+              return supportedLocales.first;
+            }
+
+            for (final locale in supportedLocales) {
+              if (locale.languageCode ==
+                  deviceLocale.languageCode) {
+                return locale;
               }
             }
+
             return supportedLocales.first;
           },
+
           initialRoute: AppRoutes.splash,
           routes: AppRoutes.routes,
           onGenerateRoute: AppRoutes.onGenerateRoute,
@@ -64,4 +68,22 @@ class _MediTrackAppState extends State<MediTrackApp> {
       },
     );
   }
+
+  static final ThemeData _lightTheme = ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: Colors.teal,
+      brightness: Brightness.light,
+    ),
+    scaffoldBackgroundColor: Colors.white,
+  );
+
+  static final ThemeData _darkTheme = ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: Colors.teal,
+      brightness: Brightness.dark,
+    ),
+    scaffoldBackgroundColor: const Color(0xFF101414),
+  );
 }

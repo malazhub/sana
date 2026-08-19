@@ -18,6 +18,8 @@ import 'medication_detail_screen.dart';
 import 'documents_screen.dart';
 import 'insurance_screen.dart';
 import 'sharing_screen.dart';
+import 'about_sana_screen.dart';
+import 'admin_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -32,12 +34,10 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> _openGetCopyLink(BuildContext context) async {
-    const url =
-        'https://link.payoneer.com/Token?t=CA1D522054524AC081ACCB17B5D8571B&src=pl';
+    const url = 'https://link.payoneer.com/Token?t=CA1D522054524AC081ACCB17B5D8571B&src=pl';
     try {
       final uri = Uri.parse(url);
-      final launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && context.mounted) {
         _showCopyModal(context);
       }
@@ -54,7 +54,7 @@ class HomeScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Get Your Own Copy'),
         content: const Text(
-          'Unlock the full source code and personal license for MediTrack / SANA.\n\nContact support or complete payment to receive your standalone copy.',
+          'Unlock the full source code and personal license for SANA.\n\nContact support or complete payment to receive your standalone copy.',
         ),
         actions: [
           TextButton(
@@ -66,48 +66,41 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLangChip(
-      BuildContext context, String langCode, String label, String activeCode) {
+  Widget _buildLangChip(BuildContext context, String langCode, String label, String activeCode) {
     final isSelected = langCode == activeCode;
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          Provider.of<LanguageProvider>(context, listen: false)
-              .setLanguage(langCode);
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 4),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.teal.shade700,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? Colors.amber.shade700 : Colors.white38,
-              width: isSelected ? 2.0 : 1.0,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ]
-                : [],
+    return InkWell(
+      onTap: () {
+        Provider.of<LanguageProvider>(context, listen: false).setLanguage(langCode);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.teal.shade700,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? Colors.amber.shade700 : Colors.white38,
+            width: isSelected ? 2.0 : 1.0,
           ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.center,
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Colors.teal.shade900 : Colors.white,
-              ),
-            ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : [],
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? Colors.teal.shade900 : Colors.white,
           ),
         ),
       ),
@@ -135,6 +128,8 @@ class HomeScreen extends StatelessWidget {
     String activeText = 'Active';
     String selectText = 'Select';
     String subHeader = 'Your smart health';
+    String aboutLabel = 'About';
+    String adminLabel = 'Admin';
 
     if (code == 'ar') {
       medLabel = 'الأدوية';
@@ -147,6 +142,8 @@ class HomeScreen extends StatelessWidget {
       activeText = 'نشط';
       selectText = 'تحديد';
       subHeader = 'صحتك الذكية';
+      aboutLabel = 'حول';
+      adminLabel = 'مدير';
     } else if (code == 'es') {
       medLabel = 'Medicamentos';
       docLabel = 'Médicos';
@@ -158,6 +155,8 @@ class HomeScreen extends StatelessWidget {
       activeText = 'Activo';
       selectText = 'Seleccionar';
       subHeader = 'Tu salud inteligente';
+      aboutLabel = 'Acerca de';
+      adminLabel = 'Administrador';
     } else if (code == 'fr') {
       medLabel = 'Médicaments';
       docLabel = 'Médecins';
@@ -169,6 +168,8 @@ class HomeScreen extends StatelessWidget {
       activeText = 'Actif';
       selectText = 'Sélectionner';
       subHeader = 'Votre santé intelligente';
+      aboutLabel = 'À propos';
+      adminLabel = 'Admin';
     } else if (code == 'de') {
       medLabel = 'Medikamente';
       docLabel = 'Ärzte';
@@ -180,6 +181,8 @@ class HomeScreen extends StatelessWidget {
       activeText = 'Aktiv';
       selectText = 'Auswählen';
       subHeader = 'Ihre intelligente Gesundheit';
+      aboutLabel = 'Über';
+      adminLabel = 'Admin';
     } else if (code == 'tr') {
       medLabel = 'İlaçlar';
       docLabel = 'Doktorlar';
@@ -191,6 +194,8 @@ class HomeScreen extends StatelessWidget {
       activeText = 'Aktif';
       selectText = 'Seç';
       subHeader = 'Akıllı sağlığınız';
+      aboutLabel = 'Hakkında';
+      adminLabel = 'Yönetici';
     } else if (code == 'hi') {
       medLabel = 'दवाएं';
       docLabel = 'डॉक्टर';
@@ -202,6 +207,8 @@ class HomeScreen extends StatelessWidget {
       activeText = 'सक्रिय';
       selectText = 'चुनें';
       subHeader = 'आपका स्मार्ट स्वास्थ्य';
+      aboutLabel = 'के बारे में';
+      adminLabel = 'व्यवस्थापक';
     } else if (code == 'zh') {
       medLabel = '药物';
       docLabel = '医生';
@@ -213,68 +220,27 @@ class HomeScreen extends StatelessWidget {
       activeText = '活动';
       selectText = '选择';
       subHeader = '您的智能健康';
+      aboutLabel = '关于';
+      adminLabel = '管理员';
     }
 
     String buttonText = '🔓 Get your own copy';
-    if (code == 'ar') {
-      buttonText = '🔓 احصل على نسختك الخاصة';
-    } else if (code == 'de') {
-      buttonText = '🔓 Holen Sie sich Ihre eigene Kopie';
-    } else if (code == 'tr') {
-      buttonText = '🔓 Kendi kopyanızı alın';
-    } else if (code == 'hi') {
-      buttonText = '🔓 अपनी खुद की प्रति प्राप्त करें';
-    } else if (code == 'zh') {
-      buttonText = '🔓 获取您自己的副本';
-    } else if (code == 'es') {
-      buttonText = '🔓 Obtén tu propia copia';
-    } else if (code == 'fr') {
-      buttonText = '🔓 Obtenez votre propre copie';
-    }
+    if (code == 'ar') buttonText = '🔓 احصل على نسختك الخاصة';
+    else if (code == 'de') buttonText = '🔓 Holen Sie sich Ihre eigene Kopie';
+    else if (code == 'tr') buttonText = '🔓 Kendi kopyanızı alın';
+    else if (code == 'hi') buttonText = '🔓 अपनी खुद की प्रति प्राप्त करें';
+    else if (code == 'zh') buttonText = '🔓 获取您自己的副本';
+    else if (code == 'es') buttonText = '🔓 Obtén tu propia copia';
+    else if (code == 'fr') buttonText = '🔓 Obtenez votre propre copie';
 
     final items = [
-      {
-        'icon': Icons.medication,
-        'label': medLabel,
-        'count': medProvider.medications.length.toString(),
-        'color': Colors.blue,
-      },
-      {
-        'icon': Icons.person,
-        'label': docLabel,
-        'count': docProvider.doctors.length.toString(),
-        'color': Colors.green,
-      },
-      {
-        'icon': Icons.local_pharmacy,
-        'label': pharmLabel,
-        'count': pharmProvider.pharmacies.length.toString(),
-        'color': Colors.orange,
-      },
-      {
-        'icon': Icons.notifications_active,
-        'label': reminderLabel,
-        'count': activeText,
-        'color': Colors.red,
-      },
-      {
-        'icon': Icons.folder,
-        'label': docsLabel,
-        'count': docuProvider.documents.length.toString(),
-        'color': Colors.purple,
-      },
-      {
-        'icon': Icons.credit_card,
-        'label': insuranceLabel,
-        'count': insuranceCount.toString(),
-        'color': Colors.indigo,
-      },
-      {
-        'icon': Icons.share,
-        'label': shareLabel,
-        'count': selectText,
-        'color': Colors.teal,
-      },
+      {'icon': Icons.medication, 'label': medLabel, 'count': medProvider.medications.length.toString(), 'color': Colors.blue},
+      {'icon': Icons.person, 'label': docLabel, 'count': docProvider.doctors.length.toString(), 'color': Colors.green},
+      {'icon': Icons.local_pharmacy, 'label': pharmLabel, 'count': pharmProvider.pharmacies.length.toString(), 'color': Colors.orange},
+      {'icon': Icons.notifications_active, 'label': reminderLabel, 'count': activeText, 'color': Colors.red},
+      {'icon': Icons.folder, 'label': docsLabel, 'count': docuProvider.documents.length.toString(), 'color': Colors.purple},
+      {'icon': Icons.credit_card, 'label': insuranceLabel, 'count': insuranceCount.toString(), 'color': Colors.indigo},
+      {'icon': Icons.share, 'label': shareLabel, 'count': selectText, 'color': Colors.orange}, // FIXED: Changed to Orange
     ];
 
     return Scaffold(
@@ -284,27 +250,43 @@ class HomeScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         toolbarHeight: 52,
         automaticallyImplyLeading: false,
-        titleSpacing: 2,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2.0),
-          child: Row(
-            children: [
-              _buildLangChip(context, 'en', 'English', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'ar', 'العربية', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'es', 'Español', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'fr', 'Français', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'de', 'Deutsch', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'tr', 'Türkçe', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'hi', 'हिन्दी', code),
-              const SizedBox(width: 2),
-              _buildLangChip(context, 'zh', '中文', code),
-            ],
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min, // FIXED: Centers logo and SANA
+          children: [
+            const Icon(Icons.health_and_safety, color: Colors.white, size: 28),
+            const SizedBox(width: 8),
+            const Text('SANA', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2)),
+            const SizedBox(width: 8),
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.share, color: Colors.orange, size: 22),
+              onPressed: () 
+                      {SharePlus.instance.share(ShareParams(text: 'https://malazhub.github.io/sana/'));
+               
+              },
+            ),
+          ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(36),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLangChip(context, 'en', 'English', code),
+                _buildLangChip(context, 'ar', 'العربية', code),
+                _buildLangChip(context, 'es', 'Español', code),
+                _buildLangChip(context, 'fr', 'Français', code),
+                _buildLangChip(context, 'de', 'Deutsch', code),
+                _buildLangChip(context, 'tr', 'Türkçe', code),
+                _buildLangChip(context, 'hi', 'हिन्दी', code),
+                _buildLangChip(context, 'zh', '中文', code),
+              ],
+            ),
           ),
         ),
       ),
@@ -315,153 +297,108 @@ class HomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE0F2FE),
-              Color(0xFFE0F7FA),
-              Color(0xFFFFF8E1),
-            ],
+            colors: [Color(0xFFE0F2FE), Color(0xFFE0F7FA), Color(0xFFFFF8E1)],
           ),
         ),
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                    minWidth: constraints.maxWidth,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Text(
+                    subHeader,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.teal.shade900,
+                    ),
                   ),
-                  child: IntrinsicHeight(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade100,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                        color: Colors.amber.shade700,
-                                        width: 1.5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.amber.shade700
-                                            .withValues(alpha: 0.15),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    'SANA',
-                                    style: TextStyle(
-                                      fontSize: 40,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.amber.shade900,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 0,
-                                child: IconButton(
-                                  icon: Icon(Icons.share,
-                                      size: 26, color: Colors.teal.shade900),
-                                  onPressed: () {
-                                    Share.share(
-                                        'https://malazhub.github.io/sana/');
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Center(
-                            child: Text(
-                              subHeader,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.teal.shade900,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: _buildHomeRow(
-                                      context, items[0], items[1]),
-                                ),
-                                const SizedBox(height: 8),
-                                Expanded(
-                                  child: _buildHomeRow(
-                                      context, items[2], items[3]),
-                                ),
-                                const SizedBox(height: 8),
-                                Expanded(
-                                  child: _buildHomeRow(
-                                      context, items[4], items[5]),
-                                ),
-                                const SizedBox(height: 8),
-                                Expanded(
-                                  child: _buildHomeCard(context, items[6]),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 40,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _openGetCopyLink(context),
-                              icon: const Icon(Icons.lock_open, size: 16),
-                              label: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  buttonText,
-                                  style: const TextStyle(fontSize: 26),
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber.shade700,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 105,
+                  child: _buildHomeRow(context, items[0], items[1]),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 105,
+                  child: _buildHomeRow(context, items[2], items[3]),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 105,
+                  child: _buildHomeRow(context, items[4], items[5]),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 105, // FIXED: Increased height for share card
+                  child: _buildHomeCard(context, items[6]),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminScreen()),
+                        ),
+                        child: Text(
+                          adminLabel, // FIXED: Translates with language selector
+                          style: const TextStyle(fontSize: 13, color: Colors.teal, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AboutSanaScreen()),
+                        ),
+                        child: Text(
+                          aboutLabel, // FIXED: Translates with language selector
+                          style: const TextStyle(fontSize: 13, color: Colors.teal, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: double.infinity,
+                  height: 38,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _openGetCopyLink(context),
+                    icon: const Icon(Icons.lock_open, size: 18),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        buttonText,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHomeRow(
-    BuildContext context,
-    Map<String, dynamic> left,
-    Map<String, dynamic> right,
-  ) {
+  Widget _buildHomeRow(BuildContext context, Map<String, dynamic> left, Map<String, dynamic> right) {
     return Row(
       children: [
         Expanded(child: _buildHomeCard(context, left)),
@@ -471,10 +408,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHomeCard(
-    BuildContext context,
-    Map<String, dynamic> item,
-  ) {
+  Widget _buildHomeCard(BuildContext context, Map<String, dynamic> item) {
     final color = item['color'] as Color;
     final icon = item['icon'] as IconData;
     final label = item['label'] as String;
@@ -486,42 +420,22 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         onTap: () {
           if (icon == Icons.medication) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MedicationListScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const MedicationListScreen()));
           } else if (icon == Icons.person) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const DoctorListScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorListScreen()));
           } else if (icon == Icons.local_pharmacy) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PharmacyListScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PharmacyListScreen()));
           } else if (icon == Icons.notifications_active) {
             _showReminderDialog(context);
           } else if (icon == Icons.folder) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const DocumentsScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const DocumentsScreen()));
           } else if (icon == Icons.credit_card) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const InsuranceScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const InsuranceScreen()));
           } else if (icon == Icons.share) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SharingScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const SharingScreen()));
           }
         },
         child: Container(
-          width: double.infinity,
-          height: double.infinity,
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.85),
@@ -547,15 +461,14 @@ class HomeScreen extends StatelessWidget {
                     label,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 18, // FIXED: Doubled font size
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
@@ -563,7 +476,7 @@ class HomeScreen extends StatelessWidget {
                     child: Text(
                       count,
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 28, // FIXED: Doubled font size
                         fontWeight: FontWeight.w600,
                         color: color,
                       ),
@@ -642,49 +555,46 @@ class HomeScreen extends StatelessWidget {
                       final timeDisplay = item['time'] as String;
 
                       Widget leadAvatar;
-                      if (med.photoUrl != null &&
-                          med.photoUrl!.startsWith('data:image')) {
+                      if (med.photoUrl != null && med.photoUrl!.startsWith('data:image')) {
                         try {
                           final data = Uri.parse(med.photoUrl!).data;
                           if (data != null) {
                             leadAvatar = ClipRRect(
                               borderRadius: BorderRadius.circular(20),
-                              child: Image.memory(data.contentAsBytes(),
-                                  width: 40, height: 40, fit: BoxFit.cover),
+                              child: Image.memory(data.contentAsBytes(), width: 40, height: 40, fit: BoxFit.cover),
                             );
                           } else {
                             leadAvatar = const CircleAvatar(
-                                backgroundColor: Colors.teal,
-                                child: Icon(Icons.alarm, color: Colors.white));
+                              backgroundColor: Colors.teal,
+                              child: Icon(Icons.alarm, color: Colors.white),
+                            );
                           }
                         } catch (_) {
                           leadAvatar = const CircleAvatar(
-                              backgroundColor: Colors.teal,
-                              child: Icon(Icons.alarm, color: Colors.white));
+                            backgroundColor: Colors.teal,
+                            child: Icon(Icons.alarm, color: Colors.white),
+                          );
                         }
                       } else {
                         leadAvatar = const CircleAvatar(
-                            backgroundColor: Colors.teal,
-                            child: Icon(Icons.alarm, color: Colors.white));
+                          backgroundColor: Colors.teal,
+                          child: Icon(Icons.alarm, color: Colors.white),
+                        );
                       }
 
                       return ListTile(
                         leading: leadAvatar,
-                        title: Text(med.name,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(med.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text('$timeDisplay - Dosage: ${med.dosage}'),
                         trailing: IconButton(
                           tooltip: 'Enlarge / Inspect',
-                          icon:
-                              const Icon(Icons.visibility, color: Colors.teal),
+                          icon: const Icon(Icons.visibility, color: Colors.teal),
                           onPressed: () {
                             Navigator.pop(context);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    MedicationDetailScreen(medication: med),
+                                builder: (_) => MedicationDetailScreen(medication: med),
                               ),
                             );
                           },
@@ -694,8 +604,7 @@ class HomeScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  MedicationDetailScreen(medication: med),
+                              builder: (_) => MedicationDetailScreen(medication: med),
                             ),
                           );
                         },
@@ -714,6 +623,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
+
 
 // ============================================================================
 // MEDICATIONS LIST SCREEN
@@ -854,8 +765,7 @@ class MedicationListScreen extends StatelessWidget {
                     ),
                     title: Text(
                       med.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -863,24 +773,30 @@ class MedicationListScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text('$dosageLbl: ${med.dosage}'),
                         if (med.reminderTimes.isNotEmpty)
-                          Text(
-                              '$remindersLbl: ${med.reminderTimes.join(", ")}'),
+                          Text('$remindersLbl: ${med.reminderTimes.join(", ")}'),
                         Text('$repeatLbl: $repeatText'),
                       ],
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // FIXED: Added Share Key
+                        IconButton(
+                          tooltip: 'Share',
+                          icon: const Icon(Icons.share, color: Colors.orange),
+                          onPressed: () 
+                            {SharePlus.instance.share(ShareParams(text: 'Medication: ${med.name}\nDosage: ${med.dosage}\nRepeat: ${repeatText}'));
+                            
+                          },
+                        ),
                         IconButton(
                           tooltip: 'Enlarge / Inspect',
-                          icon:
-                              const Icon(Icons.visibility, color: Colors.teal),
+                          icon: const Icon(Icons.visibility, color: Colors.teal),
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    MedicationDetailScreen(medication: med),
+                                builder: (_) => MedicationDetailScreen(medication: med),
                               ),
                             );
                           },
@@ -898,8 +814,7 @@ class MedicationListScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              MedicationDetailScreen(medication: med),
+                          builder: (_) => MedicationDetailScreen(medication: med),
                         ),
                       );
                     },
@@ -922,42 +837,50 @@ class DoctorListScreen extends StatelessWidget {
     String specLbl = 'Specialty';
     String phoneLbl = 'Phone Number';
     String callBtn = 'Call Doctor';
+    String waBtn = 'WhatsApp';
     String closeBtn = 'Close';
 
     if (code == 'ar') {
       specLbl = 'التخصص';
       phoneLbl = 'رقم الهاتف';
       callBtn = 'اتصال بالطبيب';
+      waBtn = 'واتساب';
       closeBtn = 'إغلاق';
     } else if (code == 'es') {
       specLbl = 'Especialidad';
       phoneLbl = 'Teléfono';
       callBtn = 'Llamar al Médico';
+      waBtn = 'WhatsApp';
       closeBtn = 'Cerrar';
     } else if (code == 'fr') {
       specLbl = 'Spécialité';
       phoneLbl = 'Téléphone';
       callBtn = 'Appeler le Médecin';
+      waBtn = 'WhatsApp';
       closeBtn = 'Fermer';
     } else if (code == 'de') {
       specLbl = 'Fachgebiet';
       phoneLbl = 'Telefonnummer';
       callBtn = 'Arzt Anrufen';
+      waBtn = 'WhatsApp';
       closeBtn = 'Schließen';
     } else if (code == 'tr') {
       specLbl = 'Uzmanlık';
       phoneLbl = 'Telefon Numarası';
       callBtn = 'Doktoru Ara';
+      waBtn = 'WhatsApp';
       closeBtn = 'Kapat';
     } else if (code == 'hi') {
       specLbl = 'विशेषता';
       phoneLbl = 'फ़ोन नंबर';
       callBtn = 'डॉक्टर को कॉल करें';
+      waBtn = 'व्हाट्सएप';
       closeBtn = 'बंद करें';
     } else if (code == 'zh') {
       specLbl = '专业';
       phoneLbl = '电话号码';
       callBtn = '呼叫医生';
+      waBtn = 'WhatsApp';
       closeBtn = '关闭';
     }
 
@@ -976,8 +899,7 @@ class DoctorListScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 doc.name,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),
           ],
@@ -989,24 +911,18 @@ class DoctorListScreen extends StatelessWidget {
             const Divider(height: 20),
             if (doc.specialty != null && doc.specialty!.isNotEmpty) ...[
               Text(specLbl,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.grey)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
               Text(doc.specialty!,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
             ],
             if (doc.phone != null && doc.phone!.isNotEmpty) ...[
               Text(phoneLbl,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.grey)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text('${doc.phone}',
-                  style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold)),
+              Text(doc.phone!,
+                  style: const TextStyle(fontSize: 16, color: Colors.teal, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
             ],
           ],
@@ -1020,7 +936,24 @@ class DoctorListScreen extends StatelessWidget {
                   backgroundColor: Colors.green, foregroundColor: Colors.white),
               onPressed: () async {
                 final uri = Uri.parse('tel:${doc.phone}');
-                if (await canLaunchUrl(uri)) await launchUrl(uri);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+          // FIXED: Added WhatsApp Key
+          if (doc.phone != null && doc.phone!.isNotEmpty)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.chat),
+              label: Text(waBtn),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+              onPressed: () async {
+                final cleanPhone = doc.phone!.replaceAll(RegExp(r'[^\d+]'), '');
+                final uri = Uri.parse('https://wa.me/$cleanPhone');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           TextButton(
@@ -1241,15 +1174,14 @@ class DoctorListScreen extends StatelessWidget {
                     ),
                     title: Text(
                       doc.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (spec != null && spec.isNotEmpty)
                           Text('$specLbl: $spec'),
-                        if (phone != null && phone.isNotEmpty) Text('$phone'),
+                        if (phone != null && phone.isNotEmpty) Text(phone),
                       ],
                     ),
                     trailing: Row(
@@ -1261,9 +1193,25 @@ class DoctorListScreen extends StatelessWidget {
                           onPressed: () async {
                             if (phone != null && phone.isNotEmpty) {
                               final uri = Uri.parse('tel:$phone');
-                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
                             } else {
                               _showEnlargedDoctor(context, doc, code);
+                            }
+                          },
+                        ),
+                        // FIXED: Added WhatsApp Key
+                        IconButton(
+                          tooltip: 'WhatsApp',
+                          icon: const Icon(Icons.chat, color: Colors.green),
+                          onPressed: () async {
+                            if (phone != null && phone.isNotEmpty) {
+                              final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+                              final uri = Uri.parse('https://wa.me/$cleanPhone');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
                             }
                           },
                         ),
@@ -1292,47 +1240,54 @@ class DoctorListScreen extends StatelessWidget {
 class PharmacyListScreen extends StatelessWidget {
   const PharmacyListScreen({super.key});
 
-  void _showEnlargedPharmacy(
-      BuildContext context, Pharmacy pharm, String code) {
+  void _showEnlargedPharmacy(BuildContext context, Pharmacy pharm, String code) {
     String addrLbl = 'Address';
     String phoneLbl = 'Phone Number';
     String callBtn = 'Call Pharmacy';
+    String waBtn = 'WhatsApp';
     String closeBtn = 'Close';
 
     if (code == 'ar') {
       addrLbl = 'العنوان';
       phoneLbl = 'رقم الهاتف';
       callBtn = 'اتصال بالصيدلية';
+      waBtn = 'واتساب';
       closeBtn = 'إغلاق';
     } else if (code == 'es') {
       addrLbl = 'Dirección';
       phoneLbl = 'Teléfono';
       callBtn = 'Llamar a la Farmacia';
+      waBtn = 'WhatsApp';
       closeBtn = 'Cerrar';
     } else if (code == 'fr') {
       addrLbl = 'Adresse';
       phoneLbl = 'Téléphone';
       callBtn = 'Appeler la Pharmacie';
+      waBtn = 'WhatsApp';
       closeBtn = 'Fermer';
     } else if (code == 'de') {
       addrLbl = 'Adresse';
       phoneLbl = 'Telefonnummer';
       callBtn = 'Apotheke Anrufen';
+      waBtn = 'WhatsApp';
       closeBtn = 'Schließen';
     } else if (code == 'tr') {
       addrLbl = 'Adres';
       phoneLbl = 'Telefon Numarası';
       callBtn = 'Eczaneyi Ara';
+      waBtn = 'WhatsApp';
       closeBtn = 'Kapat';
     } else if (code == 'hi') {
       addrLbl = 'पता';
       phoneLbl = 'फ़ोन नंबर';
       callBtn = 'फार्मेसी को कॉल करें';
+      waBtn = 'व्हाट्सएप';
       closeBtn = 'बंद करें';
     } else if (code == 'zh') {
       addrLbl = '地址';
       phoneLbl = '电话号码';
       callBtn = '呼叫药房';
+      waBtn = 'WhatsApp';
       closeBtn = '关闭';
     }
 
@@ -1351,8 +1306,7 @@ class PharmacyListScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 pharm.name,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),
           ],
@@ -1364,24 +1318,18 @@ class PharmacyListScreen extends StatelessWidget {
             const Divider(height: 20),
             if (pharm.address != null && pharm.address!.isNotEmpty) ...[
               Text(addrLbl,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.grey)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text('${pharm.address!}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
+              Text(pharm.address!,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
             ],
             if (pharm.phone != null && pharm.phone!.isNotEmpty) ...[
               Text(phoneLbl,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.grey)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text('${pharm.phone!}',
-                  style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold)),
+              Text(pharm.phone!,
+                  style: const TextStyle(fontSize: 16, color: Colors.teal, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
             ],
           ],
@@ -1395,7 +1343,24 @@ class PharmacyListScreen extends StatelessWidget {
                   backgroundColor: Colors.green, foregroundColor: Colors.white),
               onPressed: () async {
                 final uri = Uri.parse('tel:${pharm.phone}');
-                if (await canLaunchUrl(uri)) await launchUrl(uri);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+          // FIXED: Added WhatsApp Key
+          if (pharm.phone != null && pharm.phone!.isNotEmpty)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.chat),
+              label: Text(waBtn),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700, foregroundColor: Colors.white),
+              onPressed: () async {
+                final cleanPhone = pharm.phone!.replaceAll(RegExp(r'[^\d+]'), '');
+                final uri = Uri.parse('https://wa.me/$cleanPhone');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           TextButton(
@@ -1604,20 +1569,18 @@ class PharmacyListScreen extends StatelessWidget {
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: Colors.orange.shade100,
-                      child: const Icon(Icons.local_pharmacy,
-                          color: Colors.orange),
+                      child: const Icon(Icons.local_pharmacy, color: Colors.orange),
                     ),
                     title: Text(
                       pharm.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (address != null && address.isNotEmpty)
-                          Text('$address'),
-                        if (phone != null && phone.isNotEmpty) Text('$phone'),
+                          Text(address),
+                        if (phone != null && phone.isNotEmpty) Text(phone),
                       ],
                     ),
                     trailing: Row(
@@ -1629,9 +1592,25 @@ class PharmacyListScreen extends StatelessWidget {
                           onPressed: () async {
                             if (phone != null && phone.isNotEmpty) {
                               final uri = Uri.parse('tel:$phone');
-                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
                             } else {
                               _showEnlargedPharmacy(context, pharm, code);
+                            }
+                          },
+                        ),
+                        // FIXED: Added WhatsApp Key
+                        IconButton(
+                          tooltip: 'WhatsApp',
+                          icon: const Icon(Icons.chat, color: Colors.green),
+                          onPressed: () async {
+                            if (phone != null && phone.isNotEmpty) {
+                              final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+                              final uri = Uri.parse('https://wa.me/$cleanPhone');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
                             }
                           },
                         ),

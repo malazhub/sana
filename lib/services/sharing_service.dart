@@ -1,5 +1,5 @@
-import 'dart:convert';
-import 'dart:typed_data';
+﻿//import 'dart:convert';
+//import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -8,7 +8,9 @@ import 'package:share_plus/share_plus.dart';
 
 class SharingService {
   static String _value(dynamic object, String key) {
-    if (object == null) return '';
+    if (object == null) {
+      return '';
+    }
 
     if (object is Map) {
       final value = object[key];
@@ -49,21 +51,38 @@ class SharingService {
     final buffer = StringBuffer();
 
     buffer.writeln(
-      '📋 Medical Summary${name != null && name.isNotEmpty ? ': $name' : ''}',
+      '📋 Medical Summary'
+      '${name != null && name.isNotEmpty ? ': $name' : ''}',
     );
-    final now = DateTime.now();
-    buffer.writeln('Date: ${now.day}/${now.month}/${now.year}');
-    buffer.writeln('-----------------------------------');
 
-    if (medications != null && medications.isNotEmpty) {
-      buffer.writeln('\nMEDICATIONS (${medications.length}):');
-      for (final m in medications) {
-        final medName = _value(m, 'name');
-        final dosage = _value(m, 'dosage');
-        final repeat = _value(m, 'repeatType');
+    final now = DateTime.now();
+
+    buffer.writeln(
+      'Date: ${now.day}/${now.month}/${now.year}',
+    );
+
+    buffer.writeln(
+      '-----------------------------------',
+    );
+
+    if (medications != null &&
+        medications.isNotEmpty) {
+      buffer.writeln(
+        '\nMEDICATIONS (${medications.length}):',
+      );
+
+      for (final medication in medications) {
+        final medicationName =
+            _value(medication, 'name');
+
+        final dosage =
+            _value(medication, 'dosage');
+
+        final repeat =
+            _value(medication, 'repeatType');
 
         buffer.writeln(
-          '- $medName'
+          '- $medicationName'
           '${dosage.isNotEmpty ? ' | Dosage: $dosage' : ''}'
           '${repeat.isNotEmpty ? ' ($repeat)' : ''}',
         );
@@ -71,11 +90,19 @@ class SharingService {
     }
 
     if (doctors != null && doctors.isNotEmpty) {
-      buffer.writeln('\nDOCTORS (${doctors.length}):');
-      for (final d in doctors) {
-        final doctorName = _value(d, 'name');
-        final specialty = _value(d, 'specialty');
-        final phone = _value(d, 'phone');
+      buffer.writeln(
+        '\nDOCTORS (${doctors.length}):',
+      );
+
+      for (final doctor in doctors) {
+        final doctorName =
+            _value(doctor, 'name');
+
+        final specialty =
+            _value(doctor, 'specialty');
+
+        final phone =
+            _value(doctor, 'phone');
 
         buffer.writeln(
           '- $doctorName'
@@ -85,12 +112,21 @@ class SharingService {
       }
     }
 
-    if (pharmacies != null && pharmacies.isNotEmpty) {
-      buffer.writeln('\nPHARMACIES (${pharmacies.length}):');
-      for (final p in pharmacies) {
-        final pharmacyName = _value(p, 'name');
-        final address = _value(p, 'address');
-        final phone = _value(p, 'phone');
+    if (pharmacies != null &&
+        pharmacies.isNotEmpty) {
+      buffer.writeln(
+        '\nPHARMACIES (${pharmacies.length}):',
+      );
+
+      for (final pharmacy in pharmacies) {
+        final pharmacyName =
+            _value(pharmacy, 'name');
+
+        final address =
+            _value(pharmacy, 'address');
+
+        final phone =
+            _value(pharmacy, 'phone');
 
         buffer.writeln(
           '- $pharmacyName'
@@ -101,33 +137,48 @@ class SharingService {
     }
 
     if (history != null && history.isNotEmpty) {
-      buffer.writeln('\nMEDICATION HISTORY (${history.length}):');
-      for (final h in history) {
-        final description = _value(h, 'name');
-        if (description.isNotEmpty) {
-          buffer.writeln('- $description');
-        } else {
-          buffer.writeln('- ${h.toString()}');
-        }
-      }
-    }
+      buffer.writeln(
+        '\nMEDICATION HISTORY (${history.length}):',
+      );
 
-    if (documents != null && documents.isNotEmpty) {
-      buffer.writeln('\nDOCUMENTS (${documents.length}):');
-      for (final d in documents) {
-        final documentName = _value(d, 'name');
+      for (final item in history) {
+        final description =
+            _value(item, 'name');
+
         buffer.writeln(
-          '- ${documentName.isNotEmpty ? documentName : d.toString()}',
+          '- ${description.isNotEmpty ? description : item}',
         );
       }
     }
 
-    if (insuranceCards != null && insuranceCards.isNotEmpty) {
-      buffer.writeln('\nINSURANCE CARDS (${insuranceCards.length}):');
-      for (final card in insuranceCards) {
-        final cardName = _value(card, 'name');
+    if (documents != null &&
+        documents.isNotEmpty) {
+      buffer.writeln(
+        '\nDOCUMENTS (${documents.length}):',
+      );
+
+      for (final document in documents) {
+        final documentName =
+            _value(document, 'name');
+
         buffer.writeln(
-          '- ${cardName.isNotEmpty ? cardName : card.toString()}',
+          '- ${documentName.isNotEmpty ? documentName : document}',
+        );
+      }
+    }
+
+    if (insuranceCards != null &&
+        insuranceCards.isNotEmpty) {
+      buffer.writeln(
+        '\nINSURANCE CARDS (${insuranceCards.length}):',
+      );
+
+      for (final card in insuranceCards) {
+        final cardName =
+            _value(card, 'name');
+
+        buffer.writeln(
+          '- ${cardName.isNotEmpty ? cardName : card}',
         );
       }
     }
@@ -135,19 +186,30 @@ class SharingService {
     return buffer.toString();
   }
 
-  static Uint8List? _resolveImageBytes(String value) {
-    final clean = value.trim();
-    if (clean.isEmpty) return null;
+  
 
-    try {
-      if (clean.startsWith('data:image')) {
-        return Uri.parse(clean).data?.contentAsBytes();
-      }
+  // ============================================================
+  // MAIN SHARE API
+  // ============================================================
 
-      return base64Decode(clean);
-    } catch (_) {
-      return null;
-    }
+  static Future<void> shareRecord({
+    String? name,
+    List<dynamic>? medications,
+    List<dynamic>? doctors,
+    List<dynamic>? pharmacies,
+    List<dynamic>? history,
+    List<dynamic>? documents,
+    List<dynamic>? insuranceCards,
+  }) async {
+    await shareMedications(
+      name: name,
+      medications: medications,
+      doctors: doctors,
+      pharmacies: pharmacies,
+      history: history,
+      documents: documents,
+      insuranceCards: insuranceCards,
+    );
   }
 
   static Future<void> shareMedications({
@@ -172,7 +234,8 @@ class SharingService {
     await SharePlus.instance.share(
       ShareParams(
         text: summary,
-        subject: name ?? 'Medical Summary',
+        subject:
+            name ?? 'Medical Summary',
       ),
     );
   }
@@ -211,7 +274,8 @@ class SharingService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
+        margin:
+            const pw.EdgeInsets.all(32),
         build: (context) {
           final widgets = <pw.Widget>[];
 
@@ -222,58 +286,86 @@ class SharingService {
                 'Medical Record Report',
                 style: pw.TextStyle(
                   fontSize: 22,
-                  fontWeight: pw.FontWeight.bold,
+                  fontWeight:
+                      pw.FontWeight.bold,
                 ),
               ),
             ),
           );
 
-          if (name != null && name.isNotEmpty) {
+          if (name != null &&
+              name.isNotEmpty) {
             widgets.add(
               pw.Text(
                 'Patient / Record: $name',
                 style: pw.TextStyle(
                   fontSize: 16,
-                  fontWeight: pw.FontWeight.bold,
+                  fontWeight:
+                      pw.FontWeight.bold,
                 ),
               ),
             );
           }
 
           final now = DateTime.now();
+
           widgets.add(
-            pw.Text('Date: ${now.day}/${now.month}/${now.year}'),
+            pw.Text(
+              'Date: ${now.day}/${now.month}/${now.year}',
+            ),
           );
-          widgets.add(pw.SizedBox(height: 10));
-          widgets.add(pw.Divider());
+
+          widgets.add(
+            pw.SizedBox(height: 10),
+          );
+
+          widgets.add(
+            pw.Divider(),
+          );
 
           void addSection(
             String title,
             List<dynamic>? items,
             String Function(dynamic) formatter,
           ) {
-            if (items == null || items.isEmpty) return;
+            if (items == null ||
+                items.isEmpty) {
+              return;
+            }
 
-            widgets.add(pw.SizedBox(height: 10));
+            widgets.add(
+              pw.SizedBox(height: 10),
+            );
+
             widgets.add(
               pw.Text(
                 '$title (${items.length})',
                 style: pw.TextStyle(
                   fontSize: 14,
-                  fontWeight: pw.FontWeight.bold,
+                  fontWeight:
+                      pw.FontWeight.bold,
                   color: PdfColors.teal,
                 ),
               ),
             );
-            widgets.add(pw.SizedBox(height: 6));
+
+            widgets.add(
+              pw.SizedBox(height: 6),
+            );
 
             for (final item in items) {
               widgets.add(
                 pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 6),
+                  padding:
+                      const pw.EdgeInsets.only(
+                    bottom: 6,
+                  ),
                   child: pw.Text(
                     '• ${formatter(item)}',
-                    style: const pw.TextStyle(fontSize: 12),
+                    style:
+                        const pw.TextStyle(
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               );
@@ -283,12 +375,26 @@ class SharingService {
           addSection(
             'MEDICATIONS',
             medications,
-            (m) {
-              final medName = _value(m, 'name');
-              final dosage = _value(m, 'dosage');
-              final repeat = _value(m, 'repeatType');
+            (medication) {
+              final medicationName =
+                  _value(
+                medication,
+                'name',
+              );
 
-              return '$medName'
+              final dosage =
+                  _value(
+                medication,
+                'dosage',
+              );
+
+              final repeat =
+                  _value(
+                medication,
+                'repeatType',
+              );
+
+              return '$medicationName'
                   '${dosage.isNotEmpty ? ' | Dosage: $dosage' : ''}'
                   '${repeat.isNotEmpty ? ' ($repeat)' : ''}';
             },
@@ -297,10 +403,24 @@ class SharingService {
           addSection(
             'DOCTORS',
             doctors,
-            (d) {
-              final doctorName = _value(d, 'name');
-              final specialty = _value(d, 'specialty');
-              final phone = _value(d, 'phone');
+            (doctor) {
+              final doctorName =
+                  _value(
+                doctor,
+                'name',
+              );
+
+              final specialty =
+                  _value(
+                doctor,
+                'specialty',
+              );
+
+              final phone =
+                  _value(
+                doctor,
+                'phone',
+              );
 
               return '$doctorName'
                   '${specialty.isNotEmpty ? ' ($specialty)' : ''}'
@@ -311,10 +431,24 @@ class SharingService {
           addSection(
             'PHARMACIES',
             pharmacies,
-            (p) {
-              final pharmacyName = _value(p, 'name');
-              final address = _value(p, 'address');
-              final phone = _value(p, 'phone');
+            (pharmacy) {
+              final pharmacyName =
+                  _value(
+                pharmacy,
+                'name',
+              );
+
+              final address =
+                  _value(
+                pharmacy,
+                'address',
+              );
+
+              final phone =
+                  _value(
+                pharmacy,
+                'phone',
+              );
 
               return '$pharmacyName'
                   '${address.isNotEmpty ? ' | Address: $address' : ''}'
@@ -325,22 +459,40 @@ class SharingService {
           addSection(
             'MEDICATION HISTORY',
             history,
-            (h) =>
-                _value(h, 'name').isNotEmpty ? _value(h, 'name') : h.toString(),
+            (item) {
+              final value =
+                  _value(item, 'name');
+
+              return value.isNotEmpty
+                  ? value
+                  : item.toString();
+            },
           );
 
           addSection(
             'DOCUMENTS',
             documents,
-            (d) =>
-                _value(d, 'name').isNotEmpty ? _value(d, 'name') : d.toString(),
+            (item) {
+              final value =
+                  _value(item, 'name');
+
+              return value.isNotEmpty
+                  ? value
+                  : item.toString();
+            },
           );
 
           addSection(
             'INSURANCE CARDS',
             insuranceCards,
-            (c) =>
-                _value(c, 'name').isNotEmpty ? _value(c, 'name') : c.toString(),
+            (item) {
+              final value =
+                  _value(item, 'name');
+
+              return value.isNotEmpty
+                  ? value
+                  : item.toString();
+            },
           );
 
           return widgets;
@@ -350,7 +502,8 @@ class SharingService {
 
     await Printing.sharePdf(
       bytes: await pdf.save(),
-      filename: 'medical_report.pdf',
+      filename:
+          'medical_report.pdf',
     );
   }
 }

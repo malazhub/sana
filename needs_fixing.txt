@@ -1,0 +1,4522 @@
+=== FILE: lib\screens\home_screen.dart ===
+// ignore_for_file: deprecated_member_use, unused_import, unused_element
+import 'package:flutter/material.dart';
+import '../services/sharing_service.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../providers/language_provider.dart';
+import '../providers/medication_provider.dart';
+import '../providers/doctor_provider.dart';
+import '../providers/pharmacy_provider.dart';
+import '../providers/document_provider.dart';
+import '../providers/insurance_provider.dart';
+import '../models/medication.dart';
+import '../models/doctor.dart';
+import '../models/pharmacy.dart';
+
+import 'add_medication_screen.dart';
+import 'medication_detail_screen.dart';
+import 'documents_screen.dart';
+import 'insurance_screen.dart';
+import 'sharing_screen.dart';
+import 'about_screen.dart';
+import 'admin_screen.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  int _getInsuranceCount(BuildContext context) {
+    try {
+      final insProvider = Provider.of<InsuranceProvider>(context);
+      return insProvider.cards.length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _openGetCopyLink(BuildContext context) async {
+    const url =
+        'https://link.payoneer.com/Token?t=CA1D522054524AC081ACCB17B5D8571B&src=pl';
+    try {
+      final uri = Uri.parse(url);
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && context.mounted) {
+        _showCopyModal(context);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showCopyModal(context);
+      }
+    }
+  }
+
+  void _showCopyModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Get Your Own Copy'),
+        content: const Text(
+          'Unlock the full source code and personal license for SANA / SANA.\n\nContact support or complete payment to receive your standalone copy.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLangChip(
+      BuildContext context, String langCode, String label, String activeCode) {
+    final isSelected = langCode == activeCode;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          Provider.of<LanguageProvider>(context, listen: false)
+              .setLanguage(langCode);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 4),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.teal.shade700,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? Colors.amber.shade700 : Colors.white38,
+              width: isSelected ? 2.0 : 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : [],
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.teal.shade900 : Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final language = Provider.of<LanguageProvider>(context);
+    final code = language.locale.languageCode;
+
+    final medProvider = Provider.of<MedicationProvider>(context);
+    final docProvider = Provider.of<DoctorProvider>(context);
+    final pharmProvider = Provider.of<PharmacyProvider>(context);
+    final docuProvider = Provider.of<DocumentProvider>(context);
+    final insuranceCount = _getInsuranceCount(context);
+
+    String medLabel = 'Medications';
+    String docLabel = 'Doctors';
+    String pharmLabel = 'Pharmacies';
+    String reminderLabel = 'Reminders';
+    String docsLabel = 'Documents';
+    String insuranceLabel = 'Insurance Cards';
+    String shareLabel = 'Share Records';
+    String activeText = 'Active';
+    String selectText = 'Select';
+    String subHeader = 'Your smart health';
+
+    if (code == 'ar') {
+      medLabel = 'الأدوية';
+      docLabel = 'الأطباء';
+      pharmLabel = 'الصيدليات';
+      reminderLabel = 'التذكيرات';
+      docsLabel = 'المستندات';
+      insuranceLabel = 'بطاقات التأمين';
+      shareLabel = 'مشاركة السجلات';
+      activeText = 'نشط';
+      selectText = 'تحديد';
+      subHeader = 'صحتك الذكية';
+    } else if (code == 'es') {
+      medLabel = 'Medicamentos';
+      docLabel = 'Médicos';
+      pharmLabel = 'Farmacias';
+      reminderLabel = 'Recordatorios';
+      docsLabel = 'Documentos';
+      insuranceLabel = 'Tarjetas de Seguro';
+      shareLabel = 'Compartir';
+      activeText = 'Activo';
+      selectText = 'Seleccionar';
+      subHeader = 'Tu salud inteligente';
+    } else if (code == 'fr') {
+      medLabel = 'Médicaments';
+      docLabel = 'Médecins';
+      pharmLabel = 'Pharmacies';
+      reminderLabel = 'Rappels';
+      docsLabel = 'Documents';
+      insuranceLabel = 'Cartes d\'Assurance';
+      shareLabel = 'Partager';
+      activeText = 'Actif';
+      selectText = 'Sélectionner';
+      subHeader = 'Votre santé intelligente';
+    } else if (code == 'de') {
+      medLabel = 'Medikamente';
+      docLabel = 'Ärzte';
+      pharmLabel = 'Apotheken';
+      reminderLabel = 'Erinnerungen';
+      docsLabel = 'Dokumente';
+      insuranceLabel = 'Versicherungskarten';
+      shareLabel = 'Teilen';
+      activeText = 'Aktiv';
+      selectText = 'Auswählen';
+      subHeader = 'Ihre intelligente Gesundheit';
+    } else if (code == 'tr') {
+      medLabel = 'İlaçlar';
+      docLabel = 'Doktorlar';
+      pharmLabel = 'Eczaneler';
+      reminderLabel = 'Hatırlatıcılar';
+      docsLabel = 'Belgeler';
+      insuranceLabel = 'Sigorta Kartları';
+      shareLabel = 'Paylaş';
+      activeText = 'Aktif';
+      selectText = 'Seç';
+      subHeader = 'Akıllı sağlığınız';
+    } else if (code == 'hi') {
+      medLabel = 'दवाएं';
+      docLabel = 'डॉक्टर';
+      pharmLabel = 'फार्मेसी';
+      reminderLabel = 'अनुस्मारक';
+      docsLabel = 'दस्तावेज़';
+      insuranceLabel = 'बीमा कार्ड';
+      shareLabel = 'रिकॉर्ड साझा करें';
+      activeText = 'सक्रिय';
+      selectText = 'चुनें';
+      subHeader = 'आपका स्मार्ट स्वास्थ्य';
+    } else if (code == 'zh') {
+      medLabel = '药物';
+      docLabel = '医生';
+      pharmLabel = '药房';
+      reminderLabel = '提醒';
+      docsLabel = '文档';
+      insuranceLabel = '保险卡';
+      shareLabel = '共享记录';
+      activeText = '活动';
+      selectText = '选择';
+      subHeader = '您的智能健康';
+    }
+
+    String buttonText = '🔓 Get your own copy';
+    if (code == 'ar') {
+      buttonText = '🔓 احصل على نسختك الخاصة';
+    } else if (code == 'de') {
+      buttonText = '🔓 Holen Sie sich Ihre eigene Kopie';
+    } else if (code == 'tr') {
+      buttonText = '🔓 Kendi kopyanızı alın';
+    } else if (code == 'hi') {
+      buttonText = '🔓 अपनी खुद की प्रति प्राप्त करें';
+    } else if (code == 'zh') {
+      buttonText = '🔓 获取您自己的副本';
+    } else if (code == 'es') {
+      buttonText = '🔓 Obtén tu propia copia';
+    } else if (code == 'fr') {
+      buttonText = '🔓 Obtenez votre propre copie';
+    }
+
+    final items = [
+      {
+        'icon': Icons.medication,
+        'label': medLabel,
+        'count': medProvider.medications.length.toString(),
+        'color': Colors.blue,
+      },
+      {
+        'icon': Icons.person,
+        'label': docLabel,
+        'count': docProvider.doctors.length.toString(),
+        'color': Colors.green,
+      },
+      {
+        'icon': Icons.local_pharmacy,
+        'label': pharmLabel,
+        'count': pharmProvider.pharmacies.length.toString(),
+        'color': Colors.orange,
+      },
+      {
+        'icon': Icons.notifications_active,
+        'label': reminderLabel,
+        'count': activeText,
+        'color': Colors.red,
+      },
+      {
+        'icon': Icons.folder,
+        'label': docsLabel,
+        'count': docuProvider.documents.length.toString(),
+        'color': Colors.purple,
+      },
+      {
+        'icon': Icons.credit_card,
+        'label': insuranceLabel,
+        'count': insuranceCount.toString(),
+        'color': Colors.indigo,
+      },
+      {
+        'icon': Icons.share,
+        'label': shareLabel,
+        'count': selectText,
+        'color': Colors.teal,
+      },
+    ];
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        toolbarHeight: 52,
+        automaticallyImplyLeading: false,
+        titleSpacing: 2,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.0),
+          child: Row(
+            children: [
+              _buildLangChip(context, 'en', 'English', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'ar', 'العربية', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'es', 'Español', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'fr', 'Français', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'de', 'Deutsch', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'tr', 'Türkçe', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'hi', 'हिन्दी', code),
+              const SizedBox(width: 2),
+              _buildLangChip(context, 'zh', '中文', code),
+            ],
+          ),
+        ),
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFE0F2FE),
+              Color(0xFFE0F7FA),
+              Color(0xFFFFF8E1),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                    minWidth: constraints.maxWidth,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade100,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: Colors.amber.shade700,
+                                        width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.amber.shade700
+                                            .withValues(alpha: 0.15),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'SANA',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber.shade900,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 0,
+                                child: IconButton(
+                                  icon: Icon(Icons.health_and_safety,
+                                      size: 26, color: Colors.teal.shade900),
+                                  onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => const AboutScreen())),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Center(
+                            child: Text(
+                              subHeader,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.teal.shade900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: _buildHomeRow(
+                                      context, items[0], items[1]),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: _buildHomeRow(
+                                      context, items[2], items[3]),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: _buildHomeRow(
+                                      context, items[4], items[5]),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: _buildHomeCard(context, items[6]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                                onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const AdminScreen())),
+                                child: const Text('admin',
+                                    style: TextStyle(fontSize: 10))),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 24,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _openGetCopyLink(context),
+                              icon: const Icon(Icons.lock_open, size: 16),
+                              label: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  buttonText,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber.shade700,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeRow(
+    BuildContext context,
+    Map<String, dynamic> left,
+    Map<String, dynamic> right,
+  ) {
+    return Row(
+      children: [
+        Expanded(child: _buildHomeCard(context, left)),
+        const SizedBox(width: 8),
+        Expanded(child: _buildHomeCard(context, right)),
+      ],
+    );
+  }
+
+  Widget _buildHomeCard(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
+    final color = item['color'] as Color;
+    final icon = item['icon'] as IconData;
+    final label = item['label'] as String;
+    final count = item['count'] as String;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () {
+          if (icon == Icons.medication) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MedicationListScreen()),
+            );
+          } else if (icon == Icons.person) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DoctorListScreen()),
+            );
+          } else if (icon == Icons.local_pharmacy) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PharmacyListScreen()),
+            );
+          } else if (icon == Icons.notifications_active) {
+            _showReminderDialog(context);
+          } else if (icon == Icons.folder) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DocumentsScreen()),
+            );
+          } else if (icon == Icons.credit_card) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InsuranceScreen()),
+            );
+          } else if (icon == Icons.share) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SharingScreen()),
+            );
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.10),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 28),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReminderDialog(BuildContext context) {
+    final medProvider = Provider.of<MedicationProvider>(context, listen: false);
+    final language = Provider.of<LanguageProvider>(context, listen: false);
+    final code = language.locale.languageCode;
+
+    String title = 'Active Reminders';
+    String noData = 'No active reminders.';
+    String close = 'Close';
+
+    if (code == 'ar') {
+      title = 'التذكيرات النشطة';
+      noData = 'لا توجد تذكيرات نشطة.';
+      close = 'إغلاق';
+    } else if (code == 'es') {
+      title = 'Recordatorios Activos';
+      noData = 'No hay recordatorios activos.';
+      close = 'Cerrar';
+    } else if (code == 'fr') {
+      title = 'Rappels Actifs';
+      noData = 'Aucun rappel actif.';
+      close = 'Fermer';
+    } else if (code == 'de') {
+      title = 'Aktive Erinnerungen';
+      noData = 'Keine aktiven Erinnerungen.';
+      close = 'Schließen';
+    } else if (code == 'tr') {
+      title = 'Aktif Hatırlatıcılar';
+      noData = 'Aktif hatırlatıcı yok.';
+      close = 'Kapat';
+    } else if (code == 'hi') {
+      title = 'सक्रिय अनुस्मारक';
+      noData = 'कोई सक्रिय अनुस्मारक नहीं।';
+      close = 'बंद करें';
+    } else if (code == 'zh') {
+      title = '活动提醒';
+      noData = '暂无活动提醒。';
+      close = '关闭';
+    }
+
+    final alarms = <Map<String, dynamic>>[];
+    for (final med in medProvider.medications) {
+      for (final timeStr in med.reminderTimes) {
+        alarms.add({'med': med, 'time': timeStr});
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 320,
+            child: alarms.isEmpty
+                ? Center(child: Text(noData))
+                : ListView.builder(
+                    itemCount: alarms.length,
+                    itemBuilder: (context, index) {
+                      final item = alarms[index];
+                      final med = item['med'] as Medication;
+                      final timeDisplay = item['time'] as String;
+
+                      Widget leadAvatar;
+                      if (med.photoUrl != null &&
+                          med.photoUrl!.startsWith('data:image')) {
+                        try {
+                          final data = Uri.parse(med.photoUrl!).data;
+                          if (data != null) {
+                            leadAvatar = ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.memory(data.contentAsBytes(),
+                                  width: 40, height: 24, fit: BoxFit.cover),
+                            );
+                          } else {
+                            leadAvatar = const CircleAvatar(
+                                backgroundColor: Colors.teal,
+                                child: Icon(Icons.alarm, color: Colors.white));
+                          }
+                        } catch (_) {
+                          leadAvatar = const CircleAvatar(
+                              backgroundColor: Colors.teal,
+                              child: Icon(Icons.alarm, color: Colors.white));
+                        }
+                      } else {
+                        leadAvatar = const CircleAvatar(
+                            backgroundColor: Colors.teal,
+                            child: Icon(Icons.alarm, color: Colors.white));
+                      }
+
+                      return ListTile(
+                        leading: leadAvatar,
+                        title: Text(med.name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('$timeDisplay - Dosage: ${med.dosage}'),
+                        trailing: IconButton(
+                          tooltip: 'Enlarge / Inspect',
+                          icon:
+                              const Icon(Icons.visibility, color: Colors.teal),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    MedicationDetailScreen(medication: med),
+                              ),
+                            );
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  MedicationDetailScreen(medication: med),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(close),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ============================================================================
+// MEDICATIONS LIST SCREEN
+// ============================================================================
+
+class MedicationListScreen extends StatelessWidget {
+  const MedicationListScreen({super.key});
+
+  String _formatRepeatType(String repeat, String code) {
+    if (repeat == 'Daily') {
+      if (code == 'ar') return 'يومياً';
+      if (code == 'es') return 'Diario';
+      if (code == 'fr') return 'Quotidien';
+      if (code == 'de') return 'Täglich';
+      if (code == 'tr') return 'Günlük';
+      if (code == 'hi') return 'दैनिक';
+      if (code == 'zh') return '每天';
+    }
+    return repeat;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final medProvider = Provider.of<MedicationProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
+    final code = language.locale.languageCode;
+
+    String title = 'Medications';
+    String addBtn = '+ Add Medication';
+    String emptyText = 'No medications added yet.';
+    String dosageLbl = 'Dosage';
+    String remindersLbl = 'Reminders';
+    String repeatLbl = 'Repeat';
+
+    if (code == 'ar') {
+      title = 'الأدوية';
+      addBtn = '+ إضافة دواء';
+      emptyText = 'لم يتم إضافة أدوية بعد.';
+      dosageLbl = 'الجرعة';
+      remindersLbl = 'التذكيرات';
+      repeatLbl = 'التكرار';
+    } else if (code == 'es') {
+      title = 'Medicamentos';
+      addBtn = '+ Añadir Medicamento';
+      emptyText = 'Aún no se han añadido medicamentos.';
+      dosageLbl = 'Dosis';
+      remindersLbl = 'Recordatorios';
+      repeatLbl = 'Repetir';
+    } else if (code == 'fr') {
+      title = 'Médicaments';
+      addBtn = '+ Ajouter un Médicament';
+      emptyText = 'Aucun médicament ajouté pour le moment.';
+      dosageLbl = 'Dosage';
+      remindersLbl = 'Rappels';
+      repeatLbl = 'Répétition';
+    } else if (code == 'de') {
+      title = 'Medikamente';
+      addBtn = '+ Medikament hinzufügen';
+      emptyText = 'Noch keine Medikamente hinzugefügt.';
+      dosageLbl = 'Dosierung';
+      remindersLbl = 'Erinnerungen';
+      repeatLbl = 'Wiederholung';
+    } else if (code == 'tr') {
+      title = 'İlaçlar';
+      addBtn = '+ İlaç Ekle';
+      emptyText = 'Henüz ilaç eklenmedi.';
+      dosageLbl = 'Doz';
+      remindersLbl = 'Hatırlatıcılar';
+      repeatLbl = 'Tekrar';
+    } else if (code == 'hi') {
+      title = 'दवाएं';
+      addBtn = '+ दवा जोड़ें';
+      emptyText = 'अभी तक कोई दवा नहीं जोड़ी गई है।';
+      dosageLbl = 'खुराक';
+      remindersLbl = 'अनुस्मारक';
+      repeatLbl = 'दोहराना';
+    } else if (code == 'zh') {
+      title = '药物';
+      addBtn = '+ 添加药物';
+      emptyText = '尚未添加药物。';
+      dosageLbl = '剂量';
+      remindersLbl = '提醒';
+      repeatLbl = '重复';
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: Text(addBtn),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AddMedicationScreen(),
+            ),
+          );
+        },
+      ),
+      body: medProvider.medications.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.medication, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    emptyText,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: medProvider.medications.length,
+              itemBuilder: (context, index) {
+                final med = medProvider.medications[index];
+                final repeatText = _formatRepeatType(med.repeatType, code);
+
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue.shade100,
+                      child: const Icon(Icons.medication, color: Colors.blue),
+                    ),
+                    title: Text(
+                      med.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text('$dosageLbl: ${med.dosage}'),
+                        if (med.reminderTimes.isNotEmpty)
+                          Text(
+                              '$remindersLbl: ${med.reminderTimes.join(", ")}'),
+                        Text('$repeatLbl: $repeatText'),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Enlarge / Inspect',
+                          icon:
+                              const Icon(Icons.visibility, color: Colors.teal),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    MedicationDetailScreen(medication: med),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            medProvider.deleteMedication(med.id);
+                          },
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              MedicationDetailScreen(medication: med),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ============================================================================
+// DOCTORS LIST SCREEN
+// ============================================================================
+
+class DoctorListScreen extends StatelessWidget {
+  const DoctorListScreen({super.key});
+
+  void _showEnlargedDoctor(BuildContext context, Doctor doc, String code) {
+    String specLbl = 'Specialty';
+    String phoneLbl = 'Phone Number';
+    String callBtn = 'Call Doctor';
+    String closeBtn = 'Close';
+
+    if (code == 'ar') {
+      specLbl = 'التخصص';
+      phoneLbl = 'رقم الهاتف';
+      callBtn = 'اتصال بالطبيب';
+      closeBtn = 'إغلاق';
+    } else if (code == 'es') {
+      specLbl = 'Especialidad';
+      phoneLbl = 'Teléfono';
+      callBtn = 'Llamar al Médico';
+      closeBtn = 'Cerrar';
+    } else if (code == 'fr') {
+      specLbl = 'Spécialité';
+      phoneLbl = 'Téléphone';
+      callBtn = 'Appeler le Médecin';
+      closeBtn = 'Fermer';
+    } else if (code == 'de') {
+      specLbl = 'Fachgebiet';
+      phoneLbl = 'Telefonnummer';
+      callBtn = 'Arzt Anrufen';
+      closeBtn = 'Schließen';
+    } else if (code == 'tr') {
+      specLbl = 'Uzmanlık';
+      phoneLbl = 'Telefon Numarası';
+      callBtn = 'Doktoru Ara';
+      closeBtn = 'Kapat';
+    } else if (code == 'hi') {
+      specLbl = 'विशेषता';
+      phoneLbl = 'फ़ोन नंबर';
+      callBtn = 'डॉक्टर को कॉल करें';
+      closeBtn = 'बंद करें';
+    } else if (code == 'zh') {
+      specLbl = '专业';
+      phoneLbl = '电话号码';
+      callBtn = '呼叫医生';
+      closeBtn = '关闭';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.teal,
+              child: Icon(Icons.person, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                doc.name,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Divider(height: 20),
+            if (doc.specialty != null && doc.specialty!.isNotEmpty) ...[
+              Text(specLbl,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text(doc.specialty!,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+            ],
+            if (doc.phone != null && doc.phone!.isNotEmpty) ...[
+              Text(phoneLbl,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text('${doc.phone}',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.teal,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ),
+        actions: [
+          if (doc.phone != null && doc.phone!.isNotEmpty)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.phone),
+              label: Text(callBtn),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, foregroundColor: Colors.white),
+              onPressed: () async {
+                final uri = Uri.parse('tel:${doc.phone}');
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+              },
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(closeBtn),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddDoctorDialog(BuildContext context, String code) {
+    final nameCtrl = TextEditingController();
+    final specCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+
+    String dialogTitle = 'Add Doctor';
+    String nameLabel = 'Doctor Name *';
+    String specLabel = 'Specialty';
+    String phoneLabel = 'Phone Number';
+    String cancelLabel = 'Cancel';
+    String saveLabel = 'Save';
+
+    if (code == 'ar') {
+      dialogTitle = 'إضافة طبيب';
+      nameLabel = 'اسم الطبيب *';
+      specLabel = 'التخصص';
+      phoneLabel = 'رقم الهاتف';
+      cancelLabel = 'إلغاء';
+      saveLabel = 'حفظ';
+    } else if (code == 'es') {
+      dialogTitle = 'Añadir Médico';
+      nameLabel = 'Nombre del Médico *';
+      specLabel = 'Especialidad';
+      phoneLabel = 'Teléfono';
+      cancelLabel = 'Cancelar';
+      saveLabel = 'Guardar';
+    } else if (code == 'fr') {
+      dialogTitle = 'Ajouter un Médecin';
+      nameLabel = 'Nom du Médecin *';
+      specLabel = 'Spécialité';
+      phoneLabel = 'Téléphone';
+      cancelLabel = 'Annuler';
+      saveLabel = 'Enregistrer';
+    } else if (code == 'de') {
+      dialogTitle = 'Arzt hinzufügen';
+      nameLabel = 'Name des Arztes *';
+      specLabel = 'Fachgebiet';
+      phoneLabel = 'Telefonnummer';
+      cancelLabel = 'Abbrechen';
+      saveLabel = 'Speichern';
+    } else if (code == 'tr') {
+      dialogTitle = 'Doktor Ekle';
+      nameLabel = 'Doktor Adı *';
+      specLabel = 'Uzmanlık';
+      phoneLabel = 'Telefon Numarası';
+      cancelLabel = 'İptal';
+      saveLabel = 'Kaydet';
+    } else if (code == 'hi') {
+      dialogTitle = 'डॉक्टर जोड़ें';
+      nameLabel = 'डॉक्टर का नाम *';
+      specLabel = 'विशेषता';
+      phoneLabel = 'फ़ोन नंबर';
+      cancelLabel = 'रद्द करें';
+      saveLabel = 'सहेजें';
+    } else if (code == 'zh') {
+      dialogTitle = '添加医生';
+      nameLabel = '医生姓名 *';
+      specLabel = '专业';
+      phoneLabel = '电话号码';
+      cancelLabel = '取消';
+      saveLabel = '保存';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(dialogTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(labelText: nameLabel),
+              ),
+              TextField(
+                controller: specCtrl,
+                decoration: InputDecoration(labelText: specLabel),
+              ),
+              TextField(
+                controller: phoneCtrl,
+                decoration: InputDecoration(labelText: phoneLabel),
+                keyboardType: TextInputType.phone,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(cancelLabel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal, foregroundColor: Colors.white),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              if (name.isNotEmpty) {
+                final newDoc = Doctor(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: name,
+                  specialty: specCtrl.text.trim(),
+                  phone: phoneCtrl.text.trim(),
+                );
+                Provider.of<DoctorProvider>(context, listen: false)
+                    .addDoctor(newDoc);
+                Navigator.pop(ctx);
+              }
+            },
+            child: Text(saveLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final docProvider = Provider.of<DoctorProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
+    final code = language.locale.languageCode;
+
+    String title = 'Doctors';
+    String addBtn = '+ Add Doctor';
+    String emptyText = 'No doctors added yet.';
+    String specLbl = 'Specialty';
+
+    if (code == 'ar') {
+      title = 'الأطباء';
+      addBtn = '+ إضافة طبيب';
+      emptyText = 'لم يتم إضافة أطباء بعد.';
+      specLbl = 'التخصص';
+    } else if (code == 'es') {
+      title = 'Médicos';
+      addBtn = '+ Añadir Médico';
+      emptyText = 'Aún no se han añadido médicos.';
+      specLbl = 'Especialidad';
+    } else if (code == 'fr') {
+      title = 'Médecins';
+      addBtn = '+ Ajouter un Médecin';
+      emptyText = 'Aucun médecin ajouté pour le moment.';
+      specLbl = 'Spécialité';
+    } else if (code == 'de') {
+      title = 'Ärzte';
+      addBtn = '+ Arzt hinzufügen';
+      emptyText = 'Noch keine Ärzte hinzugefügt.';
+      specLbl = 'Fachgebiet';
+    } else if (code == 'tr') {
+      title = 'Doktorlar';
+      addBtn = '+ Doktor Ekle';
+      emptyText = 'Henüz doktor eklenmedi.';
+      specLbl = 'Uzmanlık';
+    } else if (code == 'hi') {
+      title = 'डॉक्टर';
+      addBtn = '+ डॉक्टर जोड़ें';
+      emptyText = 'अभी तक कोई डॉक्टर नहीं जोड़ा गया है।';
+      specLbl = 'विशेषता';
+    } else if (code == 'zh') {
+      title = '医生';
+      addBtn = '+ 添加医生';
+      emptyText = '尚未添加医生。';
+      specLbl = '专业';
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: Text(addBtn),
+        onPressed: () => _showAddDoctorDialog(context, code),
+      ),
+      body: docProvider.doctors.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    emptyText,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: docProvider.doctors.length,
+              itemBuilder: (context, index) {
+                final doc = docProvider.doctors[index];
+                final spec = doc.specialty;
+                final phone = doc.phone;
+
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.green.shade100,
+                      child: const Icon(Icons.person, color: Colors.green),
+                    ),
+                    title: Text(
+                      doc.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (spec != null && spec.isNotEmpty)
+                          Text('$specLbl: $spec'),
+                        if (phone != null && phone.isNotEmpty) Text('$phone'),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Call Doctor',
+                          icon: const Icon(Icons.phone, color: Colors.green),
+                          onPressed: () async {
+                            if (phone != null && phone.isNotEmpty) {
+                              final uri = Uri.parse('tel:$phone');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                            } else {
+                              _showEnlargedDoctor(context, doc, code);
+                            }
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            docProvider.deleteDoctor(doc.id);
+                          },
+                        ),
+                      ],
+                    ),
+                    onTap: () => _showEnlargedDoctor(context, doc, code),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ============================================================================
+// PHARMACIES LIST SCREEN
+// ============================================================================
+
+class PharmacyListScreen extends StatelessWidget {
+  const PharmacyListScreen({super.key});
+
+  void _showEnlargedPharmacy(
+      BuildContext context, Pharmacy pharm, String code) {
+    String addrLbl = 'Address';
+    String phoneLbl = 'Phone Number';
+    String callBtn = 'Call Pharmacy';
+    String closeBtn = 'Close';
+
+    if (code == 'ar') {
+      addrLbl = 'العنوان';
+      phoneLbl = 'رقم الهاتف';
+      callBtn = 'اتصال بالصيدلية';
+      closeBtn = 'إغلاق';
+    } else if (code == 'es') {
+      addrLbl = 'Dirección';
+      phoneLbl = 'Teléfono';
+      callBtn = 'Llamar a la Farmacia';
+      closeBtn = 'Cerrar';
+    } else if (code == 'fr') {
+      addrLbl = 'Adresse';
+      phoneLbl = 'Téléphone';
+      callBtn = 'Appeler la Pharmacie';
+      closeBtn = 'Fermer';
+    } else if (code == 'de') {
+      addrLbl = 'Adresse';
+      phoneLbl = 'Telefonnummer';
+      callBtn = 'Apotheke Anrufen';
+      closeBtn = 'Schließen';
+    } else if (code == 'tr') {
+      addrLbl = 'Adres';
+      phoneLbl = 'Telefon Numarası';
+      callBtn = 'Eczaneyi Ara';
+      closeBtn = 'Kapat';
+    } else if (code == 'hi') {
+      addrLbl = 'पता';
+      phoneLbl = 'फ़ोन नंबर';
+      callBtn = 'फार्मेसी को कॉल करें';
+      closeBtn = 'बंद करें';
+    } else if (code == 'zh') {
+      addrLbl = '地址';
+      phoneLbl = '电话号码';
+      callBtn = '呼叫药房';
+      closeBtn = '关闭';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.orange,
+              child: Icon(Icons.local_pharmacy, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                pharm.name,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Divider(height: 20),
+            if (pharm.address != null && pharm.address!.isNotEmpty) ...[
+              Text(addrLbl,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text('${pharm.address!}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+            ],
+            if (pharm.phone != null && pharm.phone!.isNotEmpty) ...[
+              Text(phoneLbl,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 4),
+              Text('${pharm.phone!}',
+                  style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.teal,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ),
+        actions: [
+          if (pharm.phone != null && pharm.phone!.isNotEmpty)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.phone),
+              label: Text(callBtn),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, foregroundColor: Colors.white),
+              onPressed: () async {
+                final uri = Uri.parse('tel:${pharm.phone}');
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+              },
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(closeBtn),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddPharmacyDialog(BuildContext context, String code) {
+    final nameCtrl = TextEditingController();
+    final addrCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+
+    String dialogTitle = 'Add Pharmacy';
+    String nameLabel = 'Pharmacy Name *';
+    String addrLabel = 'Address';
+    String phoneLabel = 'Phone Number';
+    String cancelLabel = 'Cancel';
+    String saveLabel = 'Save';
+
+    if (code == 'ar') {
+      dialogTitle = 'إضافة صيدلية';
+      nameLabel = 'اسم الصيدلية *';
+      addrLabel = 'العنوان';
+      phoneLabel = 'رقم الهاتف';
+      cancelLabel = 'إلغاء';
+      saveLabel = 'حفظ';
+    } else if (code == 'es') {
+      dialogTitle = 'Añadir Farmacia';
+      nameLabel = 'Nombre de la Farmacia *';
+      addrLabel = 'Dirección';
+      phoneLabel = 'Teléfono';
+      cancelLabel = 'Cancelar';
+      saveLabel = 'Guardar';
+    } else if (code == 'fr') {
+      dialogTitle = 'Ajouter une Pharmacie';
+      nameLabel = 'Nom de la Pharmacie *';
+      addrLabel = 'Adresse';
+      phoneLabel = 'Téléphone';
+      cancelLabel = 'Annuler';
+      saveLabel = 'Enregistrer';
+    } else if (code == 'de') {
+      dialogTitle = 'Apotheke hinzufügen';
+      nameLabel = 'Name der Apotheke *';
+      addrLabel = 'Adresse';
+      phoneLabel = 'Telefonnummer';
+      cancelLabel = 'Abbrechen';
+      saveLabel = 'Speichern';
+    } else if (code == 'tr') {
+      dialogTitle = 'Eczane Ekle';
+      nameLabel = 'Eczane Adı *';
+      addrLabel = 'Adres';
+      phoneLabel = 'Telefon Numarası';
+      cancelLabel = 'İptal';
+      saveLabel = 'Kaydet';
+    } else if (code == 'hi') {
+      dialogTitle = 'फार्मेसी जोड़ें';
+      nameLabel = 'फार्मेसी का नाम *';
+      addrLabel = 'पता';
+      phoneLabel = 'फ़ोन नंबर';
+      cancelLabel = 'रद्द करें';
+      saveLabel = 'सहेजें';
+    } else if (code == 'zh') {
+      dialogTitle = '添加药房';
+      nameLabel = '药房名称 *';
+      addrLabel = '地址';
+      phoneLabel = '电话号码';
+      cancelLabel = '取消';
+      saveLabel = '保存';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(dialogTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(labelText: nameLabel),
+              ),
+              TextField(
+                controller: addrCtrl,
+                decoration: InputDecoration(labelText: addrLabel),
+              ),
+              TextField(
+                controller: phoneCtrl,
+                decoration: InputDecoration(labelText: phoneLabel),
+                keyboardType: TextInputType.phone,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(cancelLabel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal, foregroundColor: Colors.white),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              if (name.isNotEmpty) {
+                final newPharm = Pharmacy(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: name,
+                  address: addrCtrl.text.trim(),
+                  phone: phoneCtrl.text.trim(),
+                );
+                Provider.of<PharmacyProvider>(context, listen: false)
+                    .addPharmacy(newPharm);
+                Navigator.pop(ctx);
+              }
+            },
+            child: Text(saveLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pharmProvider = Provider.of<PharmacyProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
+    final code = language.locale.languageCode;
+
+    String title = 'Pharmacies';
+    String addBtn = '+ Add Pharmacy';
+    String emptyText = 'No pharmacies added yet.';
+
+    if (code == 'ar') {
+      title = 'الصيدليات';
+      addBtn = '+ إضافة صيدلية';
+      emptyText = 'لم يتم إضافة صيدليات بعد.';
+    } else if (code == 'es') {
+      title = 'Farmacias';
+      addBtn = '+ Añadir Farmacia';
+      emptyText = 'Aún no se han añadido farmacias.';
+    } else if (code == 'fr') {
+      title = 'Pharmacies';
+      addBtn = '+ Ajouter une Pharmacie';
+      emptyText = 'Aucune pharmacie ajoutée pour le moment.';
+    } else if (code == 'de') {
+      title = 'Apotheken';
+      addBtn = '+ Apotheke hinzufügen';
+      emptyText = 'Noch keine Apotheken hinzugefügt.';
+    } else if (code == 'tr') {
+      title = 'Eczaneler';
+      addBtn = '+ Eczane Ekle';
+      emptyText = 'Henüz eczane eklenmedi.';
+    } else if (code == 'hi') {
+      title = 'फार्मेसी';
+      addBtn = '+ फार्मेसी जोड़ें';
+      emptyText = 'अभी तक कोई फार्मेसी नहीं जोड़ी गई है।';
+    } else if (code == 'zh') {
+      title = '药房';
+      addBtn = '+ 添加药房';
+      emptyText = '尚未添加药房。';
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: Text(addBtn),
+        onPressed: () => _showAddPharmacyDialog(context, code),
+      ),
+      body: pharmProvider.pharmacies.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.local_pharmacy, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    emptyText,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: pharmProvider.pharmacies.length,
+              itemBuilder: (context, index) {
+                final pharm = pharmProvider.pharmacies[index];
+                final address = pharm.address;
+                final phone = pharm.phone;
+
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.orange.shade100,
+                      child: const Icon(Icons.local_pharmacy,
+                          color: Colors.orange),
+                    ),
+                    title: Text(
+                      pharm.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (address != null && address.isNotEmpty)
+                          Text('$address'),
+                        if (phone != null && phone.isNotEmpty) Text('$phone'),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Call Pharmacy',
+                          icon: const Icon(Icons.phone, color: Colors.green),
+                          onPressed: () async {
+                            if (phone != null && phone.isNotEmpty) {
+                              final uri = Uri.parse('tel:$phone');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                            } else {
+                              _showEnlargedPharmacy(context, pharm, code);
+                            }
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            pharmProvider.deletePharmacy(pharm.id);
+                          },
+                        ),
+                      ],
+                    ),
+                    onTap: () => _showEnlargedPharmacy(context, pharm, code),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+
+=== FILE: lib\screens\admin_screen.dart ===
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class AdminScreen extends StatefulWidget {
+  const AdminScreen({Key? key}) : super(key: key);
+
+  @override
+  State<AdminScreen> createState() => _AdminScreenState();
+}
+
+class _AdminScreenState extends State<AdminScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+  bool _isSuccess = false;
+
+  Future<void> _handleAdminLogin() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (response.user != null) {
+        // Test/Call Admin RPC if configured
+        try {
+          await supabase.rpc('is_admin');
+        } catch (_) {}
+
+        setState(() {
+          _isSuccess = true;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Authentication failed. Please check credentials.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Portal'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isSuccess)
+                  const Column(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 64),
+                      SizedBox(height: 16),
+                      Text('Admin Access Granted Successfully!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      TextField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(labelText: 'Admin Email', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 16),
+                      if (_errorMessage != null)
+                        Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _handleAdminLogin,
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('Sign In as Admin', style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+=== FILE: lib\screens\documents_screen.dart ===
+import 'package:share_plus/share_plus.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/document.dart';
+import '../providers/document_provider.dart';
+import '../providers/language_provider.dart';
+import '../services/sharing_service.dart';
+
+class DocumentsScreen extends StatefulWidget {
+  const DocumentsScreen({super.key});
+
+  @override
+  State<DocumentsScreen> createState() => _DocumentsScreenState();
+}
+
+class _DocumentsScreenState extends State<DocumentsScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _safeLoadDocs(context.read<DocumentProvider>());
+    });
+  }
+
+  Future<void> _safeLoadDocs(DocumentProvider provider) async {
+    try {
+      await provider.loadDocuments();
+    } catch (e) {
+      debugPrint('Error loading documents: $e');
+    }
+  }
+
+  bool _getIsLoading(DocumentProvider provider) {
+    return provider.isLoading;
+  }
+
+  String _tr(LanguageProvider language, String key) {
+    final code = language.locale.languageCode;
+
+    switch (key) {
+      case 'documents_title':
+        if (code == 'ar') return 'المستندات';
+        if (code == 'es') return 'Documentos Médicos';
+        if (code == 'fr') return 'Documents Médicaux';
+        if (code == 'de') return 'Dokumente';
+        if (code == 'tr') return 'Belgeler';
+        if (code == 'hi') return 'दस्तावेज़';
+        if (code == 'zh') return '文档';
+        return 'Medical Documents';
+
+      case 'delete_document_confirm':
+        if (code == 'ar') return 'هل أنت متأكد من حذف المستند؟';
+        if (code == 'es') {
+          return '¿Estás seguro de eliminar este documento?';
+        }
+        if (code == 'fr') {
+          return 'Voulez-vous vraiment supprimer ce document ?';
+        }
+        if (code == 'de') {
+          return 'Möchten Sie dieses Dokument wirklich löschen?';
+        }
+        if (code == 'tr') {
+          return 'Bu belgeyi silmek istediğinizden emin misiniz?';
+        }
+        if (code == 'hi') {
+          return 'क्या आप इस दस्तावेज़ को हटाना चाहते हैं?';
+        }
+        if (code == 'zh') return '您确定要删除此文档吗？';
+        return 'Are you sure you want to delete this document?';
+
+      case 'cancel':
+        if (code == 'ar') return 'إلغاء';
+        if (code == 'es') return 'Cancelar';
+        if (code == 'fr') return 'Annuler';
+        if (code == 'de') return 'Abbrechen';
+        if (code == 'tr') return 'İptal';
+        if (code == 'hi') return 'रद्द करें';
+        if (code == 'zh') return '取消';
+        return 'Cancel';
+
+      case 'delete':
+        if (code == 'ar') return 'حذف';
+        if (code == 'es') return 'Eliminar';
+        if (code == 'fr') return 'Supprimer';
+        if (code == 'de') return 'Löschen';
+        if (code == 'tr') return 'Sil';
+        if (code == 'hi') return 'हटाएं';
+        if (code == 'zh') return '删除';
+        return 'Delete';
+
+      case 'no_documents_yet':
+        if (code == 'ar') return 'لا توجد مستندات بعد';
+        if (code == 'es') return 'Aún no hay documentos';
+        if (code == 'fr') return 'Aucun document pour le moment';
+        if (code == 'de') return 'Noch keine Dokumente';
+        if (code == 'tr') return 'Henüz belge yok';
+        if (code == 'hi') return 'अभी कोई दस्तावेज़ नहीं';
+        if (code == 'zh') return '尚未添加文档';
+        return 'No documents added yet';
+
+      case 'add_document_title':
+        if (code == 'ar') return 'إضافة مستند';
+        if (code == 'es') return 'Añadir Documento';
+        if (code == 'fr') return 'Ajouter un Document';
+        if (code == 'de') return 'Dokument hinzufügen';
+        if (code == 'tr') return 'Belge Ekle';
+        if (code == 'hi') return 'दस्तावेज़ जोड़ें';
+        if (code == 'zh') return '添加文档';
+        return 'Add Document';
+
+      case 'document_name_ast':
+        if (code == 'ar') return 'اسم المستند *';
+        if (code == 'es') return 'Nombre del Documento *';
+        if (code == 'fr') return 'Nom du Document *';
+        if (code == 'de') return 'Dokumentenname *';
+        if (code == 'tr') return 'Belge Adı *';
+        if (code == 'hi') return 'दस्तावेज़ का नाम *';
+        if (code == 'zh') return '文档名称 *';
+        return 'Document Name *';
+
+      case 'choose_file_btn':
+        if (code == 'ar') return 'اختر ملفاً';
+        if (code == 'es') return 'Seleccionar Archivo';
+        if (code == 'fr') return 'Choisir un Fichier';
+        if (code == 'de') return 'Datei auswählen';
+        if (code == 'tr') return 'Dosya Seç';
+        if (code == 'hi') return 'फ़ाइल चुनें';
+        if (code == 'zh') return '选择文件';
+        return 'Choose File';
+
+      case 'save_document_btn':
+        if (code == 'ar') return 'حفظ المستند';
+        if (code == 'es') return 'Guardar Documento';
+        if (code == 'fr') return 'Enregistrer le Document';
+        if (code == 'de') return 'Dokument speichern';
+        if (code == 'tr') return 'Belgeyi Kaydet';
+        if (code == 'hi') return 'दस्तावेज़ सहेजें';
+        if (code == 'zh') return '保存文档';
+        return 'Save Document';
+
+      default:
+        return key;
+    }
+  }
+
+  IconData _iconFor(String fileType) {
+    switch (fileType.trim().toLowerCase()) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+
+      case 'mp4':
+      case 'mov':
+      case 'avi':
+      case 'video':
+        return Icons.videocam;
+
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'webp':
+      case 'gif':
+      case 'image':
+        return Icons.image;
+
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  bool _isImageDocument(DocumentModel document) {
+    final type = document.fileType.trim().toLowerCase();
+
+    return [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'image',
+    ].contains(type);
+  }
+
+  Widget _buildImagePreview(DocumentModel document) {
+    final bytes = document.bytes;
+    final fileUrl = document.fileUrl?.trim() ?? '';
+
+    if (bytes != null && bytes.isNotEmpty) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) {
+          return const Center(
+            child: Icon(
+              Icons.broken_image,
+              size: 70,
+              color: Colors.red,
+            ),
+          );
+        },
+      );
+    }
+
+    if (fileUrl.isNotEmpty) {
+      if (fileUrl.startsWith('data:image')) {
+        try {
+          final UriData? data = Uri.parse(fileUrl).data;
+
+          if (data != null) {
+            final dataBytes = data.contentAsBytes();
+
+            if (dataBytes.isNotEmpty) {
+              return Image.memory(
+                dataBytes,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (_, __, ___) {
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 70,
+                      color: Colors.red,
+                    ),
+                  );
+                },
+              );
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+        return Image.network(
+          fileUrl,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+          errorBuilder: (_, __, ___) {
+            return const Center(
+              child: Icon(
+                Icons.broken_image,
+                size: 70,
+                color: Colors.red,
+              ),
+            );
+          },
+        );
+      }
+
+      try {
+        final localFile = File(fileUrl);
+
+        if (localFile.existsSync()) {
+          return Image.file(
+            localFile,
+            fit: BoxFit.contain,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, __, ___) {
+              return const Center(
+                child: Icon(
+                  Icons.broken_image,
+                  size: 70,
+                  color: Colors.red,
+                ),
+              );
+            },
+          );
+        }
+      } catch (_) {}
+
+      try {
+        String cleanBase64 = fileUrl;
+
+        if (cleanBase64.contains(',')) {
+          cleanBase64 = cleanBase64.split(',').last;
+        }
+
+        final decoded = base64Decode(cleanBase64);
+
+        if (decoded.isNotEmpty) {
+          return Image.memory(
+            decoded,
+            fit: BoxFit.contain,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, __, ___) {
+              return const Center(
+                child: Icon(
+                  Icons.broken_image,
+                  size: 70,
+                  color: Colors.red,
+                ),
+              );
+            },
+          );
+        }
+      } catch (_) {}
+    }
+
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported,
+            size: 55,
+            color: Colors.grey,
+          ),
+          SizedBox(height: 8),
+          Text(
+            'No Image Preview Available',
+            style: TextStyle(
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFullScreenZoomable(DocumentModel document) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: EdgeInsets.zero,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    minScale: 0.5,
+                    maxScale: 6.0,
+                    boundaryMargin: const EdgeInsets.all(100),
+                    child: _buildImagePreview(document),
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Pinch to zoom • Drag to move',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Map<String, dynamic> _buildShareDocumentMap(DocumentModel document) {
+    final map = <String, dynamic>{
+      'id': document.id,
+      'name': document.name,
+      'file_type': document.fileType,
+      'fileType': document.fileType,
+      'file_url': document.fileUrl ?? '',
+      'fileUrl': document.fileUrl ?? '',
+      'storage_path': document.fileUrl ?? '',
+      'storagePath': document.fileUrl ?? '',
+      'date': document.date.toIso8601String(),
+    };
+
+    final bytes = document.bytes;
+
+    if (bytes != null && bytes.isNotEmpty) {
+      final encoded = base64Encode(bytes);
+
+      map['bytes'] = encoded;
+      map['bytes_data'] = encoded;
+    }
+
+    return map;
+  }
+
+  Future<void> _shareDocument(DocumentModel document) async {
+    try {
+      final shareMap = _buildShareDocumentMap(document);
+
+      final hasBytes = document.bytes != null && document.bytes!.isNotEmpty;
+
+      debugPrint(
+        'Sharing document: ${document.name} '
+        '| type=${document.fileType} '
+        '| bytes=${document.bytes?.length ?? 0} '
+        '| hasBytes=$hasBytes',
+      );
+
+      await SharingService.shareMedications(
+        name: document.name,
+        medications: [],
+        doctors: [],
+        pharmacies: [],
+        history: [],
+        documents: [shareMap],
+        insuranceCards: [],
+      );
+    } catch (e) {
+      debugPrint('Error sharing document: $e');
+
+      if (!mounted) return;
+
+      _showMessage(
+        'Error sharing document: $e',
+        isError: true,
+      );
+    }
+  }
+
+  void _showEnlargedDocument(
+    DocumentModel document,
+    String code,
+  ) {
+    final isImage = _isImageDocument(document);
+
+    String typeLbl = 'Type:';
+    String dateLbl = 'Date:';
+    String shareBtn = 'Share';
+    String closeBtn = 'Close';
+    String inspectTitle = 'Document Inspection';
+    String tapToEnlarge = 'Tap image to enlarge and zoom';
+
+    if (code == 'ar') {
+      typeLbl = 'النوع:';
+      dateLbl = 'التاريخ:';
+      shareBtn = 'مشاركة';
+      closeBtn = 'إغلاق';
+      inspectTitle = 'معاينة المستند';
+      tapToEnlarge = 'اضغط على الصورة للتكبير والتصغير';
+    } else if (code == 'fr') {
+      typeLbl = 'Type :';
+      dateLbl = 'Date :';
+      shareBtn = 'Partager';
+      closeBtn = 'Fermer';
+      inspectTitle = 'Inspection du Document';
+      tapToEnlarge = 'Touchez l’image pour agrandir et zoomer';
+    } else if (code == 'es') {
+      typeLbl = 'Tipo:';
+      dateLbl = 'Fecha:';
+      shareBtn = 'Compartir';
+      closeBtn = 'Cerrar';
+      inspectTitle = 'Inspección de Documento';
+      tapToEnlarge = 'Toque la imagen para ampliar y hacer zoom';
+    } else if (code == 'de') {
+      typeLbl = 'Typ:';
+      dateLbl = 'Datum:';
+      shareBtn = 'Teilen';
+      closeBtn = 'Schließen';
+      inspectTitle = 'Dokumentenüberprüfung';
+      tapToEnlarge = 'Bild antippen zum Vergrößern und Zoomen';
+    } else if (code == 'tr') {
+      typeLbl = 'Tür:';
+      dateLbl = 'Tarih:';
+      shareBtn = 'Paylaş';
+      closeBtn = 'Kapat';
+      inspectTitle = 'Belge İnceleme';
+      tapToEnlarge = 'Büyütmek ve yakınlaştırmak için resme dokunun';
+    } else if (code == 'hi') {
+      typeLbl = 'प्रकार:';
+      dateLbl = 'तिथि:';
+      shareBtn = 'साझा करें';
+      closeBtn = 'बंद करें';
+      inspectTitle = 'दस्तावेज़ निरीक्षण';
+      tapToEnlarge = 'बड़ा करने और ज़ूम करने के लिए चित्र पर टैप करें';
+    } else if (code == 'zh') {
+      typeLbl = '类型:';
+      dateLbl = '日期:';
+      shareBtn = '分享';
+      closeBtn = '关闭';
+      inspectTitle = '文档检查';
+      tapToEnlarge = '点击图片以放大和缩放';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              _iconFor(document.fileType),
+              color: Colors.teal,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                document.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$typeLbl ${document.fileType.toUpperCase()}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+                Text(
+                  '$dateLbl '
+                  '${document.date.day}/'
+                  '${document.date.month}/'
+                  '${document.date.year}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (isImage)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+
+                      Future.microtask(() {
+                        if (mounted) {
+                          _openFullScreenZoomable(document);
+                        }
+                      });
+                    },
+                    child: Container(
+                      height: 300,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.teal.shade200,
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: _buildImagePreview(document),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.teal.shade200,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _iconFor(document.fileType),
+                          size: 50,
+                          color: Colors.teal,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$inspectTitle '
+                          '(${document.fileType.toUpperCase()})',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (isImage) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.zoom_in,
+                          size: 18,
+                          color: Colors.teal,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            tapToEnlarge,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.teal,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.share),
+            label: Text(shareBtn),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              _shareDocument(document);
+            },
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(closeBtn),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : null,
+        ),
+      );
+  }
+
+  Future<void> _confirmDelete(String id) async {
+    final language = context.read<LanguageProvider>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(_tr(language, 'delete')),
+          content: Text(
+            _tr(
+              language,
+              'delete_document_confirm',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: Text(
+                _tr(language, 'cancel'),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(
+                _tr(language, 'delete'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await context.read<DocumentProvider>().deleteDocument(id);
+
+      if (!mounted) return;
+
+      _showMessage(
+        'Document deleted successfully.',
+      );
+    } catch (e) {
+      _showMessage(
+        'Error deleting document: $e',
+        isError: true,
+      );
+    }
+  }
+
+  void _showAddSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => const _AddDocumentSheet(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<DocumentProvider>();
+    final language = context.watch<LanguageProvider>();
+    final code = language.locale.languageCode;
+
+    String datePrefix = 'Date:';
+
+    if (code == 'ar') {
+      datePrefix = 'التاريخ:';
+    } else if (code == 'es') {
+      datePrefix = 'Fecha:';
+    } else if (code == 'fr') {
+      datePrefix = 'Date :';
+    } else if (code == 'de') {
+      datePrefix = 'Datum:';
+    } else if (code == 'tr') {
+      datePrefix = 'Tarih:';
+    } else if (code == 'hi') {
+      datePrefix = 'तिथि:';
+    } else if (code == 'zh') {
+      datePrefix = '日期:';
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          _tr(language, 'documents_title'),
+        ),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddSheet,
+        backgroundColor: Colors.teal,
+        child: const Icon(Icons.add),
+      ),
+      body: _getIsLoading(provider)
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : provider.documents.isEmpty
+              ? _buildEmptyState(language)
+              : RefreshIndicator(
+                  onRefresh: () => _safeLoadDocs(provider),
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(12),
+                    itemCount: provider.documents.length,
+                    itemBuilder: (context, index) {
+                      final document = provider.documents[index];
+
+                      return _DocumentCard(
+                        document: document,
+                        fallbackIcon: _iconFor(document.fileType),
+                        datePrefix: datePrefix,
+                        onTap: () => _showEnlargedDocument(
+                          document,
+                          code,
+                        ),
+                        onDelete: document.id.isEmpty
+                            ? null
+                            : () => _confirmDelete(
+                                  document.id,
+                                ),
+                      );
+                    },
+                  ),
+                ),
+    );
+  }
+
+  Widget _buildEmptyState(
+    LanguageProvider language,
+  ) {
+    return RefreshIndicator(
+      onRefresh: () => _safeLoadDocs(
+        context.read<DocumentProvider>(),
+      ),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.folder_open,
+                      size: 80,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _tr(
+                        language,
+                        'no_documents_yet',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap + to add a scan, PDF, or video',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentCard extends StatelessWidget {
+  const _DocumentCard({
+    required this.document,
+    required this.fallbackIcon,
+    required this.datePrefix,
+    required this.onTap,
+    this.onDelete,
+  });
+
+  final DocumentModel document;
+  final IconData fallbackIcon;
+  final String datePrefix;
+  final VoidCallback onTap;
+  final VoidCallback? onDelete;
+
+  Widget _buildCardThumbnail() {
+    final bytes = document.bytes;
+    final fileUrl = document.fileUrl?.trim() ?? '';
+
+    final isImage = [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'image',
+    ].contains(
+      document.fileType.trim().toLowerCase(),
+    );
+
+    if (isImage) {
+      if (bytes != null && bytes.isNotEmpty) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            bytes,
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) {
+              return Icon(
+                fallbackIcon,
+                color: Colors.teal,
+              );
+            },
+          ),
+        );
+      }
+
+      if (fileUrl.isNotEmpty) {
+        if (fileUrl.startsWith('data:image')) {
+          try {
+            final UriData? data = Uri.parse(fileUrl).data;
+
+            if (data != null) {
+              final dataBytes = data.contentAsBytes();
+
+              if (dataBytes.isNotEmpty) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(
+                    dataBytes,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) {
+                      return Icon(
+                        fallbackIcon,
+                        color: Colors.teal,
+                      );
+                    },
+                  ),
+                );
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              fileUrl,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return Icon(
+                  fallbackIcon,
+                  color: Colors.teal,
+                );
+              },
+            ),
+          );
+        }
+
+        try {
+          final file = File(fileUrl);
+
+          if (file.existsSync()) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                file,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return Icon(
+                    fallbackIcon,
+                    color: Colors.teal,
+                  );
+                },
+              ),
+            );
+          }
+        } catch (_) {}
+
+        try {
+          String cleanBase64 = fileUrl;
+
+          if (cleanBase64.contains(',')) {
+            cleanBase64 = cleanBase64.split(',').last;
+          }
+
+          final decoded = base64Decode(cleanBase64);
+
+          if (decoded.isNotEmpty) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                decoded,
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return Icon(
+                    fallbackIcon,
+                    color: Colors.teal,
+                  );
+                },
+              ),
+            );
+          }
+        } catch (_) {}
+      }
+    }
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.teal.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        fallbackIcon,
+        color: Colors.teal,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: _buildCardThumbnail(),
+        title: Text(
+          document.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          '$datePrefix ${document.date.day}/'
+          '${document.date.month}/'
+          '${document.date.year}',
+          style: const TextStyle(
+            fontSize: 16,
+          ),
+        ),
+        onTap: onTap,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Enlarge / Inspect',
+              icon: const Icon(
+                Icons.visibility,
+                color: Colors.teal,
+              ),
+              onPressed: onTap,
+            ),
+            IconButton(
+              tooltip: 'Share',
+              icon: const Icon(Icons.share, color: Colors.teal),
+              onPressed: () async {
+                await SharePlus.instance.share(
+                  ShareParams(
+                      text: document.fileUrl ?? '', subject: document.name),
+                );
+              },
+            ),
+            if (onDelete != null)
+              IconButton(
+                tooltip: 'Delete',
+                icon: const Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ),
+                onPressed: onDelete,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddDocumentSheet extends StatefulWidget {
+  const _AddDocumentSheet();
+
+  @override
+  State<_AddDocumentSheet> createState() => _AddDocumentSheetState();
+}
+
+class _AddDocumentSheetState extends State<_AddDocumentSheet> {
+  static const List<String> _allowedExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+    'gif',
+    'pdf',
+    'mp4',
+    'mov',
+    'avi',
+  ];
+
+  final TextEditingController _nameController = TextEditingController();
+
+  DateTime _date = DateTime.now();
+
+  Uint8List? _fileBytes;
+  String? _fileName;
+  String? _fileType;
+
+  bool _isSaving = false;
+
+  bool get _selectedFileIsImage {
+    final type = _fileType?.trim().toLowerCase() ?? '';
+
+    return [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'image',
+    ].contains(type);
+  }
+
+  String _tr(
+    LanguageProvider language,
+    String key,
+  ) {
+    final code = language.locale.languageCode;
+
+    switch (key) {
+      case 'add_document_title':
+        if (code == 'ar') return 'إضافة مستند';
+        if (code == 'es') return 'Añadir Documento';
+        if (code == 'fr') return 'Ajouter un Document';
+        if (code == 'de') return 'Dokument hinzufügen';
+        if (code == 'tr') return 'Belge Ekle';
+        if (code == 'hi') return 'दस्तावेज़ जोड़ें';
+        if (code == 'zh') return '添加文档';
+        return 'Add Document';
+
+      case 'document_name_ast':
+        if (code == 'ar') return 'اسم المستند *';
+        if (code == 'es') return 'Nombre del Documento *';
+        if (code == 'fr') return 'Nom du Document *';
+        if (code == 'de') return 'Dokumentenname *';
+        if (code == 'tr') return 'Belge Adı *';
+        if (code == 'hi') return 'दस्तावेज़ का नाम *';
+        if (code == 'zh') return '文档名称 *';
+        return 'Document Name *';
+
+      case 'choose_file_btn':
+        if (code == 'ar') return 'اختر ملفاً';
+        if (code == 'es') return 'Seleccionar Archivo';
+        if (code == 'fr') return 'Choisir un Fichier';
+        if (code == 'de') return 'Datei auswählen';
+        if (code == 'tr') return 'Dosya Seç';
+        if (code == 'hi') return 'फ़ाइल चुनें';
+        if (code == 'zh') return '选择文件';
+        return 'Choose File';
+
+      case 'save_document_btn':
+        if (code == 'ar') return 'حفظ المستند';
+        if (code == 'es') return 'Guardar Documento';
+        if (code == 'fr') return 'Enregistrer le Document';
+        if (code == 'de') return 'Dokument speichern';
+        if (code == 'tr') return 'Belgeyi Kaydet';
+        if (code == 'hi') return 'दस्तावेज़ सहेजें';
+        if (code == 'zh') return '保存文档';
+        return 'Save Document';
+
+      default:
+        return key;
+    }
+  }
+
+  Future<void> _pickFile() async {
+    if (_isSaving) return;
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: _allowedExtensions,
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+
+      final pickedFile = result.files.single;
+      final bytes = pickedFile.bytes;
+
+      if (bytes == null || bytes.isEmpty) {
+        _showMessage(
+          'Could not read the selected file.',
+          isError: true,
+        );
+        return;
+      }
+
+      final extension = _getFileExtension(pickedFile);
+
+      if (!_allowedExtensions.contains(extension)) {
+        _showMessage(
+          'This file type is not supported.',
+          isError: true,
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _fileBytes = bytes;
+        _fileName = pickedFile.name;
+        _fileType = extension;
+      });
+    } catch (e) {
+      _showMessage(
+        'Error selecting file: $e',
+        isError: true,
+      );
+    }
+  }
+
+  String _getFileExtension(PlatformFile file) {
+    final extension = file.extension?.trim().toLowerCase() ?? '';
+
+    if (extension.isNotEmpty) {
+      return extension;
+    }
+
+    final fileName = file.name.trim();
+
+    if (!fileName.contains('.')) {
+      return '';
+    }
+
+    return fileName.split('.').last.trim().toLowerCase();
+  }
+
+  Future<void> _pickDate() async {
+    if (_isSaving) return;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(
+        const Duration(days: 365),
+      ),
+    );
+
+    if (picked == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _date = picked;
+    });
+  }
+
+  void _openSelectedImageZoom() {
+    final bytes = _fileBytes;
+
+    if (bytes == null || bytes.isEmpty) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: EdgeInsets.zero,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    boundaryMargin: const EdgeInsets.all(80),
+                    minScale: 0.5,
+                    maxScale: 6.0,
+                    child: Center(
+                      child: Image.memory(
+                        bytes,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      tooltip: 'Close',
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSelectedFilePreview() {
+    final bytes = _fileBytes;
+
+    if (bytes == null || bytes.isEmpty || !_selectedFileIsImage) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _openSelectedImageZoom,
+          child: Container(
+            height: 220,
+            width: double.infinity,
+            margin: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.teal.shade300,
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.memory(
+                bytes,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) {
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 60,
+                      color: Colors.red,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(
+                Icons.touch_app,
+                size: 18,
+                color: Colors.teal,
+              ),
+              SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Tap the photo to enlarge and zoom',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.teal,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _generateUuidV4() {
+    final random = Random.secure();
+
+    final bytes = List<int>.generate(
+      16,
+      (_) => random.nextInt(256),
+    );
+
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    String hexByte(int value) {
+      return value.toRadixString(16).padLeft(2, '0');
+    }
+
+    final hex = bytes.map(hexByte).join();
+
+    return '${hex.substring(0, 8)}-'
+        '${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-'
+        '${hex.substring(16, 20)}-'
+        '${hex.substring(20, 32)}';
+  }
+
+  Future<void> _save() async {
+    if (_isSaving) return;
+
+    final name = _nameController.text.trim();
+    final bytes = _fileBytes;
+    final fileType = _fileType ?? 'doc';
+
+    if (name.isEmpty) {
+      _showMessage(
+        'Please enter a document name.',
+      );
+      return;
+    }
+
+    if (bytes == null || bytes.isEmpty) {
+      _showMessage(
+        'Please choose a document file.',
+      );
+      return;
+    }
+
+    if (fileType.isEmpty) {
+      _showMessage(
+        'Could not determine the file type.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final newDoc = DocumentModel(
+        id: _generateUuidV4(),
+        name: name,
+        fileType: fileType,
+        date: _date,
+        bytes: bytes,
+      );
+
+      await context.read<DocumentProvider>().addDocument(newDoc);
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Document saved successfully.',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      _showMessage(
+        'Error saving document: $e',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : null,
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final language = context.watch<LanguageProvider>();
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _tr(
+                  language,
+                  'add_document_title',
+                ),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameController,
+                enabled: !_isSaving,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: _tr(
+                    language,
+                    'document_name_ast',
+                  ),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                enabled: !_isSaving,
+                title: Text(
+                  'Date: ${_date.day}/'
+                  '${_date.month}/'
+                  '${_date.year}',
+                ),
+                trailing: const Icon(
+                  Icons.calendar_today,
+                ),
+                onTap: _isSaving ? null : _pickDate,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isSaving ? null : _pickFile,
+                  icon: const Icon(
+                    Icons.attach_file,
+                  ),
+                  label: Text(
+                    _fileName ??
+                        _tr(
+                          language,
+                          'choose_file_btn',
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              _buildSelectedFilePreview(),
+              if (_fileType != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Type: ${_fileType!.toUpperCase()}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _tr(
+                            language,
+                            'save_document_btn',
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+}
+
+
+=== FILE: lib\screens\insurance_screen.dart ===
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/insurance_card.dart';
+import '../providers/insurance_provider.dart';
+import '../providers/language_provider.dart';
+import '../services/sharing_service.dart';
+
+class InsuranceScreen extends StatefulWidget {
+  const InsuranceScreen({super.key});
+
+  @override
+  State<InsuranceScreen> createState() => _InsuranceScreenState();
+}
+
+class _InsuranceScreenState extends State<InsuranceScreen> {
+  final _nameController = TextEditingController();
+  final _policyController = TextEditingController();
+  Uint8List? _frontImageBytes;
+  Uint8List? _backImageBytes;
+
+  Future<void> _pickImage(bool isFront) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final bytes = result.files.single.bytes;
+        if (bytes != null) {
+          setState(() {
+            if (isFront) {
+              _frontImageBytes = bytes;
+            } else {
+              _backImageBytes = bytes;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not pick image: $e')),
+      );
+    }
+  }
+
+  void _saveCard() {
+    final name = _nameController.text.trim();
+    final policy = _policyController.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please enter an insurance provider name.')),
+      );
+      return;
+    }
+
+    final String frontDataUrl = _frontImageBytes != null
+        ? Uri.dataFromBytes(_frontImageBytes!, mimeType: 'image/png').toString()
+        : '';
+    final String backDataUrl = _backImageBytes != null
+        ? Uri.dataFromBytes(_backImageBytes!, mimeType: 'image/png').toString()
+        : '';
+
+    final String nowIso = DateTime.now().toIso8601String();
+    final String cardId = DateTime.now().millisecondsSinceEpoch.toString();
+    final String polStr = policy.isNotEmpty ? policy : 'N/A';
+
+    final Map<String, dynamic> newCardMap = {
+      'id': cardId,
+      'name': name,
+      'providerName': name,
+      'provider_name': name,
+      'provider': name,
+      'title': name,
+      'policyNumber': polStr,
+      'policy_number': polStr,
+      'cardNumber': polStr,
+      'card_number': polStr,
+      'policyNo': polStr,
+      'frontImageUrl': frontDataUrl,
+      'front_image_url': frontDataUrl,
+      'backImageUrl': backDataUrl,
+      'back_image_url': backDataUrl,
+      'userId': 'guest',
+      'user_id': 'guest',
+      'createdAt': nowIso,
+      'created_at': nowIso,
+    };
+
+    try {
+      final newCard = InsuranceCard.fromMap(newCardMap);
+      Provider.of<InsuranceProvider>(context, listen: false).addCard(newCard);
+
+      _nameController.clear();
+      _policyController.clear();
+      setState(() {
+        _frontImageBytes = null;
+        _backImageBytes = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Insurance card saved successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error creating InsuranceCard object: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save card: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _getCardTitle(InsuranceCard card) {
+    try {
+      final dyn = card as dynamic;
+      return dyn.providerName?.toString() ??
+          dyn.name?.toString() ??
+          dyn.provider?.toString() ??
+          dyn.title?.toString() ??
+          'Insurance Card';
+    } catch (_) {
+      return 'Insurance Card';
+    }
+  }
+
+  String _getCardPolicy(InsuranceCard card) {
+    try {
+      final dyn = card as dynamic;
+      return dyn.policyNumber?.toString() ??
+          dyn.cardNumber?.toString() ??
+          dyn.policyNo?.toString() ??
+          'N/A';
+    } catch (_) {
+      return 'N/A';
+    }
+  }
+
+  String _getCardProp(InsuranceCard card, String prop) {
+    try {
+      final dyn = card as dynamic;
+      final map = dyn.toMap() ?? dyn.toJson();
+      return map[prop]?.toString() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  void _shareInsuranceCard(InsuranceCard card) {
+    final title = _getCardTitle(card);
+    final policy = _getCardPolicy(card);
+
+    String frontUrl = card.frontImageUrl ?? '';
+    if (frontUrl.isEmpty) {
+      frontUrl = _getCardProp(card, 'front_image_url');
+    }
+
+    String backUrl = card.backImageUrl ?? '';
+    if (backUrl.isEmpty) {
+      backUrl = _getCardProp(card, 'back_image_url');
+    }
+
+    final cardMap = {
+      'providerName': title,
+      'provider_name': title,
+      'policyNumber': policy,
+      'policy_number': policy,
+      'frontImageUrl': frontUrl,
+      'front_image_url': frontUrl,
+      'backImageUrl': backUrl,
+      'back_image_url': backUrl,
+    };
+
+    SharingService.shareMedications(
+      name: title,
+      medications: [],
+      doctors: [],
+      pharmacies: [],
+      history: [],
+      documents: [],
+      insuranceCards: [cardMap],
+    );
+  }
+
+  Widget _buildCardSidePreview(String imgUrl, String label) {
+    if (imgUrl.trim().isNotEmpty) {
+      if (imgUrl.startsWith('data:image')) {
+        try {
+          final data = Uri.parse(imgUrl).data;
+          if (data != null) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                data.contentAsBytes(),
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) =>
+                    const Icon(Icons.broken_image, size: 50),
+              ),
+            );
+          }
+        } catch (_) {}
+      }
+
+      if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            imgUrl,
+            height: 160,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (c, e, s) => const Icon(Icons.broken_image, size: 50),
+          ),
+        );
+      }
+
+      try {
+        final bytes = base64Decode(imgUrl);
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            bytes,
+            height: 160,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (c, e, s) => const Icon(Icons.broken_image, size: 50),
+          ),
+        );
+      } catch (_) {}
+    }
+
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        color: Colors.indigo.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.indigo.shade200, width: 1.5),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.credit_card, size: 48, color: Colors.indigo.shade400),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEnlargedCard(InsuranceCard card, String code) {
+    final title = _getCardTitle(card);
+    final policy = _getCardPolicy(card);
+
+    String frontUrl = card.frontImageUrl ?? '';
+    if (frontUrl.isEmpty) {
+      frontUrl = _getCardProp(card, 'front_image_url');
+    }
+
+    String backUrl = card.backImageUrl ?? '';
+    if (backUrl.isEmpty) {
+      backUrl = _getCardProp(card, 'back_image_url');
+    }
+
+    String policyLbl = 'Policy / Card Number:';
+    String viewLbl = 'Card Inspection View:';
+    String frontLbl = 'FRONT SIDE';
+    String backLbl = 'BACK SIDE';
+    String shareBtn = 'Share Card';
+    String closeBtn = 'Close Inspection';
+
+    if (code == 'ar') {
+      policyLbl = 'رقم البوليصة / البطاقة:';
+      viewLbl = 'معاينة البطاقة بالتكبير:';
+      frontLbl = 'الوجه الأمامي';
+      backLbl = 'الوجه الخلفي';
+      shareBtn = 'مشاركة البطاقة';
+      closeBtn = 'إغلاق المعاينة';
+    } else if (code == 'es') {
+      policyLbl = 'Número de Póliza / Tarjeta:';
+      viewLbl = 'Vista de Inspección:';
+      frontLbl = 'FRENTE';
+      backLbl = 'REVERSO';
+      shareBtn = 'Compartir Tarjeta';
+      closeBtn = 'Cerrar';
+    } else if (code == 'fr') {
+      policyLbl = 'Numéro de Police / Carte :';
+      viewLbl = 'Vue Agrandie :';
+      frontLbl = 'RECTO';
+      backLbl = 'VERSO';
+      shareBtn = 'Partager la Carte';
+      closeBtn = 'Fermer';
+    } else if (code == 'de') {
+      policyLbl = 'Police / Kartennummer:';
+      viewLbl = 'Kartenansicht:';
+      frontLbl = 'VORDERSEITE';
+      backLbl = 'RÜCKSEITE';
+      shareBtn = 'Karte Teilen';
+      closeBtn = 'Schließen';
+    } else if (code == 'tr') {
+      policyLbl = 'Poliçe / Kart Numarası:';
+      viewLbl = 'Kart İnceleme Görünümü:';
+      frontLbl = 'ÖN YÜZ';
+      backLbl = 'ARKA YÜZ';
+      shareBtn = 'Kartı Paylaş';
+      closeBtn = 'Kapat';
+    } else if (code == 'hi') {
+      policyLbl = 'पॉलिसी / कार्ड नंबर:';
+      viewLbl = 'कार्ड दृश्य:';
+      frontLbl = 'सामने का भाग';
+      backLbl = 'पीछे का भाग';
+      shareBtn = 'कार्ड साझा करें';
+      closeBtn = 'बंद करें';
+    } else if (code == 'zh') {
+      policyLbl = '保单 / 卡号:';
+      viewLbl = '放大卡片视图:';
+      frontLbl = '正面';
+      backLbl = '背面';
+      shareBtn = '分享卡片';
+      closeBtn = '关闭';
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.indigo,
+              child: Icon(Icons.credit_card, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(height: 20),
+                Text(
+                  policyLbl,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  policy,
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  viewLbl,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: _buildCardSidePreview(frontUrl, frontLbl)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildCardSidePreview(backUrl, backLbl)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.share),
+            label: Text(shareBtn),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              _shareInsuranceCard(card);
+            },
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              closeBtn,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<InsuranceProvider>(context);
+    final language = Provider.of<LanguageProvider>(context);
+    final code = language.locale.languageCode;
+
+    String title = 'Insurance Cards';
+    String addTitle = 'Add New Insurance Card';
+    String nameLabel = 'Provider Name *';
+    String policyLabel = 'Policy / Card Number';
+    String frontBtn = 'Front Image';
+    String backBtn = 'Back Image';
+    String saveBtn = 'Save Card';
+    String emptyText = 'No insurance cards added yet.';
+
+    if (code == 'ar') {
+      title = 'بطاقات التأمين';
+      addTitle = 'إضافة بطاقة تأمين جديدة';
+      nameLabel = 'اسم شركة التأمين *';
+      policyLabel = 'رقم البوليصة / البطاقة';
+      frontBtn = 'الصورة الأمامية';
+      backBtn = 'الصورة الخلفية';
+      saveBtn = 'حفظ البطاقة';
+      emptyText = 'لم يتم إضافة بطاقات تأمين بعد.';
+    } else if (code == 'es') {
+      title = 'Tarjetas de Seguro';
+      addTitle = 'Añadir Nueva Tarjeta de Seguro';
+      nameLabel = 'Nombre de la Aseguradora *';
+      policyLabel = 'Número de Póliza / Tarjeta';
+      frontBtn = 'Imagen Frontal';
+      backBtn = 'Imagen Trasera';
+      saveBtn = 'Guardar Tarjeta';
+      emptyText = 'Aún no se han añadido tarjetas de seguro.';
+    } else if (code == 'fr') {
+      title = 'Cartes d\'Assurance';
+      addTitle = 'Ajouter une Carte d\'Assurance';
+      nameLabel = 'Nom de l\'Assureur *';
+      policyLabel = 'Numéro de Police / Carte';
+      frontBtn = 'Image Recto';
+      backBtn = 'Image Verso';
+      saveBtn = 'Enregistrer la Carte';
+      emptyText = 'Aucune carte d\'assurance ajoutée.';
+    } else if (code == 'de') {
+      title = 'Versicherungskarten';
+      addTitle = 'Versicherungskarte hinzufügen';
+      nameLabel = 'Name der Versicherung *';
+      policyLabel = 'Policen- / Kartennummer';
+      frontBtn = 'Vorderseite';
+      backBtn = 'Rückseite';
+      saveBtn = 'Karte Speichern';
+      emptyText = 'Noch keine Versicherungskarten hinzugefügt.';
+    } else if (code == 'tr') {
+      title = 'Sigorta Kartları';
+      addTitle = 'Yeni Sigorta Kartı Ekle';
+      nameLabel = 'Sigorta Şirketi Adı *';
+      policyLabel = 'Poliçe / Kart Numarası';
+      frontBtn = 'Ön Yüz Resmi';
+      backBtn = 'Arka Yüz Resmi';
+      saveBtn = 'Kartı Kaydet';
+      emptyText = 'Henüz sigorta kartı eklenmedi.';
+    } else if (code == 'hi') {
+      title = 'बीमा कार्ड';
+      addTitle = 'नया बीमा कार्ड जोड़ें';
+      nameLabel = 'बीमा प्रदाता नाम *';
+      policyLabel = 'पॉलिसी / कार्ड नंबर';
+      frontBtn = 'सामने की तस्वीर';
+      backBtn = 'पीछे की तस्वीर';
+      saveBtn = 'कार्ड सहेजें';
+      emptyText = 'अभी कोई बीमा कार्ड नहीं जोड़ा गया।';
+    } else if (code == 'zh') {
+      title = '保险卡';
+      addTitle = '添加新保险卡';
+      nameLabel = '保险公司名称 *';
+      policyLabel = '保单 / 卡号';
+      frontBtn = '正面照片';
+      backBtn = '背面照片';
+      saveBtn = '保存卡片';
+      emptyText = '尚未添加保险卡。';
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      addTitle,
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _nameController,
+                      style: const TextStyle(fontSize: 18),
+                      decoration: InputDecoration(
+                        labelText: nameLabel,
+                        labelStyle: const TextStyle(fontSize: 16),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.business, size: 28),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _policyController,
+                      style: const TextStyle(fontSize: 18),
+                      decoration: InputDecoration(
+                        labelText: policyLabel,
+                        labelStyle: const TextStyle(fontSize: 16),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.credit_card, size: 28),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onPressed: () => _pickImage(true),
+                            icon: Icon(
+                              _frontImageBytes != null
+                                  ? Icons.check_circle
+                                  : Icons.camera_alt,
+                              color: _frontImageBytes != null
+                                  ? Colors.green
+                                  : Colors.teal,
+                              size: 24,
+                            ),
+                            label: Text(
+                              frontBtn,
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onPressed: () => _pickImage(false),
+                            icon: Icon(
+                              _backImageBytes != null
+                                  ? Icons.check_circle
+                                  : Icons.camera_alt,
+                              color: _backImageBytes != null
+                                  ? Colors.green
+                                  : Colors.teal,
+                              size: 24,
+                            ),
+                            label: Text(
+                              backBtn,
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _saveCard,
+                        icon: const Icon(Icons.save, size: 26),
+                        label: Text(
+                          saveBtn,
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            provider.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : provider.cards.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            children: [
+                              Icon(Icons.credit_card,
+                                  size: 72, color: Colors.grey[400]),
+                              const SizedBox(height: 12),
+                              Text(
+                                emptyText,
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: provider.cards.length,
+                        itemBuilder: (context, index) {
+                          final card = provider.cards[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: const CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Colors.indigoAccent,
+                                child: Icon(Icons.credit_card,
+                                    color: Colors.white, size: 28),
+                              ),
+                              title: Text(
+                                _getCardTitle(card),
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Policy: ${_getCardPolicy(card)}',
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Share Card',
+                                    icon: const Icon(Icons.share,
+                                        color: Colors.indigo, size: 28),
+                                    onPressed: () => _shareInsuranceCard(card),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Enlarge / Inspect',
+                                    icon: const Icon(Icons.visibility,
+                                        color: Colors.teal, size: 28),
+                                    onPressed: () =>
+                                        _showEnlargedCard(card, code),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Delete',
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red, size: 28),
+                                    onPressed: () {
+                                      if (card.id != null) {
+                                        provider.deleteCard(card.id!);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                              onTap: () => _showEnlargedCard(card, code),
+                            ),
+                          );
+                        },
+                      ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _policyController.dispose();
+    super.dispose();
+  }
+}
+
+
+=== FILE: lib\services\sana_notification_helper.dart ===
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+
+class SanaNotificationHelper {
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  static bool _initialized = false;
+
+  static Future<void> init() async {
+    if (_initialized) return;
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    
+    // Updated to use the named parameter 'settings'
+    await _notificationsPlugin.initialize(settings: initializationSettings);
+    _initialized = true;
+  }
+
+  static Future<void> scheduleMedicationReminder({
+    required int id,
+    required String title,
+    required String body,
+    required List<String> reminderTimes,
+  }) async {
+    await init();
+    for (int i = 0; i < reminderTimes.length; i++) {
+      final timeStr = reminderTimes[i];
+      final parts = timeStr.split(':');
+      if (parts.length != 2) continue;
+      final hour = int.tryParse(parts[0]) ?? 0;
+      final minute = int.tryParse(parts[1]) ?? 0;
+
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'sana_med_channel',
+        'Medication Reminders',
+        channelDescription: 'Closed-app alarms for medication',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+      const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+
+      try {
+        // Updated to strictly use named parameters and removed deprecated date interpretation parameter
+        await _notificationsPlugin.zonedSchedule(
+          id: id * 100 + i,
+          title: title,
+          body: body,
+          scheduledDate: scheduledDate,
+          notificationDetails: platformDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+        );
+      } catch (_) {}
+    }
+  }
+
+  static Future<void> cancelMedicationReminders(int id, int maxTimesCount) async {
+    await init();
+    for (int i = 0; i < maxTimesCount; i++) {
+      try {
+        // Updated to use named parameter 'id'
+        await _notificationsPlugin.cancel(id: id * 100 + i);
+      } catch (_) {}
+    }
+  }
+}
+
+
+=== FILE: D:\sana\lib\models\insurance_card.dart ===
+class InsuranceCard {
+  final String? id;
+  final String providerName;
+  final String policyNumber;
+  final String? frontImageUrl;
+  final String? backImageUrl;
+  final String? userId;
+  final String? createdAt;
+
+  InsuranceCard({
+    this.id,
+    required this.providerName,
+    required this.policyNumber,
+    this.frontImageUrl,
+    this.backImageUrl,
+    this.userId,
+    this.createdAt,
+  });
+
+  factory InsuranceCard.fromMap(Map<String, dynamic> map) {
+    return InsuranceCard(
+      id: map['id']?.toString(),
+      providerName: map['providerName']?.toString() ??
+          map['provider_name']?.toString() ??
+          map['provider']?.toString() ??
+          map['name']?.toString() ??
+          map['title']?.toString() ??
+          'Insurance Provider',
+      policyNumber: map['policyNumber']?.toString() ??
+          map['policy_number']?.toString() ??
+          map['cardNumber']?.toString() ??
+          map['card_number']?.toString() ??
+          map['policyNo']?.toString() ??
+          'N/A',
+      frontImageUrl: map['frontImageUrl']?.toString() ??
+          map['front_image_url']?.toString(),
+      backImageUrl:
+          map['backImageUrl']?.toString() ?? map['back_image_url']?.toString(),
+      userId: map['userId']?.toString() ?? map['user_id']?.toString(),
+      createdAt: map['createdAt']?.toString() ?? map['created_at']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'provider_name': providerName,
+      'providerName': providerName,
+      'policy_number': policyNumber,
+      'policyNumber': policyNumber,
+      'front_image_url': frontImageUrl ?? '',
+      'frontImageUrl': frontImageUrl ?? '',
+      'back_image_url': backImageUrl ?? '',
+      'backImageUrl': backImageUrl ?? '',
+      'user_id': userId ?? 'guest',
+      'created_at': createdAt ?? DateTime.now().toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'provider_name': providerName,
+      'policy_number': policyNumber,
+      'front_image_url': frontImageUrl ?? '',
+      'back_image_url': backImageUrl ?? '',
+    };
+  }
+
+  Map<String, dynamic> toJson() => toMap();
+}
+
+
+=== FILE: D:\sana\lib\widgets\doctor_card.dart ===
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/doctor.dart';
+
+class DoctorCard extends StatelessWidget {
+  final Doctor doctor;
+
+  const DoctorCard({super.key, required this.doctor});
+
+  Future<void> _call(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _whatsapp(String phone) async {
+    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final normalized = clean.startsWith('+') ? clean.substring(1) : clean;
+    final uri = Uri.parse('https://wa.me/$normalized');
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final phone = doctor.phone?.trim() ?? '';
+
+    return Card(
+      child: ListTile(
+        title: Text(doctor.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (doctor.specialty != null && doctor.specialty!.isNotEmpty)
+              Text(doctor.specialty!),
+            if (phone.isNotEmpty) Text(phone),
+          ],
+        ),
+        trailing: phone.isEmpty
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Call',
+                    icon: const Icon(Icons.phone, color: Colors.teal),
+                    onPressed: () => _call(phone),
+                  ),
+                  IconButton(
+                    tooltip: 'WhatsApp',
+                    icon: const Icon(Icons.chat, color: Colors.green),
+                    onPressed: () => _whatsapp(phone),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+
+=== FILE: D:\sana\lib\widgets\medication_card.dart ===
+import 'package:flutter/material.dart';
+
+class MedicationCard extends StatelessWidget {
+  final String medicationName;
+  final String dosage;
+
+  const MedicationCard({
+    Key? key,
+    required this.medicationName,
+    required this.dosage,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(medicationName),
+        subtitle: Text(dosage),
+      ),
+    );
+  }
+}
+
+
+=== FILE: D:\sana\lib\widgets\pharmacy_card.dart ===
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/pharmacy.dart';
+
+class PharmacyCard extends StatelessWidget {
+  final Pharmacy pharmacy;
+  final VoidCallback onDelete;
+
+  const PharmacyCard({
+    super.key,
+    required this.pharmacy,
+    required this.onDelete,
+  });
+
+  Future<void> _callPhone(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _whatsapp(String phone) async {
+    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final normalized = clean.startsWith('+') ? clean.substring(1) : clean;
+    final uri = Uri.parse('https://wa.me/$normalized');
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = pharmacy.name;
+    final phone = pharmacy.phone?.trim() ?? '';
+    final address = pharmacy.address?.trim() ?? '';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.green[100],
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : 'P',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+        ),
+        title: Text(name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (phone.isNotEmpty) Text('📞 $phone'),
+            if (address.isNotEmpty) Text('📍 $address'),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (phone.isNotEmpty)
+              IconButton(
+                tooltip: 'Call',
+                icon: const Icon(Icons.phone, color: Colors.teal),
+                onPressed: () => _callPhone(phone),
+              ),
+            if (phone.isNotEmpty)
+              IconButton(
+                tooltip: 'WhatsApp',
+                icon: const Icon(Icons.chat, color: Colors.green),
+                onPressed: () => _whatsapp(phone),
+              ),
+            IconButton(
+              tooltip: 'Delete',
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+

@@ -1,5 +1,6 @@
+﻿import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/insurance_card.dart';
@@ -26,22 +27,47 @@ class _SharingScreenState extends State<SharingScreen> {
   final Set<String> _selectedInsurIds = {};
 
   void _selectAll() {
-    final medP = Provider.of<MedicationProvider>(context, listen: false);
-    final docP = Provider.of<DoctorProvider>(context, listen: false);
-    final pharmP = Provider.of<PharmacyProvider>(context, listen: false);
-    final docsP = Provider.of<DocumentProvider>(context, listen: false);
+    final medP = Provider.of<MedicationProvider>(
+      context,
+      listen: false,
+    );
+    final docP = Provider.of<DoctorProvider>(
+      context,
+      listen: false,
+    );
+    final pharmP = Provider.of<PharmacyProvider>(
+      context,
+      listen: false,
+    );
+    final docsP = Provider.of<DocumentProvider>(
+      context,
+      listen: false,
+    );
+    final insP = Provider.of<InsuranceProvider>(
+      context,
+      listen: false,
+    );
 
     setState(() {
-      _selectedMedIds.addAll(medP.medications.map((m) => m.id));
-      _selectedDocIds.addAll(docP.doctors.map((d) => d.id));
-      _selectedPharmIds.addAll(pharmP.pharmacies.map((p) => p.id));
-      _selectedDocuIds.addAll(docsP.documents.map((d) => d.id));
+      _selectedMedIds.addAll(
+        medP.medications.map((m) => m.id),
+      );
 
-      try {
-        final insP = Provider.of<InsuranceProvider>(context, listen: false);
-        _selectedInsurIds
-            .addAll(insP.cards.map((c) => c.id).whereType<String>());
-      } catch (_) {}
+      _selectedDocIds.addAll(
+        docP.doctors.map((d) => d.id),
+      );
+
+      _selectedPharmIds.addAll(
+        pharmP.pharmacies.map((p) => p.id),
+      );
+
+      _selectedDocuIds.addAll(
+        docsP.documents.map((d) => d.id),
+      );
+
+      _selectedInsurIds.addAll(
+        insP.cards.map((c) => c.id).whereType<String>(),
+      );
     });
   }
 
@@ -55,38 +81,60 @@ class _SharingScreenState extends State<SharingScreen> {
     });
   }
 
-  void _showEnlargedImage(Uint8List bytes, String title) {
-    showDialog(
+  void _showEnlargedImage(
+    Uint8List bytes,
+    String title,
+  ) {
+    showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: InteractiveViewer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.memory(bytes, fit: BoxFit.contain),
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  bytes,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) {
+                    return const Icon(
+                      Icons.broken_image,
+                      size: 80,
+                    );
+                  },
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  String _getInsPolicy(InsuranceCard c) {
+  String _getInsPolicy(InsuranceCard card) {
     try {
-      final dyn = c as dynamic;
-      return dyn.policyNumber?.toString() ??
-          dyn.cardNumber?.toString() ??
-          dyn.policyNo?.toString() ??
+      final dynamic dynamicCard = card;
+
+      return dynamicCard.policyNumber?.toString() ??
+          dynamicCard.cardNumber?.toString() ??
+          dynamicCard.policyNo?.toString() ??
           'N/A';
     } catch (_) {
       return 'N/A';
@@ -94,27 +142,54 @@ class _SharingScreenState extends State<SharingScreen> {
   }
 
   Map<String, dynamic> _toMapWithPhotos(dynamic item) {
-    if (item == null) return {};
-    if (item is Map<String, dynamic>) return Map.from(item);
-    if (item is Map) return Map<String, dynamic>.from(item);
-    try {
-      return Map<String, dynamic>.from((item as dynamic).toMap());
-    } catch (_) {
-      try {
-        return Map<String, dynamic>.from((item as dynamic).toJson());
-      } catch (_) {
-        return {};
-      }
+    if (item == null) {
+      return {};
     }
+
+    if (item is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(item);
+    }
+
+    if (item is Map) {
+      return Map<String, dynamic>.from(item);
+    }
+
+    try {
+      final dynamic map = item.toMap();
+
+      if (map is Map) {
+        return Map<String, dynamic>.from(map);
+      }
+    } catch (_) {
+      // Try JSON below.
+    }
+
+    try {
+      final dynamic json = item.toJson();
+
+      if (json is Map) {
+        return Map<String, dynamic>.from(json);
+      }
+    } catch (_) {
+      // Nothing else to convert.
+    }
+
+    return {};
   }
 
-  Widget _buildItemPhotoWidget(Uint8List bytes, String title) {
+  Widget _buildItemPhotoWidget(
+    Uint8List bytes,
+    String title,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 6),
         GestureDetector(
-          onTap: () => _showEnlargedImage(bytes, title),
+          onTap: () => _showEnlargedImage(
+            bytes,
+            title,
+          ),
           child: Stack(
             children: [
               ClipRRect(
@@ -124,28 +199,50 @@ class _SharingScreenState extends State<SharingScreen> {
                   height: 140,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) {
+                    return const SizedBox(
+                      height: 140,
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          size: 60,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               Positioned(
                 bottom: 8,
                 right: 8,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
+                    color: Colors.black.withValues(
+                      alpha: 0.7,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.zoom_in, color: Colors.white, size: 14),
+                      Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                       SizedBox(width: 4),
-                      Text('Tap to Enlarge',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold)),
+                      Text(
+                        'Tap to Enlarge',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -158,7 +255,7 @@ class _SharingScreenState extends State<SharingScreen> {
     );
   }
 
-  void _shareRecord() {
+  Future<void> _shareRecord() async {
     final totalSelected = _selectedMedIds.length +
         _selectedDocIds.length +
         _selectedPharmIds.length +
@@ -168,199 +265,483 @@ class _SharingScreenState extends State<SharingScreen> {
     if (totalSelected == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please select at least one item to share.')),
+          content: Text(
+            'Please select at least one item to share.',
+          ),
+        ),
       );
       return;
     }
 
-    final medP = Provider.of<MedicationProvider>(context, listen: false);
-    final docP = Provider.of<DoctorProvider>(context, listen: false);
-    final pharmP = Provider.of<PharmacyProvider>(context, listen: false);
-    final docsP = Provider.of<DocumentProvider>(context, listen: false);
-
-    final selMeds =
-        medP.medications.where((m) => _selectedMedIds.contains(m.id)).toList();
-    final selDocs =
-        docP.doctors.where((d) => _selectedDocIds.contains(d.id)).toList();
-    final selPharms = pharmP.pharmacies
-        .where((p) => _selectedPharmIds.contains(p.id))
-        .toList();
-    final selDocus =
-        docsP.documents.where((d) => _selectedDocuIds.contains(d.id)).toList();
-
-    List<InsuranceCard> selIns = [];
-    try {
-      final insP = Provider.of<InsuranceProvider>(context, listen: false);
-      selIns = insP.cards
-          .where((c) => c.id != null && _selectedInsurIds.contains(c.id))
-          .toList();
-    } catch (_) {}
-
-    // System share execution
-    SharingService.shareMedications(
-      name: 'My Medical Record',
-      medications: selMeds.map((m) => _toMapWithPhotos(m)).toList(),
-      doctors: selDocs.map((d) => _toMapWithPhotos(d)).toList(),
-      pharmacies: selPharms.map((p) => _toMapWithPhotos(p)).toList(),
-      history: medP.logs.map((l) => _toMapWithPhotos(l)).toList(),
-      documents: selDocus.map((d) => _toMapWithPhotos(d)).toList(),
-      insuranceCards: selIns.map((c) => _toMapWithPhotos(c)).toList(),
+    final medP = Provider.of<MedicationProvider>(
+      context,
+      listen: false,
     );
 
-    // Show Preview Modal formatted Text + Photo under each item
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Share Preview (Text + Related Photos)'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (selMeds.isNotEmpty) ...[
-                  const Text('💊 MEDICATIONS:',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.blue)),
-                  const SizedBox(height: 6),
-                  ...selMeds.map((m) {
-                    Uint8List? bytes;
-                    if (m.photoUrl != null &&
-                        m.photoUrl!.startsWith('data:image')) {
-                      try {
-                        bytes = Uri.parse(m.photoUrl!).data?.contentAsBytes();
-                      } catch (_) {}
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              '• ${m.name} - Dosage: ${m.dosage} (${m.repeatType})',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
-                          if (bytes != null)
-                            _buildItemPhotoWidget(
-                                bytes, 'Medication: ${m.name}'),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-                if (selDocs.isNotEmpty) ...[
-                  const Divider(),
-                  const Text('👨‍⚕️ DOCTORS:',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.green)),
-                  const SizedBox(height: 6),
-                  ...selDocs.map((d) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text(
-                          '• ${d.name} ${d.specialty != null && d.specialty!.isNotEmpty ? "(${d.specialty})" : ""} ${d.phone != null && d.phone!.isNotEmpty ? "📞 ${d.phone}" : ""}'),
-                    );
-                  }),
-                ],
-                if (selPharms.isNotEmpty) ...[
-                  const Divider(),
-                  const Text('🏥 PHARMACIES:',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.orange)),
-                  const SizedBox(height: 6),
-                  ...selPharms.map((p) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text(
-                          '• ${p.name} ${p.address != null && p.address!.isNotEmpty ? "📍 ${p.address}" : ""} ${p.phone != null && p.phone!.isNotEmpty ? "📞 ${p.phone}" : ""}'),
-                    );
-                  }),
-                ],
-                if (selDocus.isNotEmpty) ...[
-                  const Divider(),
-                  const Text('📁 MEDICAL DOCUMENTS:',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.purple)),
-                  const SizedBox(height: 6),
-                  ...selDocus.map((d) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('• ${d.name} (${d.fileType.toUpperCase()})',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600)),
-                          if (d.bytes != null && d.bytes!.isNotEmpty)
-                            _buildItemPhotoWidget(
-                                d.bytes!, 'Document: ${d.name}'),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-                if (selIns.isNotEmpty) ...[
-                  const Divider(),
-                  const Text('💳 INSURANCE CARDS:',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.indigo)),
-                  const SizedBox(height: 6),
-                  ...selIns.map((c) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6.0),
-                      child: Text(
-                          '• ${c.providerName} - Policy: ${_getInsPolicy(c)}'),
-                    );
-                  }),
-                ],
-              ],
-            ),
+    final docP = Provider.of<DoctorProvider>(
+      context,
+      listen: false,
+    );
+
+    final pharmP = Provider.of<PharmacyProvider>(
+      context,
+      listen: false,
+    );
+
+    final docsP = Provider.of<DocumentProvider>(
+      context,
+      listen: false,
+    );
+
+    final insP = Provider.of<InsuranceProvider>(
+      context,
+      listen: false,
+    );
+
+    final selectedMedications = medP.medications
+        .where(
+          (m) => _selectedMedIds.contains(m.id),
+        )
+        .toList();
+
+    final selectedDoctors = docP.doctors
+        .where(
+          (d) => _selectedDocIds.contains(d.id),
+        )
+        .toList();
+
+    final selectedPharmacies = pharmP.pharmacies
+        .where(
+          (p) => _selectedPharmIds.contains(p.id),
+        )
+        .toList();
+
+    final selectedDocuments = docsP.documents
+        .where(
+          (d) => _selectedDocuIds.contains(d.id),
+        )
+        .toList();
+
+    final selectedInsurance = insP.cards
+        .where(
+          (c) => c.id != null && _selectedInsurIds.contains(c.id),
+        )
+        .toList();
+
+    try {
+      await SharingService.shareRecord(
+        name: 'My Medical Record',
+        medications: selectedMedications.map(_toMapWithPhotos).toList(),
+        doctors: selectedDoctors.map(_toMapWithPhotos).toList(),
+        pharmacies: selectedPharmacies.map(_toMapWithPhotos).toList(),
+        documents: selectedDocuments.map(_toMapWithPhotos).toList(),
+        insuranceCards: selectedInsurance.map(_toMapWithPhotos).toList(),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to share the selected records: $error',
           ),
         ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      );
+
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    _showSharePreview(
+      selectedMedications,
+      selectedDoctors,
+      selectedPharmacies,
+      selectedDocuments,
+      selectedInsurance,
     );
+  }
+
+  void _showSharePreview(
+    List<dynamic> medications,
+    List<dynamic> doctors,
+    List<dynamic> pharmacies,
+    List<dynamic> documents,
+    List<InsuranceCard> insuranceCards,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('Share Preview'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (medications.isNotEmpty) ...[
+                    const Text(
+                      '💊 MEDICATIONS:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...medications.map(
+                      (medication) {
+                        final bytes = _getMedicationPhoto(
+                          medication,
+                        );
+
+                        final name = _value(
+                          medication,
+                          'name',
+                        );
+
+                        final dosage = _value(
+                          medication,
+                          'dosage',
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 12,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '• $name'
+                                '${dosage.isNotEmpty ? ' - Dosage: $dosage' : ''}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (bytes != null)
+                                _buildItemPhotoWidget(
+                                  bytes,
+                                  'Medication: $name',
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                  if (doctors.isNotEmpty) ...[
+                    const Divider(),
+                    const Text(
+                      '👨‍⚕️ DOCTORS:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...doctors.map(
+                      (doctor) {
+                        final name = _value(
+                          doctor,
+                          'name',
+                        );
+
+                        final specialty = _value(
+                          doctor,
+                          'specialty',
+                        );
+
+                        final phone = _value(
+                          doctor,
+                          'phone',
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 6,
+                          ),
+                          child: Text(
+                            '• $name'
+                            '${specialty.isNotEmpty ? ' ($specialty)' : ''}'
+                            '${phone.isNotEmpty ? ' 📞 $phone' : ''}',
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                  if (pharmacies.isNotEmpty) ...[
+                    const Divider(),
+                    const Text(
+                      '🏥 PHARMACIES:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...pharmacies.map(
+                      (pharmacy) {
+                        final name = _value(
+                          pharmacy,
+                          'name',
+                        );
+
+                        final address = _value(
+                          pharmacy,
+                          'address',
+                        );
+
+                        final phone = _value(
+                          pharmacy,
+                          'phone',
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 6,
+                          ),
+                          child: Text(
+                            '• $name'
+                            '${address.isNotEmpty ? ' 📍 $address' : ''}'
+                            '${phone.isNotEmpty ? ' 📞 $phone' : ''}',
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                  if (documents.isNotEmpty) ...[
+                    const Divider(),
+                    const Text(
+                      '📁 DOCUMENTS:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...documents.map(
+                      (document) {
+                        final name = _value(
+                          document,
+                          'name',
+                        );
+
+                        final fileType = _value(
+                          document,
+                          'fileType',
+                        );
+
+                        final bytes = _getDocumentBytes(
+                          document,
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 12,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '• $name'
+                                '${fileType.isNotEmpty ? ' (${fileType.toUpperCase()})' : ''}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (bytes != null)
+                                _buildItemPhotoWidget(
+                                  bytes,
+                                  'Document: $name',
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                  if (insuranceCards.isNotEmpty) ...[
+                    const Divider(),
+                    const Text(
+                      '💳 INSURANCE:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...insuranceCards.map(
+                      (card) => Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: 6,
+                        ),
+                        child: Text(
+                          '• ${card.providerName}'
+                          ' - Policy: ${_getInsPolicy(card)}',
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _value(
+    dynamic item,
+    String key,
+  ) {
+    if (item == null) {
+      return '';
+    }
+
+    if (item is Map) {
+      return item[key]?.toString() ?? '';
+    }
+
+    try {
+      switch (key) {
+        case 'name':
+          return item.name?.toString() ?? '';
+
+        case 'dosage':
+          return item.dosage?.toString() ?? '';
+
+        case 'specialty':
+          return item.specialty?.toString() ?? '';
+
+        case 'phone':
+          return item.phone?.toString() ?? '';
+
+        case 'address':
+          return item.address?.toString() ?? '';
+
+        case 'fileType':
+          return item.fileType?.toString() ?? '';
+
+        case 'photoUrl':
+          return item.photoUrl?.toString() ?? '';
+
+        default:
+          return '';
+      }
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Uint8List? _getMedicationPhoto(
+    dynamic medication,
+  ) {
+    final photoUrl = _value(
+      medication,
+      'photoUrl',
+    ).trim();
+
+    if (photoUrl.isEmpty) {
+      return null;
+    }
+
+    if (!photoUrl.startsWith('data:image')) {
+      return null;
+    }
+
+    try {
+      final UriData? data = Uri.parse(photoUrl).data;
+
+      if (data == null) {
+        return null;
+      }
+
+      final bytes = data.contentAsBytes();
+
+      if (bytes.isEmpty) {
+        return null;
+      }
+
+      return bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Uint8List? _getDocumentBytes(
+    dynamic document,
+  ) {
+    try {
+      final dynamic value = document.bytes;
+
+      if (value is Uint8List && value.isNotEmpty) {
+        return value;
+      }
+
+      if (value is List<int> && value.isNotEmpty) {
+        return Uint8List.fromList(value);
+      }
+    } catch (_) {
+      // No document bytes available.
+    }
+
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final language = Provider.of<LanguageProvider>(context);
+
     final code = language.locale.languageCode;
 
     final medP = Provider.of<MedicationProvider>(context);
+
     final docP = Provider.of<DoctorProvider>(context);
+
     final pharmP = Provider.of<PharmacyProvider>(context);
+
     final docsP = Provider.of<DocumentProvider>(context);
 
+    final insP = Provider.of<InsuranceProvider>(context);
+
     String title = 'Share Records';
+
     String subTitle = 'Select specific items to include in your shared record:';
+
     String shareBtn = 'Share Selected Items';
+
     String selectAllBtn = 'Select All';
+
     String deselectAllBtn = 'Deselect All';
 
     String medsCategory = 'Medications';
+
     String docsCategory = 'Doctors';
+
     String pharmsCategory = 'Pharmacies';
+
     String docusCategory = 'Medical Documents';
+
     String insuranceCategory = 'Insurance Cards';
 
     if (code == 'ar') {
@@ -395,7 +776,7 @@ class _SharingScreenState extends State<SharingScreen> {
       docsCategory = 'Médecins';
       pharmsCategory = 'Pharmacies';
       docusCategory = 'Documents Médicaux';
-      insuranceCategory = 'Cartes d\'Assurance';
+      insuranceCategory = 'Cartes d’Assurance';
     } else if (code == 'de') {
       title = 'Teilen';
       subTitle = 'Wählen Sie die zu teilenden Elemente aus:';
@@ -442,11 +823,7 @@ class _SharingScreenState extends State<SharingScreen> {
       insuranceCategory = '保险卡';
     }
 
-    List<InsuranceCard> insCards = [];
-    try {
-      final insP = Provider.of<InsuranceProvider>(context);
-      insCards = insP.cards;
-    } catch (_) {}
+    final insuranceCards = insP.cards;
 
     return Scaffold(
       appBar: AppBar(
@@ -455,177 +832,320 @@ class _SharingScreenState extends State<SharingScreen> {
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               subTitle,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+
             const SizedBox(height: 8),
 
-            // Select All / Deselect All Toolbar
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                   onPressed: _selectAll,
-                  child: Text(selectAllBtn,
-                      style: const TextStyle(
-                          color: Colors.teal, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    selectAllBtn,
+                    style: const TextStyle(
+                      color: Colors.teal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 TextButton(
                   onPressed: _deselectAll,
-                  child: Text(deselectAllBtn,
-                      style: const TextStyle(color: Colors.grey)),
+                  child: Text(
+                    deselectAllBtn,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
               ],
             ),
+
             const SizedBox(height: 8),
 
-            // Medications Expansion
+            // MEDICATIONS
             ExpansionTile(
-              leading: const Icon(Icons.medication, color: Colors.blue),
+              leading: const Icon(
+                Icons.medication,
+                color: Colors.blue,
+              ),
               title: Text(
-                  '$medsCategory (${_selectedMedIds.length}/${medP.medications.length})'),
+                '$medsCategory '
+                '(${_selectedMedIds.length}/'
+                '${medP.medications.length})',
+              ),
               children: medP.medications.isEmpty
-                  ? [const ListTile(title: Text('No medications available'))]
-                  : medP.medications.map((m) {
-                      return CheckboxListTile(
-                        secondary:
-                            const Icon(Icons.photo_library, color: Colors.blue),
-                        title: Text(m.name),
-                        subtitle: Text('Dosage: ${m.dosage}'),
-                        value: _selectedMedIds.contains(m.id),
-                        onChanged: (val) {
-                          setState(() {
-                            if (val == true) {
-                              _selectedMedIds.add(m.id);
-                            } else {
-                              _selectedMedIds.remove(m.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                  ? const [
+                      ListTile(
+                        title: Text(
+                          'No medications available',
+                        ),
+                      ),
+                    ]
+                  : medP.medications
+                      .map(
+                        (medication) => CheckboxListTile(
+                          secondary: const Icon(
+                            Icons.photo_library,
+                            color: Colors.blue,
+                          ),
+                          title: Text(
+                            medication.name,
+                          ),
+                          subtitle: Text(
+                            'Dosage: ${medication.dosage}',
+                          ),
+                          value: _selectedMedIds.contains(
+                            medication.id,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedMedIds.add(
+                                  medication.id,
+                                );
+                              } else {
+                                _selectedMedIds.remove(
+                                  medication.id,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
             ),
 
-            // Doctors Expansion
+            // DOCTORS
             ExpansionTile(
-              leading: const Icon(Icons.person, color: Colors.green),
+              leading: const Icon(
+                Icons.person,
+                color: Colors.green,
+              ),
               title: Text(
-                  '$docsCategory (${_selectedDocIds.length}/${docP.doctors.length})'),
+                '$docsCategory '
+                '(${_selectedDocIds.length}/'
+                '${docP.doctors.length})',
+              ),
               children: docP.doctors.isEmpty
-                  ? [const ListTile(title: Text('No doctors available'))]
-                  : docP.doctors.map((d) {
-                      return CheckboxListTile(
-                        title: Text(d.name),
-                        subtitle: Text(d.specialty ?? 'General'),
-                        value: _selectedDocIds.contains(d.id),
-                        onChanged: (val) {
-                          setState(() {
-                            if (val == true) {
-                              _selectedDocIds.add(d.id);
-                            } else {
-                              _selectedDocIds.remove(d.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                  ? const [
+                      ListTile(
+                        title: Text(
+                          'No doctors available',
+                        ),
+                      ),
+                    ]
+                  : docP.doctors
+                      .map(
+                        (doctor) => CheckboxListTile(
+                          title: Text(
+                            doctor.name,
+                          ),
+                          subtitle: Text(
+                            doctor.specialty ?? 'General',
+                          ),
+                          value: _selectedDocIds.contains(
+                            doctor.id,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedDocIds.add(
+                                  doctor.id,
+                                );
+                              } else {
+                                _selectedDocIds.remove(
+                                  doctor.id,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
             ),
 
-            // Pharmacies Expansion
+            // PHARMACIES
             ExpansionTile(
-              leading: const Icon(Icons.local_pharmacy, color: Colors.orange),
+              leading: const Icon(
+                Icons.local_pharmacy,
+                color: Colors.orange,
+              ),
               title: Text(
-                  '$pharmsCategory (${_selectedPharmIds.length}/${pharmP.pharmacies.length})'),
+                '$pharmsCategory '
+                '(${_selectedPharmIds.length}/'
+                '${pharmP.pharmacies.length})',
+              ),
               children: pharmP.pharmacies.isEmpty
-                  ? [const ListTile(title: Text('No pharmacies available'))]
-                  : pharmP.pharmacies.map((p) {
-                      return CheckboxListTile(
-                        title: Text(p.name),
-                        subtitle: Text(p.address ?? 'Address N/A'),
-                        value: _selectedPharmIds.contains(p.id),
-                        onChanged: (val) {
-                          setState(() {
-                            if (val == true) {
-                              _selectedPharmIds.add(p.id);
-                            } else {
-                              _selectedPharmIds.remove(p.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                  ? const [
+                      ListTile(
+                        title: Text(
+                          'No pharmacies available',
+                        ),
+                      ),
+                    ]
+                  : pharmP.pharmacies
+                      .map(
+                        (pharmacy) => CheckboxListTile(
+                          title: Text(
+                            pharmacy.name,
+                          ),
+                          subtitle: Text(
+                            pharmacy.address ?? 'Address N/A',
+                          ),
+                          value: _selectedPharmIds.contains(
+                            pharmacy.id,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedPharmIds.add(
+                                  pharmacy.id,
+                                );
+                              } else {
+                                _selectedPharmIds.remove(
+                                  pharmacy.id,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
             ),
 
-            // Documents Expansion
+            // DOCUMENTS
             ExpansionTile(
-              leading: const Icon(Icons.folder, color: Colors.purple),
+              leading: const Icon(
+                Icons.folder,
+                color: Colors.purple,
+              ),
               title: Text(
-                  '$docusCategory (${_selectedDocuIds.length}/${docsP.documents.length})'),
+                '$docusCategory '
+                '(${_selectedDocuIds.length}/'
+                '${docsP.documents.length})',
+              ),
               children: docsP.documents.isEmpty
-                  ? [const ListTile(title: Text('No documents available'))]
-                  : docsP.documents.map((d) {
-                      return CheckboxListTile(
-                        secondary: const Icon(Icons.file_present,
-                            color: Colors.purple),
-                        title: Text(d.name),
-                        subtitle: Text(d.fileType.toUpperCase()),
-                        value: _selectedDocuIds.contains(d.id),
-                        onChanged: (val) {
-                          setState(() {
-                            if (val == true) {
-                              _selectedDocuIds.add(d.id);
-                            } else {
-                              _selectedDocuIds.remove(d.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                  ? const [
+                      ListTile(
+                        title: Text(
+                          'No documents available',
+                        ),
+                      ),
+                    ]
+                  : docsP.documents
+                      .map(
+                        (document) => CheckboxListTile(
+                          secondary: const Icon(
+                            Icons.file_present,
+                            color: Colors.purple,
+                          ),
+                          title: Text(
+                            document.name,
+                          ),
+                          subtitle: Text(
+                            document.fileType.toUpperCase(),
+                          ),
+                          value: _selectedDocuIds.contains(
+                            document.id,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedDocuIds.add(
+                                  document.id,
+                                );
+                              } else {
+                                _selectedDocuIds.remove(
+                                  document.id,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
             ),
 
-            // Insurance Cards Expansion
-            if (insCards.isNotEmpty)
+            // INSURANCE
+            if (insuranceCards.isNotEmpty)
               ExpansionTile(
-                leading: const Icon(Icons.credit_card, color: Colors.indigo),
+                leading: const Icon(
+                  Icons.credit_card,
+                  color: Colors.indigo,
+                ),
                 title: Text(
-                    '$insuranceCategory (${_selectedInsurIds.length}/${insCards.length})'),
-                children: insCards.map((c) {
-                  final cardId = c.id;
-                  if (cardId == null) return const SizedBox();
-                  return CheckboxListTile(
-                    secondary: const Icon(Icons.image, color: Colors.indigo),
-                    title: Text(c.providerName),
-                    subtitle: Text('Policy: ${_getInsPolicy(c)}'),
-                    value: _selectedInsurIds.contains(cardId),
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          _selectedInsurIds.add(cardId);
-                        } else {
-                          _selectedInsurIds.remove(cardId);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
+                  '$insuranceCategory '
+                  '(${_selectedInsurIds.length}/'
+                  '${insuranceCards.length})',
+                ),
+                children: insuranceCards.map(
+                  (card) {
+                    final String? cardId = card.id;
+
+                    if (cardId == null || cardId.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return CheckboxListTile(
+                      secondary: const Icon(
+                        Icons.image,
+                        color: Colors.indigo,
+                      ),
+                      title: Text(
+                        card.providerName,
+                      ),
+                      subtitle: Text(
+                        'Policy: '
+                        '${_getInsPolicy(card)}',
+                      ),
+                      value: _selectedInsurIds.contains(
+                        cardId,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedInsurIds.add(
+                              cardId,
+                            );
+                          } else {
+                            _selectedInsurIds.remove(
+                              cardId,
+                            );
+                          }
+                        });
+                      },
+                    );
+                  },
+                ).toList(),
               ),
 
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
                 onPressed: _shareRecord,
-                icon: const Icon(Icons.share),
+                icon: const Icon(
+                  Icons.share,
+                ),
                 label: Text(
                   shareBtn,
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,

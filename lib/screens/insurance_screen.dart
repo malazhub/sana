@@ -156,7 +156,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
     }
   }
 
-  void _shareInsuranceCard(InsuranceCard card) {
+  // FIXED: Now correctly uses shareRecord and attaches the image bytes
+  Future<void> _shareInsuranceCard(InsuranceCard card) async {
     final title = _getCardTitle(card);
     final policy = _getCardPolicy(card);
 
@@ -181,15 +182,20 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
       'back_image_url': backUrl,
     };
 
-    SharingService.shareMedications(
-      name: title,
-      medications: [],
-      doctors: [],
-      pharmacies: [],
-      history: [],
-      documents: [],
-      insuranceCards: [cardMap],
-    );
+    try {
+      await SharingService.shareRecord(
+        name: title,
+        medications: [],
+        doctors: [],
+        pharmacies: [],
+        documents: [],
+        insuranceCards: [cardMap],
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sharing card: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Widget _buildCardSidePreview(String imgUrl, String label) {
@@ -407,10 +413,11 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
             icon: const Icon(Icons.share),
             label: Text(shareBtn),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
+              backgroundColor: Colors.orange, // FIXED: Changed color to Orange
               foregroundColor: Colors.white,
             ),
             onPressed: () {
+              Navigator.pop(ctx); // FIXED: Close dialog before sharing
               _shareInsuranceCard(card);
             },
           ),
@@ -690,7 +697,7 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                                   IconButton(
                                     tooltip: 'Share Card',
                                     icon: const Icon(Icons.share,
-                                        color: Colors.indigo, size: 28),
+                                        color: Colors.orange, size: 28), // FIXED: Orange color
                                     onPressed: () => _shareInsuranceCard(card),
                                   ),
                                   IconButton(

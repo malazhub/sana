@@ -1,8 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 
 class DocumentModel {
   final String id;
+  final String userId;
   final String name;
   final String fileType;
   final String? fileUrl;
@@ -12,6 +13,7 @@ class DocumentModel {
 
   const DocumentModel({
     required this.id,
+    required this.userId,
     required this.name,
     required this.fileType,
     required this.date,
@@ -22,6 +24,7 @@ class DocumentModel {
 
   factory DocumentModel.fromMap(Map<String, dynamic> map) {
     Uint8List? parsedBytes;
+
     final rawBytes = map['bytes_data'] ?? map['bytes'];
 
     try {
@@ -37,6 +40,7 @@ class DocumentModel {
         if (value.isNotEmpty) {
           if (value.startsWith('data:')) {
             final data = Uri.parse(value).data;
+
             if (data != null) {
               parsedBytes = data.contentAsBytes();
             }
@@ -51,17 +55,23 @@ class DocumentModel {
 
     return DocumentModel(
       id: map['id']?.toString() ?? '',
+      userId: map['user_id']?.toString() ??
+          map['userId']?.toString() ??
+          '',
       name: map['name']?.toString() ?? '',
-      fileType:
-          map['file_type']?.toString() ?? map['fileType']?.toString() ?? 'file',
+      fileType: map['file_type']?.toString() ??
+          map['fileType']?.toString() ??
+          'file',
       fileUrl: _nullableString(
-        map['file_url'] ?? map['fileUrl'],
+        map['file_url'] ?? map['fileUrl'] ?? map['path'],
       ),
       storagePath: _nullableString(
         map['storage_path'] ?? map['storagePath'],
       ),
       date: DateTime.tryParse(
-            map['date']?.toString() ?? '',
+            map['date']?.toString() ??
+                map['upload_date']?.toString() ??
+                '',
           ) ??
           DateTime.now(),
       bytes: parsedBytes,
@@ -71,37 +81,40 @@ class DocumentModel {
   Map<String, dynamic> toMap() {
     String bytesData = '';
 
-    if (bytes != null && bytes!.isNotEmpty && bytes!.length <= 300000) {
+    // Keep large files out of SharedPreferences.
+    if (bytes != null &&
+        bytes!.isNotEmpty &&
+        bytes!.length <= 300000) {
       bytesData = base64Encode(bytes!);
     }
 
     return {
       'id': id,
+      'user_id': userId,
       'name': name,
       'file_type': fileType,
-      'fileType': fileType,
       'file_url': fileUrl ?? '',
-      'fileUrl': fileUrl ?? '',
       'storage_path': storagePath ?? '',
-      'storagePath': storagePath ?? '',
       'bytes_data': bytesData,
       'date': date.toIso8601String(),
     };
   }
 
+  /// Payload matching the Supabase `documents` table.
   Map<String, dynamic> toSupabaseMap() {
     return {
       'id': id,
+      'user_id': userId,
       'name': name,
       'file_type': fileType,
-      'file_url': fileUrl ?? '',
-      'storage_path': storagePath ?? '',
-      'date': date.toIso8601String(),
+      'path': fileUrl ?? '',
+      'upload_date': date.toIso8601String(),
     };
   }
 
   DocumentModel copyWith({
     String? id,
+    String? userId,
     String? name,
     String? fileType,
     String? fileUrl,
@@ -111,6 +124,7 @@ class DocumentModel {
   }) {
     return DocumentModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       fileType: fileType ?? this.fileType,
       fileUrl: fileUrl ?? this.fileUrl,
@@ -128,6 +142,7 @@ class DocumentModel {
     }
 
     final result = value.toString().trim();
+
     return result.isEmpty ? null : result;
   }
 }

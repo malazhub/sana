@@ -1,30 +1,41 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Holds app-wide user preferences (currently: dark mode) and persists
-/// them locally so they survive app restarts.
+/// Manages persistent application settings.
 class SettingsProvider extends ChangeNotifier {
-  static const _darkModeKey = 'is_dark_mode';
+  static const String _darkModeKey = 'is_dark_mode';
 
   bool _isDarkMode = false;
+  bool _isInitialized = false;
+
   bool get isDarkMode => _isDarkMode;
+  bool get isInitialized => _isInitialized;
 
   Future<void> init() async {
+    if (_isInitialized) {
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
+
     _isDarkMode = prefs.getBool(_darkModeKey) ?? false;
+    _isInitialized = true;
+
     notifyListeners();
   }
 
   Future<void> toggleDarkMode() async {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_darkModeKey, _isDarkMode);
+    await setDarkMode(!_isDarkMode);
   }
 
   Future<void> setDarkMode(bool value) async {
+    if (_isDarkMode == value) {
+      return;
+    }
+
     _isDarkMode = value;
     notifyListeners();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_darkModeKey, value);
   }

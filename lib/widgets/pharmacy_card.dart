@@ -12,11 +12,28 @@ class PharmacyCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  Future<void> _callPhone(String phone) async {
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _whatsapp(String phone) async {
+    final clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final normalized = clean.startsWith('+') ? clean.substring(1) : clean;
+    final uri = Uri.parse('https://wa.me/$normalized');
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final String name = pharmacy.name;
-    final String? phone = pharmacy.phone;
-    final String? address = pharmacy.address;
+    final name = pharmacy.name;
+    final phone = pharmacy.phone?.trim() ?? '';
+    final address = pharmacy.address?.trim() ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -35,27 +52,33 @@ class PharmacyCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (phone != null && phone.isNotEmpty) Text('📞 $phone'),
-            if (address != null && address.isNotEmpty) Text('📍 $address'),
+            if (phone.isNotEmpty) Text('📞 $phone'),
+            if (address.isNotEmpty) Text('📍 $address'),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: onDelete,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (phone.isNotEmpty)
+              IconButton(
+                tooltip: 'Call',
+                icon: const Icon(Icons.phone, color: Colors.teal),
+                onPressed: () => _callPhone(phone),
+              ),
+            if (phone.isNotEmpty)
+              IconButton(
+                tooltip: 'WhatsApp',
+                icon: const Icon(Icons.chat, color: Colors.green),
+                onPressed: () => _whatsapp(phone),
+              ),
+            IconButton(
+              tooltip: 'Delete',
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: onDelete,
+            ),
+          ],
         ),
-        onTap: () {
-          if (phone != null && phone.isNotEmpty) {
-            _callPhone(phone);
-          }
-        },
       ),
     );
-  }
-
-  void _callPhone(String phone) async {
-    final Uri phoneUri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    }
   }
 }

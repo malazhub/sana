@@ -6,15 +6,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/document.dart';
 
-class DocumentProvider with ChangeNotifier {
+class DocumentProvider extends ChangeNotifier {
   static const String _localStorageKey = 'saved_documents_v2';
   static const String _storageBucket = 'documents';
 
   final List<DocumentModel> _documents = [];
+
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<DocumentModel> get documents => List.unmodifiable(_documents);
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   SupabaseClient? get _supabase {
     try {
@@ -23,6 +26,8 @@ class DocumentProvider with ChangeNotifier {
       return null;
     }
   }
+
+  User? get _currentUser => _supabase?.auth.currentUser;
 
   DocumentProvider() {
     loadDocuments();
@@ -33,25 +38,300 @@ class DocumentProvider with ChangeNotifier {
       return;
     }
 
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
+    _clearError();
 
     try {
+      _documents.clear();
+
+      final user = _currentUser;
+
+      if (user == null) {
+        await _loadLocalDocuments();
+        return;
+      }
+
+      final client = _supabase;
+
+      if (client == null) {
+        await _loadLocalDocuments();
+        return;
+      }
+
+      final response = await client
+          .from('documents')
+          .select()
+          .eq('user_id', user.id)
+          .order('upload_date', ascending: false);
+
+      for (final item in response) {
+        try {
+          final document = DocumentModel.fromMap(
+            Map<String, dynamic>.from(item),
+          );
+
+          if (document.id.isNotEmpty) {
+            _documents.add(document);
+          }
+        } catch (error) {
+          debugPrint('Invalid Supabase document: $error');
+        }
+      }
+
+      await _saveToLocal();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Failed to load documents: $error\n$stackTrace',
+      );
+
+      _setError('Unable to load your documents.');
+
+      // Local cache is only a fallback.
       await _loadLocalDocuments();
-      await _loadSupabaseDocuments();
-    } catch (e) {
-      debugPrint('Error loading documents: $e');
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
+  }
+
+  Future<void> addDocument(DocumentModel document) async {
+    final user = _currentUser;
+
+    if (user == null) {
+      throw StateError(
+        'You must be signed in to save a document.',
+      );
+    }
+
+    final client = _supabase;
+
+    if (client == null) {
+      throw StateError(
+        'Supabase is not initialized.',
+      );
+    }
+
+    if (document.userId.isNotEmpty &&
+        document.userId != user.id) {
+      throw StateError(
+        'This document belongs to another user.',
+      );
+    }
+
+    DocumentModel documentToSave = document.copyWith(
+      userId: user.id,
+    );
+
+    _clearError();
+
+    try {
+      if (_shouldUploadToStorage(documentToSave)) {
+        documentToSave = await _uploadDocumentToStorage(
+          documentToSave,
+        );
+      }
+
+      await client
+          .from('documents')
+          .upsert(
+            documentToSave.toSupabaseMap(),
+            onConflict: 'id',
+          );
+
+      final index = _documents.indexWhere(
+        (item) => item.id == documentToSave.id,
+      );
+
+      if (index >= 0) {
+        _documents[index] = documentToSave;
+      } else {
+        _documents.insert(0, documentToSave);
+      }
+
+      await _saveToLocal();
+      notifyListeners();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Failed to save document: $error\n$stackTrace',
+      );
+
+      _setError('Unable to save the document.');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteDocument(String id) async {
+    final user = _currentUser;
+
+    if (user == null) {
+      throw StateError(
+        'You must be signed in to delete a document.',
+      );
+    }
+
+    final client = _supabase;
+
+    if (client == null) {
+      throw StateError(
+        'Supabase is not initialized.',
+      );
+    }
+
+    final index = _documents.indexWhere(
+      (document) => document.id == id,
+    );
+
+    if (index < 0) {
+      return;
+    }
+
+    final document = _documents[index];
+
+    if (document.userId != user.id) {
+      throw StateError(
+        'You cannot delete another user\'s document.',
+      );
+    }
+
+    _clearError();
+
+    try {
+      if (document.storagePath != null &&
+          document.storagePath!.trim().isNotEmpty) {
+        await client.storage
+            .from(_storageBucket)
+            .remove([document.storagePath!]);
+      }
+
+      await client
+          .from('documents')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+      _documents.removeAt(index);
+
+      await _saveToLocal();
+      notifyListeners();
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Failed to delete document: $error\n$stackTrace',
+      );
+
+      _setError('Unable to delete the document.');
+      rethrow;
+    }
+  }
+
+  Future<String?> getSignedDocumentUrl(
+    DocumentModel document, {
+    int expiresInSeconds = 300,
+  }) async {
+    final user = _currentUser;
+
+    if (user == null || document.userId != user.id) {
+      return null;
+    }
+
+    final path = document.storagePath;
+
+    if (path == null || path.trim().isEmpty) {
+      return document.fileUrl;
+    }
+
+    final client = _supabase;
+
+    if (client == null) {
+      return null;
+    }
+
+    try {
+      return await client.storage
+          .from(_storageBucket)
+          .createSignedUrl(
+            path,
+            expiresInSeconds,
+          );
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Failed to create signed document URL: '
+        '$error\n$stackTrace',
+      );
+
+      return null;
+    }
+  }
+
+  Future<void> clearLocalDocuments() async {
+    _documents.clear();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_localStorageKey);
+
+    notifyListeners();
+  }
+
+  bool _shouldUploadToStorage(DocumentModel document) {
+    final bytes = document.bytes;
+
+    if (bytes == null || bytes.isEmpty) {
+      return false;
+    }
+
+    if (document.storagePath != null &&
+        document.storagePath!.trim().isNotEmpty) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<DocumentModel> _uploadDocumentToStorage(
+    DocumentModel document,
+  ) async {
+    final client = _supabase;
+
+    if (client == null) {
+      throw StateError(
+        'Supabase is not initialized.',
+      );
+    }
+
+    final bytes = document.bytes;
+
+    if (bytes == null || bytes.isEmpty) {
+      return document;
+    }
+
+    final extension = _normalizeExtension(
+      document.fileType,
+    );
+
+    final storagePath =
+        '${document.userId}/${document.id}.$extension';
+
+    await client.storage
+        .from(_storageBucket)
+        .uploadBinary(
+          storagePath,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: _contentTypeForExtension(extension),
+            upsert: true,
+          ),
+        );
+
+    return document.copyWith(
+      storagePath: storagePath,
+      fileUrl: null,
+    );
   }
 
   Future<void> _loadLocalDocuments() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      final localData = prefs.getString(_localStorageKey) ??
+      final localData =
+          prefs.getString(_localStorageKey) ??
           prefs.getString('saved_documents');
 
       if (localData == null || localData.trim().isEmpty) {
@@ -65,6 +345,10 @@ class DocumentProvider with ChangeNotifier {
       }
 
       for (final item in decoded) {
+        if (item is! Map) {
+          continue;
+        }
+
         try {
           final document = DocumentModel.fromMap(
             Map<String, dynamic>.from(item),
@@ -74,208 +358,30 @@ class DocumentProvider with ChangeNotifier {
             continue;
           }
 
-          final index = _documents.indexWhere(
-            (existing) => existing.id == document.id,
-          );
+          final user = _currentUser;
 
-          if (index >= 0) {
-            _documents[index] = document;
-          } else {
-            _documents.add(document);
-          }
-        } catch (e) {
-          debugPrint('Invalid local document: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('Error loading local documents: $e');
-    }
-  }
-
-  Future<void> _loadSupabaseDocuments() async {
-    final client = _supabase;
-
-    if (client == null) {
-      return;
-    }
-
-    try {
-      final response = await client
-          .from('documents')
-          .select()
-          .order('date', ascending: false);
-
-      for (final item in response) {
-        try {
-          final cloudDocument =
-              DocumentModel.fromMap(Map<String, dynamic>.from(item));
-
-          if (cloudDocument.id.isEmpty) {
+          // Never expose another user's cached documents.
+          if (user != null &&
+              document.userId.isNotEmpty &&
+              document.userId != user.id) {
             continue;
           }
 
-          final index = _documents.indexWhere(
-            (existing) => existing.id == cloudDocument.id,
-          );
-
-          if (index >= 0) {
-            final localDocument = _documents[index];
-
-            _documents[index] = cloudDocument.copyWith(
-              bytes: cloudDocument.bytes ?? localDocument.bytes,
-            );
-          } else {
-            _documents.add(cloudDocument);
+          if (_documents.every(
+            (existing) => existing.id != document.id,
+          )) {
+            _documents.add(document);
           }
-        } catch (e) {
-          debugPrint('Error parsing Supabase document: $e');
+        } catch (error) {
+          debugPrint(
+            'Invalid local document: $error',
+          );
         }
       }
-
-      await _saveToLocal();
-    } catch (e) {
-      debugPrint('Failed to load documents from Supabase: $e');
-    }
-  }
-
-  Future<void> addDocument(DocumentModel doc) async {
-    DocumentModel documentToSave = doc;
-
-    try {
-      if (_shouldUploadToStorage(doc)) {
-        documentToSave = await _uploadDocumentToStorage(doc);
-      }
-
-      final index = _documents.indexWhere(
-        (existing) => existing.id == documentToSave.id,
+    } catch (error) {
+      debugPrint(
+        'Failed to load local documents: $error',
       );
-
-      if (index >= 0) {
-        _documents[index] = documentToSave;
-      } else {
-        _documents.add(documentToSave);
-      }
-
-      notifyListeners();
-      await _saveToLocal();
-
-      final client = _supabase;
-
-      if (client != null) {
-        await client.from('documents').upsert(
-              documentToSave.toSupabaseMap(),
-              onConflict: 'id',
-            );
-      }
-    } catch (e) {
-      debugPrint('Failed to save document: $e');
-
-      final index = _documents.indexWhere(
-        (existing) => existing.id == documentToSave.id,
-      );
-
-      if (index >= 0) {
-        _documents.removeAt(index);
-        notifyListeners();
-        await _saveToLocal();
-      }
-
-      rethrow;
-    }
-  }
-
-  bool _shouldUploadToStorage(DocumentModel doc) {
-    if (doc.bytes == null || doc.bytes!.isEmpty) {
-      return false;
-    }
-
-    if (doc.storagePath != null && doc.storagePath!.trim().isNotEmpty) {
-      return false;
-    }
-
-    if (doc.fileUrl != null &&
-        doc.fileUrl!.trim().isNotEmpty &&
-        (doc.fileUrl!.startsWith('http://') ||
-            doc.fileUrl!.startsWith('https://'))) {
-      return false;
-    }
-
-    return true;
-  }
-
-  Future<DocumentModel> _uploadDocumentToStorage(
-    DocumentModel doc,
-  ) async {
-    final client = _supabase;
-
-    if (client == null) {
-      throw Exception('Supabase is not initialized.');
-    }
-
-    final bytes = doc.bytes;
-
-    if (bytes == null || bytes.isEmpty) {
-      return doc;
-    }
-
-    final extension = _normalizeExtension(doc.fileType);
-
-    final safeId = doc.id.trim().isEmpty
-        ? DateTime.now().millisecondsSinceEpoch.toString()
-        : doc.id.trim();
-
-    final storagePath = 'documents/$safeId.$extension';
-
-    await client.storage.from(_storageBucket).uploadBinary(
-          storagePath,
-          bytes,
-          fileOptions: FileOptions(
-            contentType: _contentTypeForExtension(extension),
-            upsert: true,
-          ),
-        );
-
-    final publicUrl =
-        client.storage.from(_storageBucket).getPublicUrl(storagePath);
-
-    return doc.copyWith(
-      fileUrl: publicUrl,
-      storagePath: storagePath,
-    );
-  }
-
-  Future<void> deleteDocument(String id) async {
-    final index = _documents.indexWhere(
-      (doc) => doc.id == id,
-    );
-
-    if (index < 0) {
-      return;
-    }
-
-    final document = _documents[index];
-
-    _documents.removeAt(index);
-    notifyListeners();
-    await _saveToLocal();
-
-    final client = _supabase;
-
-    if (client == null) {
-      return;
-    }
-
-    try {
-      if (document.storagePath != null &&
-          document.storagePath!.trim().isNotEmpty) {
-        await client.storage
-            .from(_storageBucket)
-            .remove([document.storagePath!]);
-      }
-
-      await client.from('documents').delete().eq('id', id);
-    } catch (e) {
-      debugPrint('Failed to delete document from Supabase: $e');
     }
   }
 
@@ -283,15 +389,42 @@ class DocumentProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      final maps = _documents.map((document) => document.toMap()).toList();
+      final maps = _documents
+          .map((document) => document.toMap())
+          .toList();
 
       await prefs.setString(
         _localStorageKey,
         jsonEncode(maps),
       );
-    } catch (e) {
-      debugPrint('Error saving documents locally: $e');
+    } catch (error) {
+      debugPrint(
+        'Failed to cache documents: $error',
+      );
     }
+  }
+
+  void _setLoading(bool value) {
+    if (_isLoading == value) {
+      return;
+    }
+
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  void _clearError() {
+    if (_errorMessage == null) {
+      return;
+    }
+
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  void _setError(String message) {
+    _errorMessage = message;
+    notifyListeners();
   }
 
   String _normalizeExtension(String fileType) {
@@ -323,7 +456,6 @@ class DocumentProvider with ChangeNotifier {
   String _contentTypeForExtension(String extension) {
     switch (extension) {
       case 'jpg':
-      case 'jpeg':
         return 'image/jpeg';
       case 'png':
         return 'image/png';

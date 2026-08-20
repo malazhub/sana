@@ -82,7 +82,7 @@ class SanaApp extends StatelessWidget {
     ),
     scaffoldBackgroundColor: Colors.white,
   );
-
+  
   static final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(

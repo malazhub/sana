@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminProvider extends ChangeNotifier {
-  static const String adminEmail =
-      'malazjanbeih@gmail.com';
+  final SupabaseClient _supabase =
+      Supabase.instance.client;
 
   final List<Map<String, dynamic>> _users = [];
 
@@ -20,64 +20,63 @@ class AdminProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get users =>
       List.unmodifiable(_users);
 
-  SupabaseClient get _supabase =>
-      Supabase.instance.client;
-
   // ============================================================
-  // ADMIN CHECK
+  // ADMIN AUTHORIZATION
   // ============================================================
 
-  bool checkCurrentUserIsAdmin() {
-    final user =
+  Future<bool> checkCurrentUserIsAdmin() async {
+    final authUser =
         _supabase.auth.currentUser;
 
-    final email =
-        user?.email?.trim().toLowerCase();
-
-    final result =
-        user != null &&
-        email == adminEmail.toLowerCase();
-
-    if (_isAdmin != result) {
-      _isAdmin = result;
-      notifyListeners();
+    if (authUser == null) {
+      _setAdmin(false);
+      return false;
     }
 
-    return result;
-  }
+    final authUserId = authUser.id.trim();
 
-  Future<bool> checkAdminStatus(
-    String userId,
-  ) async {
-    final requestedUserId = userId.trim();
-
-    if (requestedUserId.isEmpty) {
+    if (authUserId.isEmpty) {
       _setAdmin(false);
       return false;
     }
 
     try {
-      final currentUser =
-          _supabase.auth.currentUser;
+      /*
+       * IMPORTANT:
+       *
+       * Supabase Auth user.id maps to users.user_id.
+       *
+       * Do NOT use users.id here.
+       */
+      final response = await _supabase
+          .from('users')
+          .select('role')
+          .eq(
+            'user_id',
+            authUserId,
+          )
+          .maybeSingle();
 
-      if (currentUser == null ||
-          currentUser.id != requestedUserId) {
+      if (response == null) {
         _setAdmin(false);
         return false;
       }
 
-      final email =
-          currentUser.email?.trim().toLowerCase();
+      final role =
+          response['role']
+              ?.toString()
+              .trim()
+              .toLowerCase();
 
-      final result =
-          email == adminEmail.toLowerCase();
+      final authorized =
+          role == 'admin';
 
-      _setAdmin(result);
+      _setAdmin(authorized);
 
-      return result;
+      return authorized;
     } catch (error, stackTrace) {
       debugPrint(
-        'Admin status check error: '
+        'Admin authorization check failed: '
         '$error\n$stackTrace',
       );
 
@@ -87,7 +86,36 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  void _setAdmin(bool value) {
+  Future<bool> checkAdminStatus(
+    String userId,
+  ) async {
+    final requestedUserId =
+        userId.trim();
+
+    if (requestedUserId.isEmpty) {
+      _setAdmin(false);
+      return false;
+    }
+
+    final currentUser =
+        _supabase.auth.currentUser;
+
+    if (currentUser == null) {
+      _setAdmin(false);
+      return false;
+    }
+
+    if (currentUser.id != requestedUserId) {
+      _setAdmin(false);
+      return false;
+    }
+
+    return checkCurrentUserIsAdmin();
+  }
+
+  void _setAdmin(
+    bool value,
+  ) {
     if (_isAdmin == value) {
       return;
     }
@@ -100,61 +128,84 @@ class AdminProvider extends ChangeNotifier {
   // LOAD USERS
   // ============================================================
 
-  Future<void> loadUsers() async {
-    if (!checkCurrentUserIsAdmin()) {
+  Future<bool> loadUsers() async {
+    if (_isLoading) {
+      return false;
+    }
+
+    final authorized =
+        await checkCurrentUserIsAdmin();
+
+    if (!authorized) {
       _users.clear();
 
       _setError(
         'Administrator access required.',
       );
 
-      return;
-    }
-
-    if (_isLoading) {
-      return;
+      return false;
     }
 
     _setLoading(true);
     _clearError();
 
     try {
+      /*
+       * Use the SAME columns used everywhere else.
+       */
       final response = await _supabase
-          .from('user_subscriptions')
-          .select('*')
+          .from('users')
+          .select(
+            'user_id, name, user_email, user_phone, '
+            'role, status, activated_at, expires_at',
+          )
           .order(
-            'created_at',
-            ascending: false,
+            'user_email',
+            ascending: true,
           );
 
       final loadedUsers =
           <Map<String, dynamic>>[];
 
       for (final item in response) {
-        try {
-          loadedUsers.add(
-            Map<String, dynamic>.from(item),
-          );
-        } catch (error) {
-          debugPrint(
-            'Invalid user subscription record: '
-            '$error',
-          );
+        final user =
+            Map<String, dynamic>.from(
+          item,
+        );
+
+        final role =
+            user['role']
+                ?.toString()
+                .trim()
+                .toLowerCase();
+
+        /*
+         * Do not display administrator accounts
+         * in the customer list.
+         */
+        if (role == 'admin') {
+          continue;
         }
+
+        loadedUsers.add(user);
       }
 
       _users
         ..clear()
         ..addAll(loadedUsers);
+
+      return true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Admin loadUsers error: '
+        'Admin load users failed: '
         '$error\n$stackTrace',
       );
 
       _setError(
         'Unable to load users.',
       );
+
+      return false;
     } finally {
       _setLoading(false);
     }
@@ -166,10 +217,8 @@ class AdminProvider extends ChangeNotifier {
 
   Future<bool> activateUser(
     String userId,
-    String email,
-    String phone,
   ) async {
-    if (!checkCurrentUserIsAdmin()) {
+    if (!await checkCurrentUserIsAdmin()) {
       _setError(
         'Administrator access required.',
       );
@@ -177,7 +226,8 @@ class AdminProvider extends ChangeNotifier {
       return false;
     }
 
-    final targetUserId = userId.trim();
+    final targetUserId =
+        userId.trim();
 
     if (targetUserId.isEmpty) {
       _setError(
@@ -190,15 +240,31 @@ class AdminProvider extends ChangeNotifier {
     try {
       _clearError();
 
-      /*
-       * The database RPC owns the annual subscription rule.
-       * Flutter does not calculate or forge the expiry date.
-       */
-      await _supabase.rpc(
-        'activate_annual_subscription',
-        params: {
-          'target_user_id': targetUserId,
-        },
+      final now =
+          DateTime.now().toUtc();
+
+      final expiresAt =
+          DateTime(
+        now.year + 1,
+        now.month,
+        now.day,
+        now.hour,
+        now.minute,
+        now.second,
+      ).toUtc();
+
+      await _supabase
+          .from('users')
+          .update({
+        'status': 'active',
+        'activated_at':
+            now.toIso8601String(),
+        'expires_at':
+            expiresAt.toIso8601String(),
+      })
+          .eq(
+        'user_id',
+        targetUserId,
       );
 
       await loadUsers();
@@ -206,7 +272,7 @@ class AdminProvider extends ChangeNotifier {
       return true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Admin activateUser error: '
+        'Admin activate user failed: '
         '$error\n$stackTrace',
       );
 
@@ -225,7 +291,7 @@ class AdminProvider extends ChangeNotifier {
   Future<bool> deactivateUser(
     String userId,
   ) async {
-    if (!checkCurrentUserIsAdmin()) {
+    if (!await checkCurrentUserIsAdmin()) {
       _setError(
         'Administrator access required.',
       );
@@ -233,7 +299,8 @@ class AdminProvider extends ChangeNotifier {
       return false;
     }
 
-    final targetUserId = userId.trim();
+    final targetUserId =
+        userId.trim();
 
     if (targetUserId.isEmpty) {
       _setError(
@@ -247,21 +314,21 @@ class AdminProvider extends ChangeNotifier {
       _clearError();
 
       await _supabase
-          .from('user_subscriptions')
+          .from('users')
           .update({
-            'status': 'inactive',
-          })
+        'status': 'inactive',
+      })
           .eq(
-            'user_id',
-            targetUserId,
-          );
+        'user_id',
+        targetUserId,
+      );
 
       await loadUsers();
 
       return true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Admin deactivateUser error: '
+        'Admin deactivate user failed: '
         '$error\n$stackTrace',
       );
 
@@ -274,69 +341,10 @@ class AdminProvider extends ChangeNotifier {
   }
 
   // ============================================================
-  // ACTIVE USER CHECK
+  // STATUS
   // ============================================================
 
-  Future<bool> isUserActive(
-    String userId,
-  ) async {
-    final targetUserId = userId.trim();
-
-    if (targetUserId.isEmpty) {
-      return false;
-    }
-
-    try {
-      final response = await _supabase
-          .from('user_subscriptions')
-          .select(
-            'status, expires_at',
-          )
-          .eq(
-            'user_id',
-            targetUserId,
-          )
-          .maybeSingle();
-
-      if (response == null) {
-        return false;
-      }
-
-      final status =
-          response['status']
-              ?.toString()
-              .trim()
-              .toLowerCase();
-
-      if (status != 'active') {
-        return false;
-      }
-
-      final expiresAt =
-          _parseDate(response['expires_at']);
-
-      if (expiresAt == null) {
-        return false;
-      }
-
-      return expiresAt.isAfter(
-        DateTime.now(),
-      );
-    } catch (error, stackTrace) {
-      debugPrint(
-        'isUserActive error: '
-        '$error\n$stackTrace',
-      );
-
-      return false;
-    }
-  }
-
-  // ============================================================
-  // EXPIRATION
-  // ============================================================
-
-  bool isExpired(
+  bool isActive(
     Map<String, dynamic> user,
   ) {
     final status =
@@ -345,50 +353,64 @@ class AdminProvider extends ChangeNotifier {
             .trim()
             .toLowerCase();
 
-    if (status != 'active') {
-      return true;
+    return status == 'active';
+  }
+
+  bool isExpired(
+    Map<String, dynamic> user,
+  ) {
+    final expiresAt =
+        _parseDate(
+      user['expires_at'],
+    );
+
+    if (expiresAt == null) {
+      return false;
     }
 
-    final expiry =
-        _parseDate(user['expires_at']);
-
-    if (expiry == null) {
-      return true;
-    }
-
-    return !expiry.isAfter(
-      DateTime.now(),
+    return !expiresAt.isAfter(
+      DateTime.now().toUtc(),
     );
   }
 
   bool expiresWithin20Days(
     Map<String, dynamic> user,
   ) {
-    final status =
-        user['status']
-            ?.toString()
-            .trim()
-            .toLowerCase();
-
-    if (status != 'active') {
+    if (!isActive(user)) {
       return false;
     }
 
-    final expiry =
-        _parseDate(user['expires_at']);
+    final expiresAt =
+        _parseDate(
+      user['expires_at'],
+    );
 
-    if (expiry == null) {
+    if (expiresAt == null) {
       return false;
     }
-
-    final now = DateTime.now();
 
     final difference =
-        expiry.difference(now);
+        expiresAt.difference(
+      DateTime.now().toUtc(),
+    );
 
     return !difference.isNegative &&
         difference <=
             const Duration(days: 20);
+  }
+
+  String statusText(
+    Map<String, dynamic> user,
+  ) {
+    if (isExpired(user)) {
+      return 'Expired';
+    }
+
+    if (isActive(user)) {
+      return 'Active';
+    }
+
+    return 'Pending';
   }
 
   DateTime? _parseDate(

@@ -16,7 +16,10 @@ import 'screens/home_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize notifications.
+  // ============================================================
+  // NOTIFICATIONS
+  // ============================================================
+
   try {
     await NotificationService.initialize();
   } catch (error, stackTrace) {
@@ -26,12 +29,15 @@ Future<void> main() async {
     );
   }
 
-  // Initialize Supabase.
+  // ============================================================
+  // SUPABASE
+  // ============================================================
+
   try {
     await Supabase.initialize(
       url: 'https://emvadnooxyspfsfnzlmb.supabase.co',
       publishableKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFub9veHlzcGZzZm56bG1iIiwicm9sZSI6ImFub24',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtdmFkbm9veHlzcGZzZm56bG1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0ODY2NTYsImV4cCI6MjA3MzA2MjY1Nn0.w0ZrF4vAcTrv4fAcJKzMhv1FqXScCD7f1HMrTlEU340',
     );
   } catch (error, stackTrace) {
     debugPrint(
@@ -40,14 +46,20 @@ Future<void> main() async {
     );
   }
 
-  runApp(const MyApp());
+  runApp(
+    const MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../screens/auth_screen.dart';
+
 import '../../screens/add_doctor_screen.dart';
 import '../../screens/add_medication_screen.dart';
 import '../../screens/add_pharmacy_screen.dart';
+import '../../screens/admin_login_screen.dart';
+import '../../screens/auth_screen.dart';
 import '../../screens/documents_screen.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/insurance_screen.dart';
@@ -13,9 +15,13 @@ import '../../screens/splash_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
+
   static const String auth = '/auth';
   static const String splash = '/splash';
   static const String home = '/home';
+
+  static const String adminLogin = '/admin-login';
+
   static const String addMedication = '/add-medication';
   static const String medicationDetail = '/medication-detail';
   static const String history = '/history';
@@ -29,6 +35,9 @@ class AppRoutes {
     splash: (_) => const SplashScreen(),
     auth: (_) => const AuthScreen(),
     home: (_) => const HomeScreen(),
+
+    adminLogin: (_) => const AdminLoginScreen(),
+
     addMedication: (_) => const AddMedicationScreen(),
     history: (_) => const MedicationHistoryScreen(),
     profile: (_) => const ProfileScreen(),
@@ -38,11 +47,11 @@ class AppRoutes {
     insurance: (_) => const InsuranceScreen(),
   };
 
-  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+  static Route<dynamic>? onGenerateRoute(
+    RouteSettings settings,
+  ) {
     final name = settings.name ?? '';
 
-    // Dynamic share route:
-    // /share/TOKEN
     final uri = Uri.tryParse(name);
 
     if (uri != null) {

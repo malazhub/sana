@@ -1,0 +1,661 @@
+diff --git a/lib/core/routes/app_routes.dart b/lib/core/routes/app_routes.dart
+index d2ba31b..e8dd414 100644
+--- a/lib/core/routes/app_routes.dart
++++ b/lib/core/routes/app_routes.dart
+@@ -1,5 +1,6 @@
+ import 'package:flutter/material.dart';
+ import '../../screens/auth_screen.dart';
++import '../../screens/admin_login_screen.dart';
+ import '../../screens/add_doctor_screen.dart';
+ import '../../screens/add_medication_screen.dart';
+ import '../../screens/add_pharmacy_screen.dart';
+@@ -24,10 +25,12 @@ class AppRoutes {
+   static const String addPharmacy = '/add-pharmacy';
+   static const String documents = '/documents';
+   static const String insurance = '/insurance';
++  static const String adminLogin = '/admin-login';
+ 
+   static final Map<String, WidgetBuilder> routes = {
+     splash: (_) => const SplashScreen(),
+     auth: (_) => const AuthScreen(),
++    adminLogin: (_) => const AdminLoginScreen(),
+     home: (_) => const HomeScreen(),
+     addMedication: (_) => const AddMedicationScreen(),
+     history: (_) => const MedicationHistoryScreen(),
+diff --git a/lib/providers/auth_provider.dart b/lib/providers/auth_provider.dart
+index 2e440f6..36d6633 100644
+--- a/lib/providers/auth_provider.dart
++++ b/lib/providers/auth_provider.dart
+@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
+ import 'package:supabase_flutter/supabase_flutter.dart';
+ 
+ enum LoginResult {
+-  admin,
+   activeUser,
+   notActivated,
+   userNotFound,
+@@ -27,6 +26,7 @@ class AuthProvider extends ChangeNotifier {
+   bool _isAuthenticated = false;
+   bool _isGuest = true;
+   bool _isLoading = true;
++  bool _adminFlowActive = false;
+ 
+   String? _errorMessage;
+ 
+@@ -50,6 +50,8 @@ class AuthProvider extends ChangeNotifier {
+ 
+   String? get userId => _user?.id;
+ 
++  bool get isAdminFlowActive => _adminFlowActive;
++
+   bool get isAdmin {
+     final role = _profile?['role']
+         ?.toString()
+@@ -124,6 +126,10 @@ class AuthProvider extends ChangeNotifier {
+   // ============================================================
+ 
+   Future<void> checkAuthStatus() async {
++    if (_adminFlowActive) {
++      return;
++    }
++
+     try {
+       final session = _supabase.auth.currentSession;
+ 
+@@ -166,6 +172,13 @@ class AuthProvider extends ChangeNotifier {
+       case AuthChangeEvent.userUpdated:
+       case AuthChangeEvent.passwordRecovery:
+       case AuthChangeEvent.mfaChallengeVerified:
++        // Admin authentication is handled explicitly by AdminLoginScreen.
++        // The Supabase listener must not restore the session as a normal
++        // user while that screen or AdminScreen is active.
++        if (_adminFlowActive) {
++          return;
++        }
++
+         if (session == null) {
+           _setGuest();
+         } else {
+@@ -402,9 +415,15 @@ class AuthProvider extends ChangeNotifier {
+       // ========================================================
+ 
+       if (role == 'admin') {
+-        notifyListeners();
++        await _safeSignOut();
+ 
+-        return LoginResult.admin;
++        _setGuest(notify: false);
++
++        _setError(
++          'Use Administration to sign in as an administrator.',
++        );
++
++        return LoginResult.failed;
+       }
+ 
+       // ========================================================
+@@ -461,6 +480,127 @@ class AuthProvider extends ChangeNotifier {
+     }
+   }
+ 
++  // ============================================================
++  // ADMIN SIGN IN
++  // ============================================================
++
++  void beginAdminLogin() {
++    _adminFlowActive = true;
++    _clearError(notify: false);
++  }
++
++  void cancelAdminLogin() {
++    if (_isAdmin) {
++      return;
++    }
++
++    _adminFlowActive = false;
++    _clearError();
++  }
++
++  Future<bool> signInAsAdmin({
++    required String email,
++    required String password,
++  }) async {
++    final normalizedEmail = email.trim();
++
++    _adminFlowActive = true;
++
++    if (normalizedEmail.isEmpty) {
++      _setError('Please enter your username or email.');
++      return false;
++    }
++
++    if (password.isEmpty) {
++      _setError('Please enter your password.');
++      return false;
++    }
++
++    _setLoading(true);
++    _clearError(notify: false);
++
++    try {
++      final response = await _supabase.auth.signInWithPassword(
++        email: normalizedEmail,
++        password: password,
++      );
++
++      final authenticatedUser = response.user;
++
++      if (authenticatedUser == null) {
++        _setGuest(notify: false);
++        _setError('Invalid administrator credentials.');
++        return false;
++      }
++
++      Map<String, dynamic>? loadedProfile;
++
++      try {
++        loadedProfile = await _loadProfile(authenticatedUser.id);
++      } catch (error, stackTrace) {
++        debugPrint(
++          'ADMIN PROFILE QUERY FAILED:\n$error\n$stackTrace',
++        );
++
++        await _safeSignOut();
++        _setGuest(notify: false);
++        _setError(
++          'Unable to load administrator profile. Please try again.',
++        );
++        return false;
++      }
++
++      if (loadedProfile == null) {
++        await _safeSignOut();
++        _setGuest(notify: false);
++        _setError('Administrator access required.');
++        return false;
++      }
++
++      final role = loadedProfile['role']
++          ?.toString()
++          .trim()
++          .toLowerCase();
++
++      if (role != 'admin') {
++        await _safeSignOut();
++        _setGuest(notify: false);
++        _setError('Administrator access required.');
++        return false;
++      }
++
++      _user = authenticatedUser;
++      _profile = loadedProfile;
++      _isAuthenticated = true;
++      _isGuest = false;
++      _errorMessage = null;
++      _adminFlowActive = true;
++      notifyListeners();
++
++      return true;
++    } on AuthException catch (error, stackTrace) {
++      debugPrint(
++        'ADMIN AUTH ERROR:\n${error.message}\n$stackTrace',
++      );
++
++      _setGuest(notify: false);
++      _setError('Invalid administrator credentials.');
++      return false;
++    } catch (error, stackTrace) {
++      debugPrint(
++        'ADMIN SIGN IN ERROR:\n$error\n$stackTrace',
++      );
++
++      _setGuest(notify: false);
++      _setError(
++        'Unable to sign in as administrator. Please try again.',
++      );
++      return false;
++    } finally {
++      _setLoading(false);
++    }
++  }
++
+   // ============================================================
+   // SIGN UP
+   // ============================================================
+@@ -650,6 +790,7 @@ class AuthProvider extends ChangeNotifier {
+   // ============================================================
+ 
+   Future<void> signOut() async {
++    _adminFlowActive = false;
+     _setLoading(true);
+     _clearError(notify: false);
+ 
+@@ -680,6 +821,11 @@ class AuthProvider extends ChangeNotifier {
+     }
+   }
+ 
++  Future<void> leaveAdminArea() async {
++    _adminFlowActive = false;
++    await signOut();
++  }
++
+   // ============================================================
+   // SAFE SIGN OUT
+   // ============================================================
+diff --git a/lib/screens/admin_screen.dart b/lib/screens/admin_screen.dart
+index a6284cd..721d9c8 100644
+--- a/lib/screens/admin_screen.dart
++++ b/lib/screens/admin_screen.dart
+@@ -19,7 +19,7 @@ class _AdminScreenState extends State<AdminScreen> {
+   Future<void> _signOut() async {
+     final AuthProvider auth = context.read<AuthProvider>();
+ 
+-    await auth.signOut();
++    await auth.leaveAdminArea();
+ 
+     if (!mounted) {
+       return;
+@@ -28,6 +28,11 @@ class _AdminScreenState extends State<AdminScreen> {
+     Navigator.of(context).popUntil((route) => route.isFirst);
+   }
+ 
++  Future<bool> _leaveAdminArea() async {
++    await context.read<AuthProvider>().leaveAdminArea();
++    return true;
++  }
++
+   void _showSection(String title, IconData icon) {
+     showModalBottomSheet<void>(
+       context: context,
+@@ -98,7 +103,9 @@ class _AdminScreenState extends State<AdminScreen> {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return Scaffold(
++    return WillPopScope(
++      onWillPop: _leaveAdminArea,
++      child: Scaffold(
+       backgroundColor: const Color(0xFFF4FAF9),
+       appBar: AppBar(
+         backgroundColor: const Color(0xFF009688),
+@@ -107,9 +114,7 @@ class _AdminScreenState extends State<AdminScreen> {
+         leading: IconButton(
+           tooltip: 'Back',
+           icon: const Icon(Icons.arrow_back),
+-          onPressed: () {
+-            Navigator.of(context).maybePop();
+-          },
++          onPressed: _signOut,
+         ),
+         title: const Row(
+           mainAxisSize: MainAxisSize.min,
+@@ -172,6 +177,7 @@ class _AdminScreenState extends State<AdminScreen> {
+           ),
+         ],
+       ),
++      ),
+     );
+   }
+ 
+diff --git a/lib/screens/auth_screen.dart b/lib/screens/auth_screen.dart
+index 0ccf454..5f4c67f 100644
+--- a/lib/screens/auth_screen.dart
++++ b/lib/screens/auth_screen.dart
+@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
+ 
+ import '../providers/auth_provider.dart';
+ import '../providers/language_provider.dart';
+-import 'admin_screen.dart';
+ 
+ class AuthScreen extends StatefulWidget {
+   const AuthScreen({
+@@ -75,21 +74,6 @@ class _AuthScreenState
+       }
+ 
+       switch (result) {
+-        // ------------------------------------------------------
+-        // ADMIN
+-        // ------------------------------------------------------
+-
+-        case LoginResult.admin:
+-          await Navigator.of(context)
+-              .pushReplacement(
+-            MaterialPageRoute(
+-              builder: (_) =>
+-                  const AdminScreen(),
+-            ),
+-          );
+-
+-          return;
+-
+         // ------------------------------------------------------
+         // NORMAL ACTIVE USER
+         // ------------------------------------------------------
+diff --git a/lib/screens/home_screen.dart b/lib/screens/home_screen.dart
+index 9365767..60ca567 100644
+--- a/lib/screens/home_screen.dart
++++ b/lib/screens/home_screen.dart
+@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
+ import 'package:share_plus/share_plus.dart';
+ import 'package:url_launcher/url_launcher.dart';
+ 
++import '../core/routes/app_routes.dart';
+ import '../models/doctor.dart';
+ import '../models/medication.dart';
+ import '../models/pharmacy.dart';
+@@ -17,7 +18,6 @@ import '../providers/pharmacy_provider.dart';
+ 
+ import 'about_sana_screen.dart';
+ import 'add_medication_screen.dart';
+-import 'admin_screen.dart';
+ import 'documents_screen.dart';
+ import 'insurance_screen.dart';
+ import 'medication_detail_screen.dart';
+@@ -936,6 +936,7 @@ class HomeScreen extends StatelessWidget {
+         foregroundColor: Colors.white,
+         toolbarHeight: 52,
+         automaticallyImplyLeading: false,
++        centerTitle: true,
+         title: Row(
+           mainAxisSize: MainAxisSize.min,
+           mainAxisAlignment: MainAxisAlignment.center,
+@@ -1110,12 +1111,9 @@ class HomeScreen extends StatelessWidget {
+                     Expanded(
+                       child: TextButton(
+                         onPressed: () {
+-                          Navigator.push(
++                          Navigator.pushNamed(
+                             context,
+-                            MaterialPageRoute(
+-                              builder: (_) =>
+-                                  const AdminScreen(),
+-                            ),
++                            AppRoutes.adminLogin,
+                           );
+                         },
+                         child: Text(
+diff --git a/lib/services/supabase_service.dart b/lib/services/supabase_service.dart
+index 41ece66..0f3ae10 100644
+--- a/lib/services/supabase_service.dart
++++ b/lib/services/supabase_service.dart
+@@ -90,7 +90,7 @@ class SupabaseService {
+       final response = await _supabase
+           .from('users')
+           .select()
+-          .eq('id', userId)
++          .eq('user_id', userId)
+           .maybeSingle();
+ 
+       if (response == null) {
+@@ -102,7 +102,9 @@ class SupabaseService {
+       debugPrint(
+         'Get user data error: $error\n$stackTrace',
+       );
+-      return null;
++      // A query/RLS failure is not the same as a missing users row.
++      // Preserve the error so callers can show the correct state.
++      rethrow;
+     }
+   }
+ 
+diff --git a/lib/screens/admin_login_screen.dart b/lib/screens/admin_login_screen.dart
+new file mode 100644
+index 0000000..b7ea998
+--- /dev/null
++++ b/lib/screens/admin_login_screen.dart
+@@ -0,0 +1,207 @@
++import 'package:flutter/material.dart';
++import 'package:provider/provider.dart';
++
++import '../providers/auth_provider.dart';
++import 'admin_screen.dart';
++
++class AdminLoginScreen extends StatefulWidget {
++  const AdminLoginScreen({super.key});
++
++  @override
++  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
++}
++
++class _AdminLoginScreenState extends State<AdminLoginScreen> {
++  final _formKey = GlobalKey<FormState>();
++  final _usernameController = TextEditingController();
++  final _passwordController = TextEditingController();
++
++  bool _obscurePassword = true;
++  bool _didAuthenticate = false;
++
++  @override
++  void initState() {
++    super.initState();
++    WidgetsBinding.instance.addPostFrameCallback((_) {
++      if (mounted) {
++        context.read<AuthProvider>().beginAdminLogin();
++      }
++    });
++  }
++
++  @override
++  void dispose() {
++    _usernameController.dispose();
++    _passwordController.dispose();
++    super.dispose();
++  }
++
++  Future<void> _submit() async {
++    if (!_formKey.currentState!.validate()) {
++      return;
++    }
++
++    final auth = context.read<AuthProvider>();
++    final success = await auth.signInAsAdmin(
++      email: _usernameController.text,
++      password: _passwordController.text,
++    );
++
++    if (!mounted || !success) {
++      return;
++    }
++
++    _didAuthenticate = true;
++
++    await Navigator.of(context).pushReplacement(
++      MaterialPageRoute(
++        builder: (_) => const AdminScreen(),
++      ),
++    );
++  }
++
++  Future<bool> _handleBack() async {
++    if (!_didAuthenticate) {
++      context.read<AuthProvider>().cancelAdminLogin();
++    }
++    return true;
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    final auth = context.watch<AuthProvider>();
++
++    return WillPopScope(
++      onWillPop: _handleBack,
++      child: Scaffold(
++        appBar: AppBar(
++          title: const Text('Admin Login'),
++          centerTitle: true,
++        ),
++        body: SafeArea(
++          child: Center(
++            child: SingleChildScrollView(
++              padding: const EdgeInsets.all(24),
++              child: ConstrainedBox(
++                constraints: const BoxConstraints(maxWidth: 460),
++                child: Form(
++                  key: _formKey,
++                  child: Column(
++                    crossAxisAlignment: CrossAxisAlignment.stretch,
++                    children: [
++                      const Icon(
++                        Icons.admin_panel_settings,
++                        size: 72,
++                        color: Colors.teal,
++                      ),
++                      const SizedBox(height: 16),
++                      const Text(
++                        'Administrator access',
++                        textAlign: TextAlign.center,
++                        style: TextStyle(
++                          fontSize: 24,
++                          fontWeight: FontWeight.bold,
++                        ),
++                      ),
++                      const SizedBox(height: 8),
++                      Text(
++                        'Sign in with your administrator credentials.',
++                        textAlign: TextAlign.center,
++                        style: TextStyle(color: Colors.grey.shade700),
++                      ),
++                      const SizedBox(height: 32),
++                      TextFormField(
++                        controller: _usernameController,
++                        enabled: !auth.isLoading,
++                        keyboardType: TextInputType.emailAddress,
++                        textInputAction: TextInputAction.next,
++                        decoration: const InputDecoration(
++                          labelText: 'Username or email',
++                          prefixIcon: Icon(Icons.person_outline),
++                          border: OutlineInputBorder(),
++                        ),
++                        validator: (value) {
++                          if (value == null || value.trim().isEmpty) {
++                            return 'Please enter your username or email.';
++                          }
++                          return null;
++                        },
++                      ),
++                      const SizedBox(height: 16),
++                      TextFormField(
++                        controller: _passwordController,
++                        enabled: !auth.isLoading,
++                        obscureText: _obscurePassword,
++                        textInputAction: TextInputAction.done,
++                        onFieldSubmitted: (_) => _submit(),
++                        decoration: InputDecoration(
++                          labelText: 'Password',
++                          prefixIcon: const Icon(Icons.lock_outline),
++                          border: const OutlineInputBorder(),
++                          suffixIcon: IconButton(
++                            tooltip: _obscurePassword
++                                ? 'Show password'
++                                : 'Hide password',
++                            icon: Icon(
++                              _obscurePassword
++                                  ? Icons.visibility
++                                  : Icons.visibility_off,
++                            ),
++                            onPressed: auth.isLoading
++                                ? null
++                                : () {
++                                    setState(() {
++                                      _obscurePassword = !_obscurePassword;
++                                    });
++                                  },
++                          ),
++                        ),
++                        validator: (value) {
++                          if (value == null || value.isEmpty) {
++                            return 'Please enter your password.';
++                          }
++                          return null;
++                        },
++                      ),
++                      if (auth.errorMessage != null) ...[
++                        const SizedBox(height: 16),
++                        Text(
++                          auth.errorMessage!,
++                          textAlign: TextAlign.center,
++                          style: TextStyle(
++                            color: Theme.of(context).colorScheme.error,
++                            fontWeight: FontWeight.w600,
++                          ),
++                        ),
++                      ],
++                      const SizedBox(height: 24),
++                      SizedBox(
++                        height: 48,
++                        child: FilledButton.icon(
++                          onPressed: auth.isLoading ? null : _submit,
++                          icon: auth.isLoading
++                              ? const SizedBox(
++                                  width: 18,
++                                  height: 18,
++                                  child: CircularProgressIndicator(
++                                    strokeWidth: 2,
++                                    color: Colors.white,
++                                  ),
++                                )
++                              : const Icon(Icons.login),
++                          label: Text(
++                            auth.isLoading ? 'Signing in...' : 'LOGIN',
++                          ),
++                        ),
++                      ),
++                    ],
++                  ),
++                ),
++              ),
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
+\ No newline at end of file
+diff --git a/MANUAL_TESTING.md b/MANUAL_TESTING.md
+new file mode 100644
+index 0000000..61f9cc1
+--- /dev/null
++++ b/MANUAL_TESTING.md
+@@ -0,0 +1,37 @@
++# SANA admin flow manual test
++
++Run these checks on a device after applying the replacement files.
++
++## Home screen
++
++1. Open the SANA home screen.
++2. Confirm the logo, `SANA`, and share icon are centered together in the top bar.
++3. Tap the share icon and confirm the SANA link opens the device share sheet.
++4. Confirm `Get your own copy` spans the available content width.
++5. Tap `Administration`.
++6. Confirm the dedicated `Admin Login` screen opens directly. The normal user login screen must not appear.
++
++## Admin Login validation
++
++1. Tap `LOGIN` with both fields empty. Confirm both validation messages appear.
++2. Enter a username/email but leave the password empty. Confirm the password validation message appears.
++3. Tap the password eye icon. Confirm the password switches between hidden and visible text.
++4. Enter invalid credentials. Confirm the screen stays on `Admin Login` and displays an invalid-credentials message.
++5. Enter valid credentials for a non-admin user. Confirm the screen stays open and displays:
++   `Administrator access required.`
++6. Temporarily test with a database/RLS failure if available. Confirm the message describes a profile-loading problem rather than saying the user is missing.
++
++## Successful administrator flow
++
++The Supabase `users` record for the authenticated administrator must use:
++
++- `user_id` equal to the Supabase Auth user id
++- `role` equal to `admin`
++
++1. Sign in with the administrator email and password.
++2. Confirm `AdminScreen` opens immediately, without passing through normal user login.
++3. Confirm the Users section loads the expected records.
++4. Press the device back button. Confirm the administrator is signed out and the app returns to Home.
++5. Open Administration again. Confirm the Admin Login screen is shown again.
++6. Sign in again, then use the logout icon. Confirm the app returns to Home and the admin session is no longer active.
++7. Sign in as a normal user from the normal user flow. Confirm the existing user login/signup behavior still works.
+\ No newline at end of file
+
+
+//git apply --whitespace=fix sana2-admin-flow.patch

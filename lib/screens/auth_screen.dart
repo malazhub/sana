@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
-import 'admin_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({
@@ -11,25 +10,23 @@ class AuthScreen extends StatefulWidget {
   });
 
   @override
-  State<AuthScreen> createState() =>
-      _AuthScreenState();
+  State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState
-    extends State<AuthScreen> {
-  final _formKey =
+class _AuthScreenState extends State<AuthScreen> {
+  final GlobalKey<FormState> _formKey =
       GlobalKey<FormState>();
 
-  final _emailController =
+  final TextEditingController _emailController =
       TextEditingController();
 
-  final _passwordController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
-  final _nameController =
+  final TextEditingController _nameController =
       TextEditingController();
 
-  final _phoneController =
+  final TextEditingController _phoneController =
       TextEditingController();
 
   bool _isLogin = true;
@@ -41,7 +38,6 @@ class _AuthScreenState
     _passwordController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
-
     super.dispose();
   }
 
@@ -50,24 +46,25 @@ class _AuthScreenState
   // ============================================================
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
+    final form = _formKey.currentState;
+
+    if (form == null || !form.validate()) {
       return;
     }
 
-    final auth =
+    final AuthProvider auth =
         context.read<AuthProvider>();
 
+    auth.clearError();
+
     // ==========================================================
-    // LOGIN
+    // NORMAL USER LOGIN
     // ==========================================================
 
     if (_isLogin) {
-      final result =
-          await auth.signIn(
-        email:
-            _emailController.text.trim(),
-        password:
-            _passwordController.text,
+      final LoginResult result = await auth.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
 
       if (!mounted) {
@@ -77,16 +74,27 @@ class _AuthScreenState
       switch (result) {
         // ------------------------------------------------------
         // ADMIN
+        //
+        // Admin authentication must use the dedicated
+        // Admin Login screen. Do NOT open AdminScreen here.
         // ------------------------------------------------------
 
         case LoginResult.admin:
-          await Navigator.of(context)
-              .pushReplacement(
-            MaterialPageRoute(
-              builder: (_) =>
-                  const AdminScreen(),
-            ),
-          );
+          await auth.signOut();
+
+          if (!mounted) {
+            return;
+          }
+
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Administrator access required.',
+                ),
+              ),
+            );
 
           return;
 
@@ -108,15 +116,14 @@ class _AuthScreenState
         case LoginResult.userNotFound:
         case LoginResult.notActivated:
           ScaffoldMessenger.of(context)
-              .showSnackBar(
-            SnackBar(
-              content: Text(
-                _getYourOwnCopyMessage(
-                  context,
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  _getYourOwnCopyMessage(context),
                 ),
               ),
-            ),
-          );
+            );
 
           return;
 
@@ -126,20 +133,21 @@ class _AuthScreenState
 
         case LoginResult.failed:
           ScaffoldMessenger.of(context)
-              .showSnackBar(
-            SnackBar(
-              content: Text(
-                auth.errorMessage ??
-                    _localizedText(
-                      context,
-                      english:
-                          'Unable to sign in. Please try again.',
-                      arabic:
-                          'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.',
-                    ),
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  auth.errorMessage ??
+                      _localizedText(
+                        context,
+                        english:
+                            'Unable to sign in. Please try again.',
+                        arabic:
+                            'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.',
+                      ),
+                ),
               ),
-            ),
-          );
+            );
 
           return;
       }
@@ -149,16 +157,11 @@ class _AuthScreenState
     // CREATE ACCOUNT
     // ==========================================================
 
-    final success =
-        await auth.signUp(
-      name:
-          _nameController.text.trim(),
-      phone:
-          _phoneController.text.trim(),
-      email:
-          _emailController.text.trim(),
-      password:
-          _passwordController.text,
+    final bool success = await auth.signUp(
+      name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
     );
 
     if (!mounted) {
@@ -167,26 +170,26 @@ class _AuthScreenState
 
     if (!success) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text(
-            auth.errorMessage ??
-                _localizedText(
-                  context,
-                  english:
-                      'Unable to create your account.',
-                  arabic:
-                      'تعذر إنشاء حسابك.',
-                ),
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              auth.errorMessage ??
+                  _localizedText(
+                    context,
+                    english:
+                        'Unable to create your account.',
+                    arabic:
+                        'تعذر إنشاء حسابك.',
+                  ),
+            ),
           ),
-        ),
-      );
+        );
 
       return;
     }
 
-    final currentUser =
-        auth.currentUser;
+    final currentUser = auth.currentUser;
 
     if (currentUser != null) {
       Navigator.of(context).pop(
@@ -197,20 +200,21 @@ class _AuthScreenState
     }
 
     ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(
-          auth.errorMessage ??
-              _localizedText(
-                context,
-                english:
-                    'Account created. Please confirm your email before signing in.',
-                arabic:
-                    'تم إنشاء الحساب. يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.',
-              ),
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            auth.errorMessage ??
+                _localizedText(
+                  context,
+                  english:
+                      'Account created. Please confirm your email before signing in.',
+                  arabic:
+                      'تم إنشاء الحساب. يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.',
+                ),
+          ),
         ),
-      ),
-    );
+      );
   }
 
   // ============================================================
@@ -218,9 +222,7 @@ class _AuthScreenState
   // ============================================================
 
   void _toggleMode() {
-    context
-        .read<AuthProvider>()
-        .clearError();
+    context.read<AuthProvider>().clearError();
 
     setState(() {
       _isLogin = !_isLogin;
@@ -234,10 +236,10 @@ class _AuthScreenState
   String _getYourOwnCopyMessage(
     BuildContext context,
   ) {
-    final languageCode =
-        Localizations.localeOf(
-      context,
-    ).languageCode.toLowerCase();
+    final String languageCode =
+        Localizations.localeOf(context)
+            .languageCode
+            .toLowerCase();
 
     switch (languageCode) {
       case 'ar':
@@ -280,10 +282,10 @@ class _AuthScreenState
     required String english,
     required String arabic,
   }) {
-    final languageCode =
-        Localizations.localeOf(
-      context,
-    ).languageCode.toLowerCase();
+    final String languageCode =
+        Localizations.localeOf(context)
+            .languageCode
+            .toLowerCase();
 
     if (languageCode == 'ar') {
       return arabic;
@@ -297,13 +299,11 @@ class _AuthScreenState
   // ============================================================
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    final auth =
+  Widget build(BuildContext context) {
+    final AuthProvider auth =
         context.watch<AuthProvider>();
 
-    final language =
+    final LanguageProvider language =
         context.watch<LanguageProvider>();
 
     return Scaffold(
@@ -315,27 +315,19 @@ class _AuthScreenState
         ),
         centerTitle: true,
       ),
-
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.all(24),
-
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 460,
               ),
-
               child: Form(
                 key: _formKey,
-
                 child: Column(
                   crossAxisAlignment:
-                      CrossAxisAlignment
-                          .stretch,
-
+                      CrossAxisAlignment.stretch,
                   children: [
                     _buildHeader(),
 
@@ -355,11 +347,9 @@ class _AuthScreenState
                             !auth.isLoading,
                         textInputAction:
                             TextInputAction.next,
-
                         decoration:
                             const InputDecoration(
-                          labelText:
-                              'Name',
+                          labelText: 'Name',
                           prefixIcon:
                               Icon(
                             Icons
@@ -368,14 +358,9 @@ class _AuthScreenState
                           border:
                               OutlineInputBorder(),
                         ),
-
-                        validator:
-                            (value) {
-                          if (value ==
-                                  null ||
-                              value
-                                  .trim()
-                                  .isEmpty) {
+                        validator: (value) {
+                          if (value == null ||
+                              value.trim().isEmpty) {
                             return _localizedText(
                               context,
                               english:
@@ -406,11 +391,9 @@ class _AuthScreenState
                             TextInputType.phone,
                         textInputAction:
                             TextInputAction.next,
-
                         decoration:
                             const InputDecoration(
-                          labelText:
-                              'Phone',
+                          labelText: 'Phone',
                           prefixIcon:
                               Icon(
                             Icons
@@ -419,14 +402,9 @@ class _AuthScreenState
                           border:
                               OutlineInputBorder(),
                         ),
-
-                        validator:
-                            (value) {
-                          if (value ==
-                                  null ||
-                              value
-                                  .trim()
-                                  .isEmpty) {
+                        validator: (value) {
+                          if (value == null ||
+                              value.trim().isEmpty) {
                             return _localizedText(
                               context,
                               english:
@@ -455,15 +433,12 @@ class _AuthScreenState
                       enabled:
                           !auth.isLoading,
                       keyboardType:
-                          TextInputType
-                              .emailAddress,
+                          TextInputType.emailAddress,
                       textInputAction:
                           TextInputAction.next,
-
                       decoration:
                           const InputDecoration(
-                        labelText:
-                            'Email',
+                        labelText: 'Email',
                         prefixIcon:
                             Icon(
                           Icons
@@ -472,12 +447,9 @@ class _AuthScreenState
                         border:
                             OutlineInputBorder(),
                       ),
-
-                      validator:
-                          (value) {
-                        final email =
-                            value?.trim() ??
-                                '';
+                      validator: (value) {
+                        final String email =
+                            value?.trim() ?? '';
 
                         if (email.isEmpty) {
                           return _localizedText(
@@ -489,8 +461,7 @@ class _AuthScreenState
                           );
                         }
 
-                        if (!email
-                            .contains('@')) {
+                        if (!email.contains('@')) {
                           return _localizedText(
                             context,
                             english:
@@ -521,42 +492,35 @@ class _AuthScreenState
                           _obscurePassword,
                       textInputAction:
                           TextInputAction.done,
-
-                      onFieldSubmitted:
-                          (_) {
+                      onFieldSubmitted: (_) {
                         if (!auth.isLoading) {
                           _submit();
                         }
                       },
-
                       decoration:
                           InputDecoration(
-                        labelText:
-                            'Password',
-
+                        labelText: 'Password',
                         prefixIcon:
                             const Icon(
-                          Icons
-                              .lock_outline,
+                          Icons.lock_outline,
                         ),
-
                         border:
                             const OutlineInputBorder(),
-
                         suffixIcon:
                             IconButton(
+                          tooltip:
+                              _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
                           onPressed:
                               auth.isLoading
                                   ? null
                                   : () {
-                                      setState(
-                                        () {
-                                          _obscurePassword =
-                                              !_obscurePassword;
-                                        },
-                                      );
+                                      setState(() {
+                                        _obscurePassword =
+                                            !_obscurePassword;
+                                      });
                                     },
-
                           icon: Icon(
                             _obscurePassword
                                 ? Icons
@@ -566,14 +530,11 @@ class _AuthScreenState
                           ),
                         ),
                       ),
-
-                      validator:
-                          (value) {
-                        final password =
+                      validator: (value) {
+                        final String password =
                             value ?? '';
 
-                        if (password
-                            .isEmpty) {
+                        if (password.isEmpty) {
                           return _localizedText(
                             context,
                             english:
@@ -584,8 +545,7 @@ class _AuthScreenState
                         }
 
                         if (!_isLogin &&
-                            password.length <
-                                6) {
+                            password.length < 6) {
                           return _localizedText(
                             context,
                             english:
@@ -603,41 +563,33 @@ class _AuthScreenState
                     // ERROR
                     // ==================================================
 
-                    if (auth.errorMessage !=
-                        null) ...[
+                    if (auth.errorMessage != null) ...[
                       const SizedBox(
                         height: 16,
                       ),
 
                       Container(
                         padding:
-                            const EdgeInsets
-                                .all(12),
-
+                            const EdgeInsets.all(12),
                         decoration:
                             BoxDecoration(
                           color:
                               Colors.red.shade50,
                           borderRadius:
-                              BorderRadius
-                                  .circular(
-                            8,
-                          ),
+                              BorderRadius.circular(8),
                           border:
                               Border.all(
                             color:
                                 Colors.red.shade200,
                           ),
                         ),
-
                         child: Text(
                           auth.errorMessage!,
                           textAlign:
                               TextAlign.center,
-
                           style: TextStyle(
-                            color: Colors
-                                .red.shade700,
+                            color:
+                                Colors.red.shade700,
                             fontWeight:
                                 FontWeight.w600,
                           ),
@@ -650,41 +602,35 @@ class _AuthScreenState
                     ),
 
                     // ==================================================
-                    // LOGIN BUTTON
+                    // SUBMIT BUTTON
                     // ==================================================
 
                     SizedBox(
                       height: 52,
-
-                      child:
-                          FilledButton(
+                      child: FilledButton(
                         onPressed:
                             auth.isLoading
                                 ? null
                                 : _submit,
-
-                        child:
-                            auth.isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child:
-                                        CircularProgressIndicator(
-                                      strokeWidth:
-                                          2,
-                                    ),
-                                  )
-                                : Text(
-                                    _isLogin
-                                        ? 'LOGIN'
-                                        : 'CREATE ACCOUNT',
-
-                                    style:
-                                        const TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
-                                    ),
-                                  ),
+                        child: auth.isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child:
+                                    CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                _isLogin
+                                    ? 'LOGIN'
+                                    : 'CREATE ACCOUNT',
+                                style:
+                                    const TextStyle(
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
 
@@ -693,7 +639,7 @@ class _AuthScreenState
                     ),
 
                     // ==================================================
-                    // SWITCH MODE
+                    // SWITCH LOGIN / SIGNUP
                     // ==================================================
 
                     TextButton(
@@ -701,7 +647,6 @@ class _AuthScreenState
                           auth.isLoading
                               ? null
                               : _toggleMode,
-
                       child: Text(
                         _isLogin
                             ? 'Create a new account'
@@ -716,10 +661,8 @@ class _AuthScreenState
                     Text(
                       'Language: '
                       '${language.locale.languageCode.toUpperCase()}',
-
                       textAlign:
                           TextAlign.center,
-
                       style:
                           Theme.of(context)
                               .textTheme
@@ -745,12 +688,9 @@ class _AuthScreenState
         Image.asset(
           'assets/health_logo.png',
           height: 72,
-
-          errorBuilder:
-              (_, __, ___) {
+          errorBuilder: (_, __, ___) {
             return const Icon(
-              Icons
-                  .health_and_safety,
+              Icons.health_and_safety,
               size: 72,
             );
           },
@@ -764,10 +704,8 @@ class _AuthScreenState
           _isLogin
               ? 'Welcome back'
               : 'Create your SANA account',
-
           textAlign:
               TextAlign.center,
-
           style:
               Theme.of(context)
                   .textTheme
@@ -786,10 +724,8 @@ class _AuthScreenState
           _isLogin
               ? 'Sign in to access your health information.'
               : 'Keep your health information organized in one place.',
-
           textAlign:
               TextAlign.center,
-
           style:
               Theme.of(context)
                   .textTheme

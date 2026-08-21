@@ -65,12 +65,9 @@ class AuthProvider extends ChangeNotifier {
         .trim()
         .toLowerCase();
 
-    final status = _profile?['status']
-        ?.toString()
-        .trim()
-        .toLowerCase();
+    final isActive = _profile?['is_active'] == true;
 
-    return role != 'admin' && status == 'active';
+    return role != 'admin' && isActive;
   }
 
   // ============================================================
@@ -111,8 +108,7 @@ class AuthProvider extends ChangeNotifier {
 
       _setGuest(notify: false);
 
-      _errorMessage =
-          'Unable to restore your session.';
+      _errorMessage = 'Unable to restore your session.';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -140,9 +136,7 @@ class AuthProvider extends ChangeNotifier {
 
       _setGuest();
 
-      _setError(
-        'Unable to load user.',
-      );
+      _setError('Unable to load user.');
     }
   }
 
@@ -181,7 +175,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ============================================================
-  // LOAD PROFILE
+  // LOAD APPLICATION PROFILE
   // ============================================================
 
   Future<Map<String, dynamic>?> _loadProfile(
@@ -195,7 +189,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await _supabase
           .from('users')
           .select()
-          .eq('user_id', authUserId)
+          .eq('id', authUserId)
           .maybeSingle();
 
       if (response == null) {
@@ -206,30 +200,22 @@ class AuthProvider extends ChangeNotifier {
         return null;
       }
 
-      final profile =
+      final loadedProfile =
           Map<String, dynamic>.from(response);
 
       debugPrint(
         'Application profile loaded: '
-        'role=${profile['role']}, '
-        'status=${profile['status']}',
+        'role=${loadedProfile['role']}, '
+        'is_active=${loadedProfile['is_active']}',
       );
 
-      return profile;
+      return loadedProfile;
     } catch (error, stackTrace) {
       debugPrint(
         'LOAD PROFILE ERROR:\n$error\n$stackTrace',
       );
 
-      /*
-       * IMPORTANT:
-       *
-       * Do NOT silently convert a database/RLS error into
-       * "user not found".
-       *
-       * Rethrow the error so signIn/checkAuthStatus can
-       * distinguish a database failure from a missing profile.
-       */
+      // Database/RLS errors must not become "user not found".
       rethrow;
     }
   }
@@ -254,13 +240,6 @@ class AuthProvider extends ChangeNotifier {
       _profile = loadedProfile;
 
       if (loadedProfile == null) {
-        /*
-         * Supabase session exists but application profile
-         * does not exist.
-         *
-         * We keep the Auth user available but do not claim
-         * that the user is an active application user.
-         */
         debugPrint(
           'Authenticated user has no application profile.',
         );
@@ -290,18 +269,12 @@ class AuthProvider extends ChangeNotifier {
     final normalizedEmail = email.trim();
 
     if (normalizedEmail.isEmpty) {
-      _setError(
-        'Please enter your email.',
-      );
-
+      _setError('Please enter your email.');
       return LoginResult.failed;
     }
 
     if (password.isEmpty) {
-      _setError(
-        'Please enter your password.',
-      );
-
+      _setError('Please enter your password.');
       return LoginResult.failed;
     }
 
@@ -322,9 +295,8 @@ class AuthProvider extends ChangeNotifier {
       final authenticatedUser = response.user;
 
       if (authenticatedUser == null) {
-        _setError(
-          'Unable to sign in.',
-        );
+        _setGuest(notify: false);
+        _setError('Unable to sign in.');
 
         return LoginResult.failed;
       }
@@ -338,41 +310,28 @@ class AuthProvider extends ChangeNotifier {
 
       try {
         loadedProfile =
-            await _loadProfile(
-          authenticatedUser.id,
-        );
+            await _loadProfile(authenticatedUser.id);
       } catch (error, stackTrace) {
         debugPrint(
           'PROFILE QUERY FAILED:\n$error\n$stackTrace',
         );
 
-        /*
-         * This is a real database/RLS/configuration error,
-         * NOT "user not found".
-         */
         await _safeSignOut();
 
         _setGuest(notify: false);
-
-        _setError(
-          'Unable to load user.',
-        );
+        _setError('Unable to load user.');
 
         return LoginResult.failed;
       }
 
       if (loadedProfile == null) {
         debugPrint(
-          'User authenticated but no users-table record exists.',
+          'Authenticated user has no users-table profile.',
         );
 
         await _safeSignOut();
 
         _setGuest(notify: false);
-
-        _setError(
-          'Get your own copy.',
-        );
 
         return LoginResult.userNotFound;
       }
@@ -388,13 +347,13 @@ class AuthProvider extends ChangeNotifier {
           .trim()
           .toLowerCase();
 
-      final status = loadedProfile['status']
-          ?.toString()
-          .trim()
-          .toLowerCase();
+      final isActive =
+          loadedProfile['is_active'] == true;
 
       debugPrint(
-        'LOGIN PROFILE: role=$role status=$status',
+        'LOGIN PROFILE: '
+        'role=$role '
+        'is_active=$isActive',
       );
 
       // ========================================================
@@ -403,7 +362,6 @@ class AuthProvider extends ChangeNotifier {
 
       if (role == 'admin') {
         notifyListeners();
-
         return LoginResult.admin;
       }
 
@@ -411,14 +369,12 @@ class AuthProvider extends ChangeNotifier {
       // NORMAL USER
       // ========================================================
 
-      if (status != 'active') {
+      if (!isActive) {
         await _safeSignOut();
 
         _setGuest(notify: false);
 
-        _setError(
-          'Get your own copy.',
-        );
+        notifyListeners();
 
         return LoginResult.notActivated;
       }
@@ -439,9 +395,7 @@ class AuthProvider extends ChangeNotifier {
 
       _setGuest(notify: false);
 
-      _setError(
-        error.message,
-      );
+      _setError(error.message);
 
       return LoginResult.failed;
     } catch (error, stackTrace) {
@@ -476,34 +430,22 @@ class AuthProvider extends ChangeNotifier {
     final normalizedEmail = email.trim();
 
     if (normalizedName.isEmpty) {
-      _setError(
-        'Please enter your name.',
-      );
-
+      _setError('Please enter your name.');
       return false;
     }
 
     if (normalizedPhone.isEmpty) {
-      _setError(
-        'Please enter your phone number.',
-      );
-
+      _setError('Please enter your phone number.');
       return false;
     }
 
     if (normalizedEmail.isEmpty) {
-      _setError(
-        'Please enter your email.',
-      );
-
+      _setError('Please enter your email.');
       return false;
     }
 
     if (password.isEmpty) {
-      _setError(
-        'Please enter a password.',
-      );
-
+      _setError('Please enter a password.');
       return false;
     }
 
@@ -545,12 +487,6 @@ class AuthProvider extends ChangeNotifier {
 
       final session = response.session;
 
-      /*
-       * Email confirmation enabled:
-       *
-       * Supabase creates the Auth account but gives us
-       * no session until the email is confirmed.
-       */
       if (session == null) {
         _setGuest(notify: false);
 
@@ -561,10 +497,6 @@ class AuthProvider extends ChangeNotifier {
         return true;
       }
 
-      /*
-       * If Supabase immediately creates a session,
-       * load the application profile.
-       */
       Map<String, dynamic>? loadedProfile;
 
       try {
@@ -579,21 +511,12 @@ class AuthProvider extends ChangeNotifier {
 
         _setGuest(notify: false);
 
-        _setError(
-          'Unable to load user.',
-        );
+        _setError('Unable to load user.');
 
         return false;
       }
 
       if (loadedProfile == null) {
-        /*
-         * The Auth account exists but the application
-         * users record has not been created.
-         *
-         * This is normally a database-trigger/profile
-         * configuration problem.
-         */
         await _safeSignOut();
 
         _setGuest(notify: false);
@@ -623,9 +546,7 @@ class AuthProvider extends ChangeNotifier {
 
       _setGuest(notify: false);
 
-      _setError(
-        error.message,
-      );
+      _setError(error.message);
 
       return false;
     } catch (error, stackTrace) {
@@ -664,17 +585,13 @@ class AuthProvider extends ChangeNotifier {
         '$stackTrace',
       );
 
-      _setError(
-        error.message,
-      );
+      _setError(error.message);
     } catch (error, stackTrace) {
       debugPrint(
         'SIGN OUT ERROR:\n$error\n$stackTrace',
       );
 
-      _setError(
-        'Unable to sign out.',
-      );
+      _setError('Unable to sign out.');
     } finally {
       _setLoading(false);
     }

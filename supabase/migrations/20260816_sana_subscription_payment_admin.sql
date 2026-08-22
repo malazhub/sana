@@ -1,4 +1,4 @@
-﻿-- SANA server-controlled subscription/payment system
+-- SANA server-controlled subscription/payment system
 -- Administrator: malazjanbeih@gmail.com
 -- Customers NEVER activate their own subscription.
 
@@ -31,14 +31,20 @@ on public.payment_confirmations(transaction_id);
 alter table public.subscriptions enable row level security;
 alter table public.payment_confirmations enable row level security;
 
-drop policy if exists "users read own subscription" on public.subscriptions;
+drop policy if exists "users read own subscription"
+on public.subscriptions;
+
 create policy "users read own subscription"
 on public.subscriptions
 for select
 to authenticated
-using ((select auth.uid()) = user_id);
+using (
+  (select auth.uid()) = user_id
+);
 
-drop policy if exists "users create own pending subscription" on public.subscriptions;
+drop policy if exists "users create own pending subscription"
+on public.subscriptions;
+
 create policy "users create own pending subscription"
 on public.subscriptions
 for insert
@@ -48,7 +54,9 @@ with check (
   and status = 'pending'
 );
 
-drop policy if exists "users cancel own pending subscription" on public.subscriptions;
+drop policy if exists "users cancel own pending subscription"
+on public.subscriptions;
+
 create policy "users cancel own pending subscription"
 on public.subscriptions
 for update
@@ -62,15 +70,23 @@ with check (
   and status = 'cancelled'
 );
 
-drop policy if exists "users read own payment confirmations" on public.payment_confirmations;
+drop policy if exists "users read own payment confirmations"
+on public.payment_confirmations;
+
 create policy "users read own payment confirmations"
 on public.payment_confirmations
 for select
 to authenticated
-using ((select auth.uid()) = user_id);
+using (
+  (select auth.uid()) = user_id
+);
 
-revoke all on public.payment_confirmations from anon;
-revoke insert, update, delete on public.payment_confirmations from authenticated;
+revoke all on public.payment_confirmations
+from anon;
+
+revoke insert, update, delete
+on public.payment_confirmations
+from authenticated;
 
 create or replace function public.request_private_subscription()
 returns public.subscriptions
@@ -85,8 +101,14 @@ begin
     raise exception 'Authentication required';
   end if;
 
-  insert into public.subscriptions(user_id,status)
-  values(auth.uid(),'pending')
+  insert into public.subscriptions(
+    user_id,
+    status
+  )
+  values(
+    auth.uid(),
+    'pending'
+  )
   on conflict(user_id)
   do update set
     status = case
@@ -101,8 +123,13 @@ begin
 end;
 $$;
 
-revoke all on function public.request_private_subscription() from public;
-grant execute on function public.request_private_subscription() to authenticated;
+revoke all
+on function public.request_private_subscription()
+from public;
+
+grant execute
+on function public.request_private_subscription()
+to authenticated;
 
 create or replace function public.admin_confirm_payment(
   p_user_id uuid,
@@ -121,22 +148,33 @@ declare
   result public.subscriptions;
   admin_email text;
 begin
-  admin_email := lower(coalesce(auth.email(),''));
+  admin_email :=
+    lower(
+      coalesce(
+        auth.email(),
+        ''
+      )
+    );
 
   if admin_email <> 'malazjanbeih@gmail.com' then
-    raise exception 'Administrator authorization required';
+    raise exception
+      'Administrator authorization required';
   end if;
 
   if p_user_id is null then
-    raise exception 'Customer is required';
+    raise exception
+      'Customer is required';
   end if;
 
-  if p_transaction_id is null or length(trim(p_transaction_id)) < 3 then
-    raise exception 'Payoneer transaction ID is required';
+  if p_transaction_id is null
+     or length(trim(p_transaction_id)) < 3 then
+    raise exception
+      'Payoneer transaction ID is required';
   end if;
 
   if p_amount <= 0 then
-    raise exception 'Payment amount must be greater than zero';
+    raise exception
+      'Payment amount must be greater than zero';
   end if;
 
   insert into public.payment_confirmations(
@@ -158,6 +196,17 @@ begin
     p_notes
   );
 
+  /*
+   * Administrator activation grants exactly
+   * one year of access.
+   *
+   * Existing private user data is NOT deleted
+   * when a subscription expires.
+   *
+   * Re-activation uses the same user_id and
+   * therefore restores access to the same
+   * private data.
+   */
   insert into public.subscriptions(
     user_id,
     status,
@@ -170,16 +219,16 @@ begin
     p_user_id,
     'active',
     now(),
-    now() + interval '30 days',
-    now() + interval '60 days',
+    now() + interval '1 year',
+    null,
     now()
   )
   on conflict(user_id)
   do update set
     status = 'active',
     started_at = now(),
-    expires_at = now() + interval '30 days',
-    grace_until = now() + interval '60 days',
+    expires_at = now() + interval '1 year',
+    grace_until = null,
     updated_at = now()
   returning * into result;
 
@@ -187,8 +236,27 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_confirm_payment(uuid,text,numeric,text,timestamptz,text) from public;
-grant execute on function public.admin_confirm_payment(uuid,text,numeric,text,timestamptz,text) to authenticated;
+revoke all
+on function public.admin_confirm_payment(
+  uuid,
+  text,
+  numeric,
+  text,
+  timestamptz,
+  text
+)
+from public;
+
+grant execute
+on function public.admin_confirm_payment(
+  uuid,
+  text,
+  numeric,
+  text,
+  timestamptz,
+  text
+)
+to authenticated;
 
 create or replace function public.expire_sana_subscriptions()
 returns void
@@ -197,58 +265,32 @@ security definer
 set search_path = public
 as $$
 begin
+  /*
+   * Expiration only changes subscription status.
+   *
+   * It does NOT delete:
+   * - medications
+   * - doctors
+   * - pharmacies
+   * - documents
+   * - insurance cards
+   *
+   * Those records remain associated with the
+   * user's account for future reactivation.
+   */
   update public.subscriptions
-  set status = 'expired',
-      updated_at = now()
+  set
+    status = 'expired',
+    updated_at = now()
   where status = 'active'
     and expires_at is not null
     and expires_at <= now();
 end;
 $$;
 
-create or replace function public.delete_expired_sana_data()
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  r record;
-begin
-  for r in
-    select user_id
-    from public.subscriptions
-    where status = 'expired'
-      and grace_until is not null
-      and grace_until <= now()
-  loop
-
-    delete from public.medications
-    where user_id = r.user_id;
-
-    delete from public.doctors
-    where user_id = r.user_id;
-
-    delete from public.pharmacies
-    where user_id = r.user_id;
-
-    delete from public.documents
-    where user_id = r.user_id;
-
-    delete from public.insurance_cards
-    where user_id = r.user_id;
-
-    update public.subscriptions
-    set status = 'cancelled',
-        updated_at = now()
-    where user_id = r.user_id
-      and status = 'expired';
-  end loop;
-end;
-$$;
-
-revoke all on function public.expire_sana_subscriptions() from public,anon,authenticated;
-revoke all on function public.delete_expired_sana_data() from public,anon,authenticated;
+revoke all
+on function public.expire_sana_subscriptions()
+from public, anon, authenticated;
 
 create index if not exists subscriptions_expires_at_idx
 on public.subscriptions(expires_at);
@@ -257,21 +299,33 @@ create index if not exists subscriptions_grace_until_idx
 on public.subscriptions(grace_until);
 
 -- Requires pg_cron to be enabled in the Supabase project.
+
 do $$
 begin
   if exists (
-    select 1 from pg_extension where extname = 'pg_cron'
+    select 1
+    from pg_extension
+    where extname = 'pg_cron'
   ) then
-    perform cron.unschedule('sana-expire-subscriptions')
+
+    perform cron.unschedule(
+      'sana-expire-subscriptions'
+    )
     where exists (
-      select 1 from cron.job
-      where jobname = 'sana-expire-subscriptions'
+      select 1
+      from cron.job
+      where jobname =
+        'sana-expire-subscriptions'
     );
 
-    perform cron.unschedule('sana-delete-expired-data')
+    perform cron.unschedule(
+      'sana-delete-expired-data'
+    )
     where exists (
-      select 1 from cron.job
-      where jobname = 'sana-delete-expired-data'
+      select 1
+      from cron.job
+      where jobname =
+        'sana-delete-expired-data'
     );
 
     perform cron.schedule(
@@ -280,10 +334,6 @@ begin
       'select public.expire_sana_subscriptions()'
     );
 
-    perform cron.schedule(
-      'sana-delete-expired-data',
-      '0 3 * * *',
-      'select public.delete_expired_sana_data()'
-    );
   end if;
-end $$;
+end
+$$;

@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -51,19 +50,13 @@ class AuthProvider extends ChangeNotifier {
   String? get userId => _user?.id;
 
   bool get isAdmin {
-    final role = _profile?['role']
-        ?.toString()
-        .trim()
-        .toLowerCase();
+    final role = _profile?['role']?.toString().trim().toLowerCase();
 
     return role == 'admin';
   }
 
   bool get isActiveUser {
-    final role = _profile?['role']
-        ?.toString()
-        .trim()
-        .toLowerCase();
+    final role = _profile?['role']?.toString().trim().toLowerCase();
 
     final isActive = _profile?['is_active'] == true;
 
@@ -90,8 +83,7 @@ class AuthProvider extends ChangeNotifier {
         );
       }
 
-      _authSubscription =
-          _supabase.auth.onAuthStateChange.listen(
+      _authSubscription = _supabase.auth.onAuthStateChange.listen(
         (AuthState state) async {
           await _handleAuthStateChange(state);
         },
@@ -189,7 +181,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await _supabase
           .from('users')
           .select()
-          .eq('id', authUserId)
+          .eq('user_id', authUserId)
           .maybeSingle();
 
       if (response == null) {
@@ -200,8 +192,7 @@ class AuthProvider extends ChangeNotifier {
         return null;
       }
 
-      final loadedProfile =
-          Map<String, dynamic>.from(response);
+      final loadedProfile = Map<String, dynamic>.from(response);
 
       debugPrint(
         'Application profile loaded: '
@@ -234,8 +225,7 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      final loadedProfile =
-          await _loadProfile(authenticatedUser.id);
+      final loadedProfile = await _loadProfile(authenticatedUser.id);
 
       _profile = loadedProfile;
 
@@ -286,8 +276,7 @@ class AuthProvider extends ChangeNotifier {
         'Signing in: $normalizedEmail',
       );
 
-      final response =
-          await _supabase.auth.signInWithPassword(
+      final response = await _supabase.auth.signInWithPassword(
         email: normalizedEmail,
         password: password,
       );
@@ -309,8 +298,7 @@ class AuthProvider extends ChangeNotifier {
       Map<String, dynamic>? loadedProfile;
 
       try {
-        loadedProfile =
-            await _loadProfile(authenticatedUser.id);
+        loadedProfile = await _loadProfile(authenticatedUser.id);
       } catch (error, stackTrace) {
         debugPrint(
           'PROFILE QUERY FAILED:\n$error\n$stackTrace',
@@ -342,13 +330,9 @@ class AuthProvider extends ChangeNotifier {
       _isGuest = false;
       _errorMessage = null;
 
-      final role = loadedProfile['role']
-          ?.toString()
-          .trim()
-          .toLowerCase();
+      final role = loadedProfile['role']?.toString().trim().toLowerCase();
 
-      final isActive =
-          loadedProfile['is_active'] == true;
+      final isActive = loadedProfile['is_active'] == true;
 
       debugPrint(
         'LOGIN PROFILE: '
@@ -461,8 +445,7 @@ class AuthProvider extends ChangeNotifier {
     _clearError(notify: false);
 
     try {
-      final response =
-          await _supabase.auth.signUp(
+      final response = await _supabase.auth.signUp(
         email: normalizedEmail,
         password: password,
         data: {
@@ -500,8 +483,7 @@ class AuthProvider extends ChangeNotifier {
       Map<String, dynamic>? loadedProfile;
 
       try {
-        loadedProfile =
-            await _loadProfile(createdUser.id);
+        loadedProfile = await _loadProfile(createdUser.id);
       } catch (error, stackTrace) {
         debugPrint(
           'SIGN UP PROFILE ERROR:\n$error\n$stackTrace',
@@ -619,10 +601,7 @@ class AuthProvider extends ChangeNotifier {
     bool notify = true,
   }) {
     final changed =
-        _user != null ||
-        _profile != null ||
-        _isAuthenticated ||
-        !_isGuest;
+        _user != null || _profile != null || _isAuthenticated || !_isGuest;
 
     _user = null;
     _profile = null;
@@ -682,4 +661,3 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 }
-

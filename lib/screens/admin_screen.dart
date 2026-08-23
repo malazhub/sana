@@ -17,12 +17,17 @@ class _AdminScreenState extends State<AdminScreen> {
   int _selectedIndex = 0;
   bool _actionInProgress = false;
 
+  static const Color _primary = Color(0xFF009688);
+  static const Color _darkPrimary = Color(0xFF008F83);
+  static const Color _background = Color(0xFFF4FAF9);
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+
       context.read<AdminProvider>().loadUsers();
     });
   }
@@ -32,6 +37,12 @@ class _AdminScreenState extends State<AdminScreen> {
   // ============================================================
 
   Future<void> _signOut() async {
+    if (_actionInProgress) return;
+
+    setState(() {
+      _actionInProgress = true;
+    });
+
     try {
       await context.read<AuthProvider>().signOut();
     } catch (error) {
@@ -39,9 +50,15 @@ class _AdminScreenState extends State<AdminScreen> {
 
       _showMessage(
         title: 'Sign Out Failed',
-        message: error.toString(),
+        message: _cleanError(error),
         icon: Icons.error_outline,
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _actionInProgress = false;
+        });
+      }
     }
   }
 
@@ -168,9 +185,9 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4FAF9),
+      backgroundColor: _background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF009688),
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -193,6 +210,17 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            icon: const Icon(Icons.refresh),
+            onPressed: _actionInProgress
+                ? null
+                : () {
+                    context
+                        .read<AdminProvider>()
+                        .loadUsers();
+                  },
+          ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
@@ -256,9 +284,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
     final totalUsers = users.length;
 
-    final activeUsers = users
-        .where(admin.isActive)
-        .length;
+    final activeUsers = users.where(admin.isActive).length;
 
     final pendingUsers = users
         .where(
@@ -268,13 +294,12 @@ class _AdminScreenState extends State<AdminScreen> {
         )
         .length;
 
-    final expiredUsers = users
-        .where(admin.isExpired)
-        .length;
+    final expiredUsers = users.where(admin.isExpired).length;
 
     return RefreshIndicator(
-      onRefresh: () =>
-          context.read<AdminProvider>().loadUsers(),
+      onRefresh: () {
+        return context.read<AdminProvider>().loadUsers();
+      },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
@@ -285,14 +310,13 @@ class _AdminScreenState extends State<AdminScreen> {
               icon: Icons.dashboard,
               title: 'Administrator Dashboard',
               subtitle:
-                  'Control user activations and review subscriptions.',
+                  'Control payment activations and review subscriptions.',
             ),
             const SizedBox(height: 20),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
-              physics:
-                  const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
               children: [
@@ -323,9 +347,9 @@ class _AdminScreenState extends State<AdminScreen> {
               icon: Icons.info_outline,
               title: 'Subscription Flow',
               text:
-                  'New users remain Pending until payment is confirmed. '
-                  'Activation is performed through the protected backend '
-                  'RPC, which calculates the one-year subscription period.',
+                  'New users remain pending until payment is confirmed. '
+                  'The protected backend RPC records the payment and '
+                  'calculates the one-year subscription period.',
             ),
           ],
         ),
@@ -344,18 +368,18 @@ class _AdminScreenState extends State<AdminScreen> {
     if (admin.isLoading && users.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
-          color: Color(0xFF009688),
+          color: _primary,
         ),
       );
     }
 
     if (admin.errorMessage != null && users.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () =>
-            context.read<AdminProvider>().loadUsers(),
+        onRefresh: () {
+          return context.read<AdminProvider>().loadUsers();
+        },
         child: ListView(
-          physics:
-              const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
             const SizedBox(height: 100),
             const Icon(
@@ -363,22 +387,21 @@ class _AdminScreenState extends State<AdminScreen> {
               size: 56,
             ),
             const SizedBox(height: 16),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                ),
-                child: Text(
-                  admin.errorMessage!,
-                  textAlign: TextAlign.center,
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+              ),
+              child: Text(
+                admin.errorMessage!,
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 20),
             Center(
               child: FilledButton.icon(
-                onPressed: () =>
-                    context.read<AdminProvider>().loadUsers(),
+                onPressed: () {
+                  context.read<AdminProvider>().loadUsers();
+                },
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
               ),
@@ -389,12 +412,12 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () =>
-          context.read<AdminProvider>().loadUsers(),
+      onRefresh: () {
+        return context.read<AdminProvider>().loadUsers();
+      },
       child: users.isEmpty
           ? ListView(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               children: const [
                 SizedBox(height: 120),
                 Center(
@@ -409,8 +432,7 @@ class _AdminScreenState extends State<AdminScreen> {
               ],
             )
           : ListView.builder(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 20,
@@ -435,38 +457,23 @@ class _AdminScreenState extends State<AdminScreen> {
     final active = admin.isActive(user);
     final status = admin.statusText(user);
 
-    final name =
-        user['user_name']?.toString().trim().isNotEmpty == true
-            ? user['user_name'].toString()
-            : 'Unnamed';
+    final name = _valueOrDefault(
+      user['user_name'],
+      'Unnamed',
+    );
 
-    final email =
-        user['user_email']?.toString().trim().isNotEmpty == true
-            ? user['user_email'].toString()
-            : 'No email';
+    final email = _valueOrDefault(
+      user['user_email'],
+      'No email',
+    );
 
-    final phone =
-        user['user_phone']?.toString() ?? '';
+    final phone = user['user_phone']?.toString().trim() ?? '';
 
-    final userId =
-        user['user_id']?.toString().trim() ?? '';
+    final userId = user['user_id']?.toString().trim() ?? '';
 
-    final remaining =
-        admin.daysRemaining(user);
+    final remaining = admin.daysRemaining(user);
 
-    Color statusColor = Colors.grey;
-
-    switch (status) {
-      case 'Active':
-        statusColor = Colors.green;
-        break;
-      case 'Pending':
-        statusColor = Colors.orange;
-        break;
-      case 'Expired':
-        statusColor = Colors.red;
-        break;
-    }
+    final statusColor = _statusColor(status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -481,24 +488,22 @@ class _AdminScreenState extends State<AdminScreen> {
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor:
-                      const Color(0xFF009688)
-                          .withValues(alpha: 0.1),
+                  backgroundColor: _primary.withValues(
+                    alpha: 0.1,
+                  ),
                   child: Text(
                     name.isNotEmpty
                         ? name[0].toUpperCase()
                         : 'U',
                     style: const TextStyle(
-                      color: Color(0xFF009688),
+                      color: _primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -513,16 +518,14 @@ class _AdminScreenState extends State<AdminScreen> {
                         name,
                         style: const TextStyle(
                           fontSize: 17,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         email,
                         style: TextStyle(
-                          color:
-                              Colors.grey.shade600,
+                          color: Colors.grey.shade600,
                           fontSize: 13,
                         ),
                       ),
@@ -531,8 +534,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         Text(
                           phone,
                           style: TextStyle(
-                            color:
-                                Colors.grey.shade600,
+                            color: Colors.grey.shade600,
                             fontSize: 13,
                           ),
                         ),
@@ -541,8 +543,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 5,
                   ),
@@ -550,15 +551,13 @@ class _AdminScreenState extends State<AdminScreen> {
                     color: statusColor.withValues(
                       alpha: 0.12,
                     ),
-                    borderRadius:
-                        BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     status,
                     style: TextStyle(
                       color: statusColor,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
                   ),
@@ -568,7 +567,9 @@ class _AdminScreenState extends State<AdminScreen> {
             if (active && remaining != null) ...[
               const SizedBox(height: 12),
               Text(
-                'Remaining: $remaining days',
+                remaining == 1
+                    ? 'Remaining: 1 day'
+                    : 'Remaining: $remaining days',
                 style: const TextStyle(
                   fontSize: 13,
                   color: Colors.black87,
@@ -590,6 +591,10 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  // ============================================================
+  // USER ACTION
+  // ============================================================
+
   Widget _buildUserAction({
     required String userId,
     required String userName,
@@ -606,31 +611,41 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     if (active) {
-      return OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.red.shade700,
-          side: BorderSide(
-            color: Colors.red.shade200,
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 9,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(
+            alpha: 0.10,
           ),
+          borderRadius: BorderRadius.circular(10),
         ),
-        icon: const Icon(
-          Icons.block,
-          size: 18,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.verified,
+              color: Colors.green,
+              size: 18,
+            ),
+            SizedBox(width: 7),
+            Text(
+              'Subscription Active',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-        label: const Text('Deactivate'),
-        onPressed: _actionInProgress
-            ? null
-            : () => _confirmDeactivation(
-                  userId,
-                  userName,
-                ),
       );
     }
 
     return FilledButton.icon(
       style: FilledButton.styleFrom(
-        backgroundColor:
-            const Color(0xFF009688),
+        backgroundColor: _primary,
       ),
       icon: const Icon(
         Icons.check,
@@ -641,32 +656,27 @@ class _AdminScreenState extends State<AdminScreen> {
       ),
       onPressed: _actionInProgress
           ? null
-          : () => _openActivationDialog(
+          : () {
+              _openActivationDialog(
                 userId,
                 userName,
-              ),
+              );
+            },
     );
   }
 
   // ============================================================
-  // ACTIVATION
+  // ACTIVATION DIALOG
   // ============================================================
 
   Future<void> _openActivationDialog(
     String userId,
     String userName,
   ) async {
-    final transactionCtrl =
-        TextEditingController();
-
-    final amountCtrl =
-        TextEditingController(text: '50.0');
-
-    final currencyCtrl =
-        TextEditingController(text: 'USD');
-
-    final notesCtrl =
-        TextEditingController();
+    final transactionCtrl = TextEditingController();
+    final amountCtrl = TextEditingController(text: '50.0');
+    final currencyCtrl = TextEditingController(text: 'USD');
+    final notesCtrl = TextEditingController();
 
     try {
       await showDialog<void>(
@@ -683,30 +693,27 @@ class _AdminScreenState extends State<AdminScreen> {
                 title: Text(
                   'Activate: $userName',
                 ),
-                content:
-                    SingleChildScrollView(
+                content: SingleChildScrollView(
                   child: Column(
-                    mainAxisSize:
-                        MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'Record payment details to trigger the one-year subscription RPC.',
+                        'Enter the payment information. '
+                        'The server will create the subscription and '
+                        'calculate its one-year expiry date.',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey,
+                          height: 1.4,
                         ),
                       ),
                       const SizedBox(height: 16),
                       TextField(
-                        controller:
-                            transactionCtrl,
+                        controller: transactionCtrl,
                         enabled: !submitting,
-                        decoration:
-                            const InputDecoration(
-                          labelText:
-                              'Transaction ID *',
-                          border:
-                              OutlineInputBorder(),
+                        decoration: const InputDecoration(
+                          labelText: 'Transaction ID *',
+                          border: OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -715,21 +722,15 @@ class _AdminScreenState extends State<AdminScreen> {
                           Expanded(
                             flex: 2,
                             child: TextField(
-                              controller:
-                                  amountCtrl,
-                              enabled:
-                                  !submitting,
+                              controller: amountCtrl,
+                              enabled: !submitting,
                               keyboardType:
-                                  const TextInputType
-                                      .numberWithOptions(
+                                  const TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
-                              decoration:
-                                  const InputDecoration(
-                                labelText:
-                                    'Amount *',
-                                border:
-                                    OutlineInputBorder(),
+                              decoration: const InputDecoration(
+                                labelText: 'Amount *',
+                                border: OutlineInputBorder(),
                               ),
                             ),
                           ),
@@ -737,19 +738,13 @@ class _AdminScreenState extends State<AdminScreen> {
                           Expanded(
                             flex: 1,
                             child: TextField(
-                              controller:
-                                  currencyCtrl,
-                              enabled:
-                                  !submitting,
+                              controller: currencyCtrl,
+                              enabled: !submitting,
                               textCapitalization:
-                                  TextCapitalization
-                                      .characters,
-                              decoration:
-                                  const InputDecoration(
-                                labelText:
-                                    'Currency',
-                                border:
-                                    OutlineInputBorder(),
+                                  TextCapitalization.characters,
+                              decoration: const InputDecoration(
+                                labelText: 'Currency',
+                                border: OutlineInputBorder(),
                               ),
                             ),
                           ),
@@ -760,12 +755,9 @@ class _AdminScreenState extends State<AdminScreen> {
                         controller: notesCtrl,
                         enabled: !submitting,
                         maxLines: 2,
-                        decoration:
-                            const InputDecoration(
-                          labelText:
-                              'Notes (Optional)',
-                          border:
-                              OutlineInputBorder(),
+                        decoration: const InputDecoration(
+                          labelText: 'Notes (Optional)',
+                          border: OutlineInputBorder(),
                         ),
                       ),
                     ],
@@ -776,59 +768,51 @@ class _AdminScreenState extends State<AdminScreen> {
                     onPressed: submitting
                         ? null
                         : () {
-                            Navigator.of(
-                              dialogContext,
-                            ).pop();
+                            Navigator.of(dialogContext).pop();
                           },
-                    child:
-                        const Text('Cancel'),
+                    child: const Text('Cancel'),
                   ),
                   FilledButton(
-                    style:
-                        FilledButton.styleFrom(
-                      backgroundColor:
-                          const Color(
-                        0xFF009688,
-                      ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _primary,
                     ),
                     onPressed: submitting
                         ? null
                         : () async {
                             final transactionId =
-                                transactionCtrl
-                                    .text
-                                    .trim();
+                                transactionCtrl.text.trim();
 
-                            final amount =
-                                double.tryParse(
-                                      amountCtrl
-                                          .text
-                                          .trim(),
-                                    ) ??
-                                    0;
+                            final amount = double.tryParse(
+                                  amountCtrl.text.trim(),
+                                ) ??
+                                0;
 
                             final currency =
-                                currencyCtrl
-                                    .text
-                                    .trim();
+                                currencyCtrl.text.trim();
 
                             final notes =
-                                notesCtrl
-                                    .text
-                                    .trim();
+                                notesCtrl.text.trim();
 
-                            if (transactionId
-                                    .isEmpty ||
-                                amount <= 0) {
-                              ScaffoldMessenger
-                                  .of(
+                            if (transactionId.isEmpty) {
+                              _showDialogError(
                                 context,
-                              ).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please provide a valid transaction ID and amount.',
-                                  ),
-                                ),
+                                'Transaction ID is required.',
+                              );
+                              return;
+                            }
+
+                            if (amount <= 0) {
+                              _showDialogError(
+                                context,
+                                'Amount must be greater than zero.',
+                              );
+                              return;
+                            }
+
+                            if (currency.length != 3) {
+                              _showDialogError(
+                                context,
+                                'Currency must be a 3-letter code such as USD.',
                               );
                               return;
                             }
@@ -837,78 +821,59 @@ class _AdminScreenState extends State<AdminScreen> {
                               submitting = true;
                             });
 
-                            setState(() {
-                              _actionInProgress =
-                                  true;
-                            });
-
-                            final success =
-                                await context
-                                    .read<
-                                        AdminProvider>()
-                                    .activateUser(
-                                      userId,
-                                      transactionId:
-                                          transactionId,
-                                      amount: amount,
-                                      currency:
-                                          currency,
-                                      paidAt:
-                                          DateTime
-                                              .now(),
-                                      notes: notes
-                                              .isNotEmpty
-                                          ? notes
-                                          : null,
-                                    );
-
-                            if (!mounted) {
-                              return;
+                            if (mounted) {
+                              setState(() {
+                                _actionInProgress = true;
+                              });
                             }
+
+                            final success = await context
+                                .read<AdminProvider>()
+                                .confirmPayment(
+                                  userId: userId,
+                                  transactionId: transactionId,
+                                  amount: amount,
+                                  currency: currency,
+                                  paidAt: DateTime.now(),
+                                  notes: notes.isNotEmpty
+                                      ? notes
+                                      : null,
+                                );
+
+                            if (!mounted) return;
 
                             setState(() {
-                              _actionInProgress =
-                                  false;
+                              _actionInProgress = false;
                             });
 
-                            if (dialogContext
-                                .mounted) {
-                              Navigator.of(
-                                dialogContext,
-                              ).pop();
+                            final error = context
+                                .read<AdminProvider>()
+                                .errorMessage;
+
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
                             }
 
-                            if (!mounted) {
-                              return;
-                            }
-
-                            final error =
-                                context
-                                    .read<
-                                        AdminProvider>()
-                                    .errorMessage;
+                            if (!mounted) return;
 
                             _showMessage(
                               title: success
                                   ? 'User Activated'
                                   : 'Activation Failed',
                               message: success
-                                  ? 'Subscription for $userName is now active for 1 year.'
+                                  ? 'Payment confirmed and $userName now has an active one-year subscription.'
                                   : error ??
                                       'Failed to activate user.',
                               icon: success
-                                  ? Icons
-                                      .check_circle
-                                  : Icons
-                                      .error_outline,
+                                  ? Icons.check_circle
+                                  : Icons.error_outline,
                             );
                           },
                     child: submitting
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child:
-                                CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               strokeWidth: 2,
                               color: Colors.white,
                             ),
@@ -932,88 +897,17 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   // ============================================================
-  // DEACTIVATION
+  // DIALOG VALIDATION ERROR
   // ============================================================
 
-  Future<void> _confirmDeactivation(
-    String userId,
-    String userName,
-  ) async {
-    final confirmed =
-        await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title:
-              Text('Deactivate $userName?'),
-          content: const Text(
-            'This will mark the user subscription as expired. '
-            'User data will be kept intact (non-destructive).',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(
-                dialogContext,
-              ).pop(false),
-              child:
-                  const Text('Cancel'),
-            ),
-            FilledButton(
-              style:
-                  FilledButton.styleFrom(
-                backgroundColor:
-                    Colors.red,
-              ),
-              onPressed: () =>
-                  Navigator.of(
-                dialogContext,
-              ).pop(true),
-              child:
-                  const Text('Deactivate'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true ||
-        !mounted ||
-        _actionInProgress) {
-      return;
-    }
-
-    setState(() {
-      _actionInProgress = true;
-    });
-
-    final success =
-        await context
-            .read<AdminProvider>()
-            .deactivateUser(userId);
-
-    if (!mounted) return;
-
-    setState(() {
-      _actionInProgress = false;
-    });
-
-    final error =
-        context
-            .read<AdminProvider>()
-            .errorMessage;
-
-    _showMessage(
-      title: success
-          ? 'Deactivated'
-          : 'Deactivation Failed',
-      message: success
-          ? 'User $userName has been marked as inactive.'
-          : error ??
-              'Failed to deactivate user.',
-      icon: success
-          ? Icons.check_circle
-          : Icons.error_outline,
+  void _showDialogError(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
     );
   }
 
@@ -1028,32 +922,49 @@ class _AdminScreenState extends State<AdminScreen> {
     final activeCount =
         users.where(admin.isActive).length;
 
-    final expiringCount = users
-        .where(admin.expiresWithin20Days)
+    final pendingCount = users
+        .where(
+          (user) =>
+              !admin.isActive(user) &&
+              !admin.isExpired(user),
+        )
         .length;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          _buildPageHeader(
-            icon: Icons.bar_chart,
-            title: 'Statistics & Analytics',
-            subtitle:
-                'Overview of platform usage and user growth.',
-          ),
-          const SizedBox(height: 20),
-          _buildInfoCard(
-            icon: Icons.pie_chart,
-            title: 'User Distribution',
-            text:
-                'Registered Customers: ${users.length}\n'
-                'Active Subscriptions: $activeCount\n'
-                'Expiring in ≤20 Days: $expiringCount',
-          ),
-        ],
+    final expiredCount =
+        users.where(admin.isExpired).length;
+
+    final expiringCount =
+        users.where(admin.expiresWithin20Days).length;
+
+    return RefreshIndicator(
+      onRefresh: () {
+        return context.read<AdminProvider>().loadUsers();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPageHeader(
+              icon: Icons.bar_chart,
+              title: 'Statistics & Analytics',
+              subtitle:
+                  'Overview of subscriptions and customer status.',
+            ),
+            const SizedBox(height: 20),
+            _buildInfoCard(
+              icon: Icons.pie_chart,
+              title: 'User Distribution',
+              text:
+                  'Registered Customers: ${users.length}\n'
+                  'Active Subscriptions: $activeCount\n'
+                  'Pending Customers: $pendingCount\n'
+                  'Expired Subscriptions: $expiredCount\n'
+                  'Expiring in ≤20 Days: $expiringCount',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1066,22 +977,20 @@ class _AdminScreenState extends State<AdminScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildPageHeader(
             icon: Icons.security,
             title: 'Security Architecture',
             subtitle:
-                'Role-based access control and RPC protections.',
+                'Role-based access control and protected backend operations.',
           ),
           const SizedBox(height: 20),
           _buildSecurityTile(
-            icon:
-                Icons.admin_panel_settings,
+            icon: Icons.admin_panel_settings,
             title: 'Role Validation',
             subtitle:
-                'Access is granted only when the server-side users.role value is admin.',
+                'Administrator access is determined from the authenticated user profile and must be enforced server-side.',
             color: Colors.blue,
           ),
           const SizedBox(height: 12),
@@ -1089,7 +998,7 @@ class _AdminScreenState extends State<AdminScreen> {
             icon: Icons.payment,
             title: 'Payment Confirmation',
             subtitle:
-                'Administrators confirm customer payments directly from the User Management screen.',
+                'Administrators confirm customer payments through the protected admin_confirm_payment RPC.',
             color: Colors.orange,
           ),
           const SizedBox(height: 12),
@@ -1097,15 +1006,15 @@ class _AdminScreenState extends State<AdminScreen> {
             icon: Icons.key,
             title: 'One-Year Activation',
             subtitle:
-                'The protected server-side RPC calculates the subscription expiry. Flutter does not choose the expiry date.',
+                'The backend calculates the activation and expiry dates. Flutter never chooses the subscription expiry date.',
             color: Colors.deepOrange,
           ),
           const SizedBox(height: 12),
           _buildSecurityTile(
-            icon: Icons.delete_outline,
-            title: 'Non-Destructive Deactivation',
+            icon: Icons.storage,
+            title: 'Non-Destructive Data',
             subtitle:
-                'Deactivating an account does not delete user data.',
+                'The admin UI does not directly delete or manipulate subscription records.',
             color: Colors.red,
           ),
           const SizedBox(height: 12),
@@ -1113,7 +1022,7 @@ class _AdminScreenState extends State<AdminScreen> {
             icon: Icons.logout,
             title: 'Session Control',
             subtitle:
-                'Sign Out terminates the current administrator Supabase session.',
+                'Signing out terminates the current Supabase authentication session.',
             color: Colors.purple,
           ),
         ],
@@ -1134,16 +1043,14 @@ class _AdminScreenState extends State<AdminScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF008F83),
-        borderRadius:
-            BorderRadius.circular(22),
+        color: _darkPrimary,
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor:
-                Colors.white.withValues(
+            backgroundColor: Colors.white.withValues(
               alpha: 0.18,
             ),
             child: Icon(
@@ -1163,16 +1070,14 @@ class _AdminScreenState extends State<AdminScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 5),
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color:
-                        Color(0xFFD5F5F1),
+                    color: Color(0xFFD5F5F1),
                     fontSize: 14,
                   ),
                 ),
@@ -1198,8 +1103,7 @@ class _AdminScreenState extends State<AdminScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Colors.grey.shade200,
         ),
@@ -1210,7 +1114,7 @@ class _AdminScreenState extends State<AdminScreen> {
         children: [
           Icon(
             icon,
-            color: const Color(0xFF008F83),
+            color: _darkPrimary,
             size: 30,
           ),
           const SizedBox(width: 16),
@@ -1223,16 +1127,14 @@ class _AdminScreenState extends State<AdminScreen> {
                   title,
                   style: const TextStyle(
                     fontSize: 17,
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 7),
                 Text(
                   text,
                   style: TextStyle(
-                    color:
-                        Colors.grey.shade700,
+                    color: Colors.grey.shade700,
                     height: 1.4,
                   ),
                 ),
@@ -1257,8 +1159,7 @@ class _AdminScreenState extends State<AdminScreen> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Colors.grey.shade200,
         ),
@@ -1269,7 +1170,7 @@ class _AdminScreenState extends State<AdminScreen> {
         children: [
           Icon(
             icon,
-            color: const Color(0xFF008F83),
+            color: _darkPrimary,
             size: 30,
           ),
           const SizedBox(height: 14),
@@ -1277,8 +1178,7 @@ class _AdminScreenState extends State<AdminScreen> {
             value,
             style: const TextStyle(
               fontSize: 28,
-              fontWeight:
-                  FontWeight.bold,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
@@ -1309,8 +1209,7 @@ class _AdminScreenState extends State<AdminScreen> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Colors.grey.shade200,
         ),
@@ -1319,8 +1218,9 @@ class _AdminScreenState extends State<AdminScreen> {
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundColor:
-                color.withValues(alpha: 0.12),
+            backgroundColor: color.withValues(
+              alpha: 0.12,
+            ),
             child: Icon(
               icon,
               color: color,
@@ -1335,8 +1235,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
@@ -1344,8 +1243,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color:
-                        Colors.grey.shade700,
+                    color: Colors.grey.shade700,
                     height: 1.3,
                   ),
                 ),
@@ -1355,5 +1253,49 @@ class _AdminScreenState extends State<AdminScreen> {
         ],
       ),
     );
+  }
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+
+  String _valueOrDefault(
+    dynamic value,
+    String fallback,
+  ) {
+    final text = value?.toString().trim() ?? '';
+
+    return text.isEmpty ? fallback : text;
+  }
+
+  Color _statusColor(
+    String status,
+  ) {
+    switch (status) {
+      case 'Active':
+        return Colors.green;
+      case 'Pending':
+        return Colors.orange;
+      case 'Expired':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _cleanError(
+    Object error,
+  ) {
+    final text = error.toString().trim();
+
+    if (text.startsWith('Exception: ')) {
+      return text.substring(
+        'Exception: '.length,
+      );
+    }
+
+    return text.isEmpty
+        ? 'An unexpected error occurred.'
+        : text;
   }
 }

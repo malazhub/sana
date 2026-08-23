@@ -1,7 +1,36 @@
 ﻿-- ============================================================
--- SANA ADMIN STANDARDIZATION
--- Annual subscription: 1 YEAR
--- Expiration is NON-DESTRUCTIVE.
+-- SANA
+-- 20260817_sana_admin.sql
+--
+-- ADMIN / ROLE STANDARDIZATION
+--
+-- Responsibilities:
+--   1. Server-side administrator detection
+--   2. Initial administrator seed
+--   3. Secure administrator user listing
+--   4. Administrator permissions
+--
+-- Subscription activation/payment confirmation is handled by:
+--
+--   20260822_admin_confirm_payment.sql
+--
+-- Subscription expiration is also finalized there.
+--
+-- IMPORTANT:
+--   This migration NEVER deletes customer data.
+-- ============================================================
+
+
+-- ============================================================
+-- 1. ADMIN CHECK
+--
+-- The database is the source of truth.
+--
+-- auth.uid()
+--     ↓
+-- public.users.id
+--     ↓
+-- public.users.role = 'admin'
 -- ============================================================
 
 create or replace function public.sana_is_admin()
@@ -19,9 +48,20 @@ as $$
   );
 $$;
 
+
+-- ============================================================
+-- 2. ADMIN CHECK PERMISSIONS
+-- ============================================================
+
 revoke all
 on function public.sana_is_admin()
-from public, anon;
+from public;
+
+
+revoke all
+on function public.sana_is_admin()
+from anon;
+
 
 grant execute
 on function public.sana_is_admin()
@@ -29,9 +69,17 @@ to authenticated;
 
 
 -- ============================================================
--- INITIAL ADMIN SEED
--- Email is used ONLY to locate the initial administrator.
--- Runtime authorization uses users.id + users.role.
+-- 3. INITIAL ADMIN SEED
+--
+-- This only grants the admin role to the existing account.
+--
+-- Runtime authorization does NOT depend on email.
+-- Runtime authorization uses:
+--
+--     users.id
+--     users.role
+--
+-- The email below is only for the initial installation.
 -- ============================================================
 
 insert into public.users (
@@ -46,15 +94,26 @@ insert into public.users (
 )
 select
   au.id,
-  coalesce(au.raw_user_meta_data->>'name', ''),
+  coalesce(
+    au.raw_user_meta_data->>'name',
+    ''
+  ),
   au.email,
-  coalesce(au.raw_user_meta_data->>'phone', ''),
-  coalesce(au.created_at, now()),
+  coalesce(
+    au.raw_user_meta_data->>'phone',
+    ''
+  ),
+  coalesce(
+    au.created_at,
+    now()
+  ),
   true,
   null,
   'admin'
 from auth.users au
-where lower(coalesce(au.email, '')) = 'malazjanbeih@gmail.com'
+where lower(
+  coalesce(au.email, '')
+) = 'malazjanbeih@gmail.com'
 on conflict (id)
 do update set
   role = 'admin',
@@ -63,7 +122,14 @@ do update set
 
 
 -- ============================================================
--- ADMIN LIST USERS
+-- 4. ADMIN USER LIST
+--
+-- This is read-only.
+--
+-- Admins can see customers.
+-- Customers cannot call this successfully.
+--
+-- Subscription status comes from user_subscriptions.
 -- ============================================================
 
 create or replace function public.admin_list_users()
@@ -86,19 +152,35 @@ as $$
     coalesce(u.email, ''),
     coalesce(u.phone, ''),
     u.created_at,
-    coalesce(us.status, 'pending'),
+    coalesce(
+      us.status,
+      'pending'
+    ),
     us.expires_at
   from public.users u
   left join public.user_subscriptions us
     on us.user_id = u.id
   where public.sana_is_admin()
-    and lower(coalesce(u.role, 'user')) <> 'admin'
+    and lower(
+      coalesce(u.role, 'user')
+    ) <> 'admin'
   order by u.created_at desc;
 $$;
 
+
+-- ============================================================
+-- 5. ADMIN USER LIST PERMISSIONS
+-- ============================================================
+
 revoke all
 on function public.admin_list_users()
-from public, anon;
+from public;
+
+
+revoke all
+on function public.admin_list_users()
+from anon;
+
 
 grant execute
 on function public.admin_list_users()
@@ -106,169 +188,44 @@ to authenticated;
 
 
 -- ============================================================
--- ACTIVATE ANNUAL SUBSCRIPTION
+-- 6. INDEXES
+-- ============================================================
+
+create index if not exists
+  user_subscriptions_user_id_idx
+on public.user_subscriptions (
+  user_id
+);
+
+
+create index if not exists
+  user_subscriptions_status_idx
+on public.user_subscriptions (
+  status
+);
+
+
+create index if not exists
+  user_subscriptions_expires_at_idx
+on public.user_subscriptions (
+  expires_at
+);
+
+
+-- ============================================================
+-- 7. REMOVE LEGACY DESTRUCTIVE EXPIRATION JOB
 --
--- EXACTLY ONE YEAR.
--- Existing private data is NOT deleted.
--- ============================================================
-
-create or replace function public.activate_annual_subscription(
-  target_user_id uuid
-)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  customer_email text;
-  customer_phone text;
-  expiration timestamptz;
-begin
-
-  if not public.sana_is_admin() then
-    raise exception
-      'Administrator authorization required';
-  end if;
-
-  if target_user_id is null then
-    raise exception
-      'Customer is required';
-  end if;
-
-  select
-    au.email,
-    coalesce(
-      au.raw_user_meta_data->>'phone',
-      ''
-    )
-  into
-    customer_email,
-    customer_phone
-  from auth.users au
-  where au.id = target_user_id;
-
-  if customer_email is null then
-    raise exception
-      'Customer does not exist';
-  end if;
-
-  -- EXACTLY ONE YEAR FROM ACTIVATION
-  expiration := now() + interval '1 year';
-
-  -- Update existing subscription.
-  update public.user_subscriptions
-  set
-    user_email = customer_email,
-    user_phone = customer_phone,
-    status = 'active',
-    activated_at = now(),
-    expires_at = expiration,
-    reminder_20day_sent = false
-  where user_id = target_user_id;
-
-  -- Create subscription if one does not already exist.
-  if not found then
-    insert into public.user_subscriptions (
-      user_id,
-      user_email,
-      user_phone,
-      status,
-      activated_at,
-      expires_at,
-      reminder_20day_sent
-    )
-    values (
-      target_user_id,
-      customer_email,
-      customer_phone,
-      'active',
-      now(),
-      expiration,
-      false
-    );
-  end if;
-
-  -- Synchronize user account status.
-  update public.users
-  set
-    is_active = true,
-    expiry_date = expiration
-  where id = target_user_id;
-
-end;
-$$;
-
-revoke all
-on function public.activate_annual_subscription(uuid)
-from public, anon;
-
-grant execute
-on function public.activate_annual_subscription(uuid)
-to authenticated;
-
-
--- ============================================================
--- EXPIRE SUBSCRIPTIONS
+-- Expiration must NEVER delete:
 --
--- NON-DESTRUCTIVE.
+--   medications
+--   doctors
+--   pharmacies
+--   documents
+--   insurance cards
+--   application data
+--   user profile data
 --
--- NOTHING IS DELETED:
--- medications
--- doctors
--- pharmacies
--- documents
--- insurance_cards
--- ============================================================
-
-create or replace function public.expire_sana_subscriptions()
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-
-  update public.user_subscriptions
-  set
-    status = 'expired',
-    reminder_20day_sent = false
-  where lower(coalesce(status, '')) = 'active'
-    and expires_at is not null
-    and expires_at <= now();
-
-  update public.users u
-  set
-    is_active = false,
-    expiry_date = us.expires_at
-  from public.user_subscriptions us
-  where us.user_id = u.id
-    and lower(coalesce(us.status, '')) = 'expired';
-
-end;
-$$;
-
-revoke all
-on function public.expire_sana_subscriptions()
-from public, anon, authenticated;
-
-
--- ============================================================
--- INDEXES
--- ============================================================
-
-create index if not exists user_subscriptions_user_id_idx
-on public.user_subscriptions(user_id);
-
-create index if not exists user_subscriptions_status_idx
-on public.user_subscriptions(status);
-
-create index if not exists user_subscriptions_expires_at_idx
-on public.user_subscriptions(expires_at);
-
-
--- ============================================================
--- REMOVE OLD DESTRUCTIVE CRON
+-- Only subscription/access state may change.
 -- ============================================================
 
 do $$
@@ -280,31 +237,78 @@ begin
     where extname = 'pg_cron'
   ) then
 
-    perform cron.unschedule(
-      'sana-delete-expired-data'
-    )
-    where exists (
+    if exists (
       select 1
       from cron.job
       where jobname = 'sana-delete-expired-data'
-    );
+    ) then
 
-    perform cron.unschedule(
-      'sana-expire-subscriptions'
-    )
-    where exists (
-      select 1
-      from cron.job
-      where jobname = 'sana-expire-subscriptions'
-    );
+      perform cron.unschedule(
+        'sana-delete-expired-data'
+      );
 
-    perform cron.schedule(
-      'sana-expire-subscriptions',
-      '*/15 * * * *',
-      'select public.expire_sana_subscriptions()'
-    );
+    end if;
 
   end if;
 
 end;
 $$;
+
+
+-- ============================================================
+-- 8. REMOVE LEGACY DESTRUCTIVE FUNCTION
+--
+-- Do NOT create a replacement here.
+--
+-- Final expiration logic belongs to the newer migration:
+--
+--   20260822_admin_confirm_payment.sql
+-- ============================================================
+
+drop function if exists
+  public.delete_expired_sana_data();
+
+
+-- ============================================================
+-- 9. SAFETY VERIFICATION
+-- ============================================================
+
+do $$
+begin
+
+  if not exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n
+      on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'sana_is_admin'
+  ) then
+
+    raise exception
+      'sana_is_admin() was not created';
+
+  end if;
+
+
+  if not exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n
+      on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'admin_list_users'
+  ) then
+
+    raise exception
+      'admin_list_users() was not created';
+
+  end if;
+
+end;
+$$;
+
+
+-- ============================================================
+-- END OF MIGRATION
+-- ============================================================

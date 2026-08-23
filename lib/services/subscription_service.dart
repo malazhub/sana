@@ -7,7 +7,21 @@ class SubscriptionService {
       Supabase.instance.client;
 
   // ============================================================
-  // ADMIN: CONFIRM PAYMENT + ACTIVATE SUBSCRIPTION
+  // ADMIN
+  // CONFIRM PAYMENT + ACTIVATE SUBSCRIPTION
+  //
+  // IMPORTANT:
+  // Flutter NEVER calculates expires_at.
+  //
+  // PostgreSQL admin_confirm_payment() controls:
+  //   - administrator authorization
+  //   - payment recording
+  //   - transaction uniqueness
+  //   - activation time
+  //   - one-year subscription period
+  //   - subscription status
+  //   - users.is_active
+  //   - users.expiry_date
   // ============================================================
 
   static Future<void> adminConfirmPayment({
@@ -18,27 +32,29 @@ class SubscriptionService {
     DateTime? paidAt,
     String? notes,
   }) async {
-    final normalizedUserId =
+    final cleanUserId =
         userId.trim();
 
-    final normalizedTransactionId =
+    final cleanTransactionId =
         transactionId.trim();
 
-    final normalizedCurrency =
-        currency.trim().isEmpty
-            ? 'USD'
-            : currency.trim().toUpperCase();
+    final cleanCurrency =
+        currency.trim().toUpperCase();
 
-    final normalizedNotes =
+    final cleanNotes =
         notes?.trim();
 
-    if (normalizedUserId.isEmpty) {
+    // ----------------------------------------------------------
+    // VALIDATION
+    // ----------------------------------------------------------
+
+    if (cleanUserId.isEmpty) {
       throw Exception(
-        'User ID is required.',
+        'Customer is required.',
       );
     }
 
-    if (normalizedTransactionId.isEmpty) {
+    if (cleanTransactionId.length < 3) {
       throw Exception(
         'Transaction ID is required.',
       );
@@ -50,55 +66,42 @@ class SubscriptionService {
       );
     }
 
+    if (cleanCurrency.isEmpty) {
+      throw Exception(
+        'Currency is required.',
+      );
+    }
+
     try {
-      /*
-       * IMPORTANT:
-       *
-       * Flutter deliberately does NOT calculate:
-       *
-       *     expires_at
-       *
-       * The protected PostgreSQL RPC is responsible for:
-       *
-       * - authorization
-       * - payment recording
-       * - activation
-       * - activated_at
-       * - expires_at
-       * - subscription status
-       *
-       * This prevents the client from choosing its own
-       * subscription expiry date.
-       */
       await _supabase.rpc(
         'admin_confirm_payment',
         params: {
           'target_user_id':
-              normalizedUserId,
+              cleanUserId,
           'p_transaction_id':
-              normalizedTransactionId,
+              cleanTransactionId,
           'p_amount':
               amount,
           'p_currency':
-              normalizedCurrency,
+              cleanCurrency,
           'p_paid_at':
               paidAt
                   ?.toUtc()
                   .toIso8601String(),
           'p_notes':
-              normalizedNotes,
+              cleanNotes?.isEmpty == true
+                  ? null
+                  : cleanNotes,
         },
       );
     } on PostgrestException catch (error) {
       final message =
           error.message.trim();
 
-      if (message.isNotEmpty) {
-        throw Exception(message);
-      }
-
       throw Exception(
-        'Unable to confirm payment.',
+        message.isNotEmpty
+            ? message
+            : 'Unable to confirm payment.',
       );
     } catch (error) {
       final message =
@@ -171,7 +174,7 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // ACTIVE SUBSCRIPTION
+  // CHECK ACTIVE SUBSCRIPTION
   // ============================================================
 
   static Future<bool>
@@ -209,7 +212,7 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // EXPIRY DATE
+  // GET EXPIRY DATE
   // ============================================================
 
   static Future<DateTime?>
@@ -227,7 +230,7 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // REMAINING DAYS
+  // GET REMAINING DAYS
   // ============================================================
 
   static Future<int>
@@ -252,7 +255,7 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // EXPIRED
+  // CHECK EXPIRED
   // ============================================================
 
   static Future<bool>
@@ -270,7 +273,7 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // 20-DAY REMINDER
+  // CHECK EXPIRING WITHIN 20 DAYS
   // ============================================================
 
   static Future<bool>
@@ -309,11 +312,40 @@ class SubscriptionService {
       return false;
     }
 
-    return expiresAt
-            .difference(now) <=
+    final remaining =
+        expiresAt.difference(now);
+
+    return remaining <=
         const Duration(
           days: 20,
         );
+  }
+
+  // ============================================================
+  // GET SUBSCRIPTION STATUS
+  // ============================================================
+
+  static Future<String?>
+      getCurrentStatus() async {
+    final subscription =
+        await getCurrentSubscription();
+
+    if (subscription == null) {
+      return null;
+    }
+
+    final status =
+        subscription['status']
+            ?.toString()
+            .trim()
+            .toLowerCase();
+
+    if (status == null ||
+        status.isEmpty) {
+      return null;
+    }
+
+    return status;
   }
 
   // ============================================================

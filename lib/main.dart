@@ -17,12 +17,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    // KEEP THE EXISTING AUTHORITATIVE VALUES
-    // FROM YOUR CURRENT CONVERSATION VERSION HERE.
-    //
-    // Do not replace them with values from GitHub.
     url: 'YOUR_EXISTING_SUPABASE_URL',
-    publishableKey: 'YOUR_EXISTING_SUPABASE_PUBLISHABLE_KEY',
+    publishableKey:
+        'YOUR_EXISTING_SUPABASE_PUBLISHABLE_KEY',
   );
 
   runApp(
@@ -73,8 +70,7 @@ class _SanaRoot extends StatefulWidget {
   const _SanaRoot();
 
   @override
-  State<_SanaRoot> createState() =>
-      _SanaRootState();
+  State<_SanaRoot> createState() => _SanaRootState();
 }
 
 class _SanaRootState extends State<_SanaRoot> {
@@ -82,15 +78,17 @@ class _SanaRootState extends State<_SanaRoot> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        if (!mounted) {
+          return;
+        }
 
-      context
-          .read<AuthProvider>()
-          .initialize();
-    });
+        context
+            .read<AuthProvider>()
+            .initialize();
+      },
+    );
   }
 
   @override
@@ -103,6 +101,8 @@ class _SanaRootState extends State<_SanaRoot> {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.teal,
         ),
+        scaffoldBackgroundColor:
+            const Color(0xFFF4FAF9),
       ),
       home: const AuthGate(),
     );

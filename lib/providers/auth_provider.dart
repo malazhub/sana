@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/subscription_service.dart';
+
 class AuthProvider extends ChangeNotifier {
   final SupabaseClient _supabase =
       Supabase.instance.client;
@@ -10,13 +12,11 @@ class AuthProvider extends ChangeNotifier {
   StreamSubscription<AuthState>? _authSubscription;
 
   User? _currentUser;
-
   Map<String, dynamic>? _profile;
+  Map<String, dynamic>? _subscription;
 
   bool _isLoading = false;
-
   bool _isInitialized = false;
-
   String? _errorMessage;
 
   // ============================================================
@@ -26,6 +26,9 @@ class AuthProvider extends ChangeNotifier {
   User? get currentUser => _currentUser;
 
   Map<String, dynamic>? get profile => _profile;
+
+  Map<String, dynamic>? get subscription =>
+      _subscription;
 
   bool get isLoading => _isLoading;
 
@@ -44,10 +47,10 @@ class AuthProvider extends ChangeNotifier {
 
   String get role =>
       _profile?['role']
-              ?.toString()
-              .trim()
-              .toLowerCase() ??
-          'user';
+          ?.toString()
+          .trim()
+          .toLowerCase() ??
+      'user';
 
   bool get isAdmin =>
       isAuthenticated &&
@@ -57,31 +60,19 @@ class AuthProvider extends ChangeNotifier {
     final value =
         _profile?['is_active'];
 
-    if (value is bool) {
-      return value;
-    }
-
-    return false;
+    return value is bool && value;
   }
+
+  // ============================================================
+  // SUBSCRIPTION STATE
+  // ============================================================
 
   DateTime? get expiryDate {
     final value =
+        _subscription?['expires_at'] ??
         _profile?['expiry_date'];
 
-    if (value == null) {
-      return null;
-    }
-
-    final text =
-        value.toString().trim();
-
-    if (text.isEmpty) {
-      return null;
-    }
-
-    return DateTime.tryParse(
-      text,
-    )?.toUtc();
+    return _parseDate(value);
   }
 
   bool get hasValidSubscription {
@@ -89,20 +80,24 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
-    /*
-     * Administrators do not require a customer
-     * subscription to access the admin panel.
-     */
+    // Administrators do not require
+    // a customer subscription.
     if (isAdmin) {
       return true;
     }
 
-    if (!isActive) {
+    final status =
+        _subscription?['status']
+            ?.toString()
+            .trim()
+            .toLowerCase() ??
+        '';
+
+    if (status != 'active') {
       return false;
     }
 
-    final expiry =
-        expiryDate;
+    final expiry = expiryDate;
 
     if (expiry == null) {
       return false;
@@ -114,8 +109,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   bool get subscriptionExpired {
-    final expiry =
-        expiryDate;
+    final expiry = expiryDate;
 
     if (expiry == null) {
       return false;
@@ -127,8 +121,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   int? get daysRemaining {
-    final expiry =
-        expiryDate;
+    final expiry = expiryDate;
 
     if (expiry == null) {
       return null;
@@ -162,17 +155,11 @@ class AuthProvider extends ChangeNotifier {
       _currentUser =
           _supabase.auth.currentUser;
 
-      /*
-       * Listen for login, logout, token refresh,
-       * and other Supabase authentication changes.
-       */
       _authSubscription ??=
           _supabase.auth.onAuthStateChange.listen(
         (AuthState state) {
           unawaited(
-            _handleAuthStateChange(
-              state,
-            ),
+            _handleAuthStateChange(state),
           );
         },
         onError: (Object error) {
@@ -183,9 +170,10 @@ class AuthProvider extends ChangeNotifier {
       );
 
       if (_currentUser != null) {
-        await loadProfile();
+        await _loadAuthenticatedState();
       } else {
         _profile = null;
+        _subscription = null;
       }
 
       _isInitialized = true;
@@ -208,6 +196,10 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // ============================================================
+  // AUTH STATE CHANGES
+  // ============================================================
+
   Future<void> _handleAuthStateChange(
     AuthState state,
   ) async {
@@ -217,11 +209,12 @@ class AuthProvider extends ChangeNotifier {
 
       if (_currentUser == null) {
         _profile = null;
+        _subscription = null;
         notifyListeners();
         return;
       }
 
-      await loadProfile();
+      await _loadAuthenticatedState();
 
       notifyListeners();
     } catch (error, stackTrace) {
@@ -230,6 +223,11 @@ class AuthProvider extends ChangeNotifier {
         '$error\n$stackTrace',
       );
     }
+  }
+
+  Future<void> _loadAuthenticatedState() async {
+    await loadProfile();
+    await loadSubscription();
   }
 
   // ============================================================
@@ -243,6 +241,7 @@ class AuthProvider extends ChangeNotifier {
     if (user == null) {
       _currentUser = null;
       _profile = null;
+      _subscription = null;
       notifyListeners();
       return false;
     }
@@ -263,10 +262,7 @@ class AuthProvider extends ChangeNotifier {
               .maybeSingle();
 
       if (response == null) {
-        /*
-         * A Supabase Auth account may exist before the
-         * application profile has been created.
-         */
+        _currentUser = user;
         _profile = null;
         notifyListeners();
         return false;
@@ -293,6 +289,62 @@ class AuthProvider extends ChangeNotifier {
           error,
           fallback:
               'Unable to load user profile.',
+        ),
+      );
+
+      return false;
+    }
+  }
+
+  // ============================================================
+  // LOAD SUBSCRIPTION
+  // ============================================================
+
+  Future<bool> loadSubscription() async {
+    if (!isAuthenticated) {
+      _subscription = null;
+      return false;
+    }
+
+    try {
+      _subscription =
+          await SubscriptionService
+              .getCurrentSubscription();
+
+      /*
+       * Keep the legacy users table fields synchronized
+       * in memory so existing screens that read profile
+       * continue to work.
+       */
+      if (_profile != null &&
+          _subscription != null) {
+        _profile!['is_active'] =
+            _subscription!['status']
+                    ?.toString()
+                    .trim()
+                    .toLowerCase() ==
+                'active';
+
+        _profile!['expiry_date'] =
+            _subscription!['expires_at'];
+      }
+
+      notifyListeners();
+
+      return _subscription != null;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Load subscription failed: '
+        '$error\n$stackTrace',
+      );
+
+      _subscription = null;
+
+      _setError(
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to load subscription.',
         ),
       );
 
@@ -346,7 +398,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      await loadProfile();
+      await _loadAuthenticatedState();
 
       return true;
     } on AuthException catch (error) {
@@ -434,13 +486,6 @@ class AuthProvider extends ChangeNotifier {
       _currentUser =
           response.user;
 
-      /*
-       * If email confirmation is disabled, the user may
-       * already have a session and can continue immediately.
-       *
-       * If email confirmation is enabled, Supabase may
-       * return a user without an active session.
-       */
       if (_currentUser != null) {
         await _ensureUserProfile(
           user: _currentUser!,
@@ -448,7 +493,7 @@ class AuthProvider extends ChangeNotifier {
           phone: cleanPhone,
         );
 
-        await loadProfile();
+        await _loadAuthenticatedState();
       }
 
       return true;
@@ -481,7 +526,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ============================================================
-  // CREATE / UPDATE APPLICATION PROFILE
+  // ENSURE PROFILE
   // ============================================================
 
   Future<void> _ensureUserProfile({
@@ -503,12 +548,6 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
 
-    /*
-     * New customers start inactive.
-     *
-     * The administrator activates the account after
-     * payment confirmation.
-     */
     await _supabase.from('users').insert({
       'id': user.id,
       'name': name,
@@ -536,6 +575,7 @@ class AuthProvider extends ChangeNotifier {
 
       _currentUser = null;
       _profile = null;
+      _subscription = null;
     } on AuthException catch (error) {
       _setError(
         error.message.isNotEmpty
@@ -572,6 +612,7 @@ class AuthProvider extends ChangeNotifier {
     if (user == null) {
       _currentUser = null;
       _profile = null;
+      _subscription = null;
       notifyListeners();
       return false;
     }
@@ -582,14 +623,32 @@ class AuthProvider extends ChangeNotifier {
     try {
       _currentUser = user;
 
-      return await loadProfile();
+      await _loadAuthenticatedState();
+
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Auth refresh failed: '
+        '$error\n$stackTrace',
+      );
+
+      _setError(
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to refresh account status.',
+        ),
+      );
+
+      return false;
     } finally {
       _setLoading(false);
+      notifyListeners();
     }
   }
 
   // ============================================================
-  // ADMIN CHECK
+  // ADMIN STATUS
   // ============================================================
 
   Future<bool> refreshAdminStatus() async {
@@ -658,7 +717,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ============================================================
-  // CLEAR ERROR
+  // ERROR
   // ============================================================
 
   void clearError() {
@@ -715,12 +774,36 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // ============================================================
-  // RESET PROVIDER
+  // DATE
+  // ============================================================
+
+  DateTime? _parseDate(
+    dynamic value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    final text =
+        value.toString().trim();
+
+    if (text.isEmpty) {
+      return null;
+    }
+
+    return DateTime.tryParse(
+      text,
+    )?.toUtc();
+  }
+
+  // ============================================================
+  // RESET
   // ============================================================
 
   void reset() {
     _currentUser = null;
     _profile = null;
+    _subscription = null;
     _isLoading = false;
     _isInitialized = false;
     _errorMessage = null;

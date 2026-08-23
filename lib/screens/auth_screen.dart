@@ -10,23 +10,29 @@ class AuthScreen extends StatefulWidget {
   });
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  State<AuthScreen> createState() =>
+      _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState
+    extends State<AuthScreen> {
   final GlobalKey<FormState> _formKey =
       GlobalKey<FormState>();
 
-  final TextEditingController _emailController =
+  final TextEditingController
+      _emailController =
       TextEditingController();
 
-  final TextEditingController _passwordController =
+  final TextEditingController
+      _passwordController =
       TextEditingController();
 
-  final TextEditingController _nameController =
+  final TextEditingController
+      _nameController =
       TextEditingController();
 
-  final TextEditingController _phoneController =
+  final TextEditingController
+      _phoneController =
       TextEditingController();
 
   bool _isLogin = true;
@@ -46,122 +52,68 @@ class _AuthScreenState extends State<AuthScreen> {
   // ============================================================
 
   Future<void> _submit() async {
-    final form = _formKey.currentState;
+    final form =
+        _formKey.currentState;
 
-    if (form == null || !form.validate()) {
+    if (form == null ||
+        !form.validate()) {
       return;
     }
 
-    final AuthProvider auth =
+    final auth =
         context.read<AuthProvider>();
 
     auth.clearError();
 
-    // ==========================================================
-    // NORMAL USER LOGIN
-    // ==========================================================
-
     if (_isLogin) {
-      final LoginResult result = await auth.signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      final success =
+          await auth.signIn(
+        email:
+            _emailController.text.trim(),
+        password:
+            _passwordController.text,
       );
 
       if (!mounted) {
         return;
       }
 
-      switch (result) {
-        // ------------------------------------------------------
-        // ADMIN
-        //
-        // Admin authentication must use the dedicated
-        // Admin Login screen. Do NOT open AdminScreen here.
-        // ------------------------------------------------------
-
-        case LoginResult.admin:
-          await auth.signOut();
-
-          if (!mounted) {
-            return;
-          }
-
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Administrator access required.',
-                ),
+      if (!success) {
+        _showError(
+          auth.errorMessage ??
+              _localizedText(
+                context,
+                english:
+                    'Unable to sign in. Please try again.',
+                arabic:
+                    'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.',
               ),
-            );
-
-          return;
-
-        // ------------------------------------------------------
-        // NORMAL ACTIVE USER
-        // ------------------------------------------------------
-
-        case LoginResult.activeUser:
-          Navigator.of(context).pop(
-            LoginResult.activeUser,
-          );
-
-          return;
-
-        // ------------------------------------------------------
-        // USER NOT FOUND / NOT ACTIVATED
-        // ------------------------------------------------------
-
-        case LoginResult.userNotFound:
-        case LoginResult.notActivated:
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(
-                  _getYourOwnCopyMessage(context),
-                ),
-              ),
-            );
-
-          return;
-
-        // ------------------------------------------------------
-        // LOGIN FAILED
-        // ------------------------------------------------------
-
-        case LoginResult.failed:
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(
-                  auth.errorMessage ??
-                      _localizedText(
-                        context,
-                        english:
-                            'Unable to sign in. Please try again.',
-                        arabic:
-                            'تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.',
-                      ),
-                ),
-              ),
-            );
-
-          return;
+        );
+        return;
       }
+
+      /*
+       * AuthGate owns navigation.
+       *
+       * Do not push AdminScreen, HomeScreen or
+       * SubscriptionScreen from this widget.
+       *
+       * AuthProvider notifies listeners after login,
+       * causing AuthGate to rebuild automatically.
+       */
+      return;
     }
 
-    // ==========================================================
-    // CREATE ACCOUNT
-    // ==========================================================
-
-    final bool success = await auth.signUp(
-      name: _nameController.text.trim(),
-      phone: _phoneController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
+    final success =
+        await auth.signUp(
+      name:
+          _nameController.text.trim(),
+      phone:
+          _phoneController.text.trim(),
+      email:
+          _emailController.text.trim(),
+      password:
+          _passwordController.text,
     );
 
     if (!mounted) {
@@ -169,60 +121,56 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     if (!success) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              auth.errorMessage ??
-                  _localizedText(
-                    context,
-                    english:
-                        'Unable to create your account.',
-                    arabic:
-                        'تعذر إنشاء حسابك.',
-                  ),
+      _showError(
+        auth.errorMessage ??
+            _localizedText(
+              context,
+              english:
+                  'Unable to create your account.',
+              arabic:
+                  'تعذر إنشاء حسابك.',
             ),
-          ),
-        );
-
+      );
       return;
     }
 
-    final currentUser = auth.currentUser;
-
-    if (currentUser != null) {
-      Navigator.of(context).pop(
-        LoginResult.activeUser,
-      );
-
+    /*
+     * If Supabase email confirmation is enabled,
+     * signUp may create the account without creating
+     * an authenticated session.
+     */
+    if (auth.isAuthenticated) {
       return;
     }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            auth.errorMessage ??
-                _localizedText(
-                  context,
-                  english:
-                      'Account created. Please confirm your email before signing in.',
-                  arabic:
-                      'تم إنشاء الحساب. يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.',
-                ),
-          ),
-        ),
-      );
+    _showMessage(
+      title: _localizedText(
+        context,
+        english:
+            'Account created',
+        arabic:
+            'تم إنشاء الحساب',
+      ),
+      message: _localizedText(
+        context,
+        english:
+            'Your account was created successfully. Please confirm your email before signing in.',
+        arabic:
+            'تم إنشاء حسابك بنجاح. يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.',
+      ),
+      icon:
+          Icons.mark_email_read_outlined,
+    );
   }
 
   // ============================================================
-  // TOGGLE LOGIN / SIGN UP
+  // LOGIN / SIGNUP TOGGLE
   // ============================================================
 
   void _toggleMode() {
-    context.read<AuthProvider>().clearError();
+    context
+        .read<AuthProvider>()
+        .clearError();
 
     setState(() {
       _isLogin = !_isLogin;
@@ -230,62 +178,124 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   // ============================================================
-  // LOCALIZATION
+  // ERROR MESSAGE
   // ============================================================
 
-  String _getYourOwnCopyMessage(
-    BuildContext context,
+  void _showError(
+    String message,
   ) {
-    final String languageCode =
-        Localizations.localeOf(context)
-            .languageCode
-            .toLowerCase();
-
-    switch (languageCode) {
-      case 'ar':
-        return 'احصل على نسختك الخاصة';
-
-      case 'fr':
-        return 'Obtenez votre propre copie';
-
-      case 'de':
-        return 'Holen Sie sich Ihre eigene Kopie';
-
-      case 'es':
-        return 'Obtén tu propia copia';
-
-      case 'it':
-        return 'Ottieni la tua copia';
-
-      case 'pt':
-        return 'Obtenha sua própria cópia';
-
-      case 'tr':
-        return 'Kendi kopyanızı edinin';
-
-      case 'ru':
-        return 'Получите свою собственную копию';
-
-      case 'zh':
-        return '获取您自己的副本';
-
-      case 'ja':
-        return '自分用のコピーを入手してください';
-
-      default:
-        return 'Get your own copy';
-    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior:
+              SnackBarBehavior.floating,
+        ),
+      );
   }
+
+  // ============================================================
+  // INFORMATION MESSAGE
+  // ============================================================
+
+  void _showMessage({
+    required String title,
+    required String message,
+    required IconData icon,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final theme =
+            Theme.of(sheetContext);
+
+        return SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.fromLTRB(
+              24,
+              8,
+              24,
+              32,
+            ),
+            child: Column(
+              mainAxisSize:
+                  MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 52,
+                  color:
+                      theme.colorScheme.primary,
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                Text(
+                  title,
+                  textAlign:
+                      TextAlign.center,
+                  style:
+                      const TextStyle(
+                    fontSize: 22,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  message,
+                  textAlign:
+                      TextAlign.center,
+                  style: TextStyle(
+                    color:
+                        Colors.grey.shade700,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                SizedBox(
+                  width:
+                      double.infinity,
+                  child:
+                      FilledButton(
+                    onPressed: () {
+                      Navigator.of(
+                        sheetContext,
+                      ).pop();
+                    },
+                    child:
+                        const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // LOCALIZATION
+  // ============================================================
 
   String _localizedText(
     BuildContext context, {
     required String english,
     required String arabic,
   }) {
-    final String languageCode =
-        Localizations.localeOf(context)
-            .languageCode
-            .toLowerCase();
+    final languageCode =
+        Localizations.localeOf(
+      context,
+    ).languageCode.toLowerCase();
 
     if (languageCode == 'ar') {
       return arabic;
@@ -299,11 +309,13 @@ class _AuthScreenState extends State<AuthScreen> {
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
-    final AuthProvider auth =
+  Widget build(
+    BuildContext context,
+  ) {
+    final auth =
         context.watch<AuthProvider>();
 
-    final LanguageProvider language =
+    final language =
         context.watch<LanguageProvider>();
 
     return Scaffold(
@@ -317,17 +329,21 @@ class _AuthScreenState extends State<AuthScreen> {
       ),
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+          child:
+              SingleChildScrollView(
+            padding:
+                const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
+              constraints:
+                  const BoxConstraints(
                 maxWidth: 460,
               ),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
+                      CrossAxisAlignment
+                          .stretch,
                   children: [
                     _buildHeader(),
 
@@ -335,9 +351,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       height: 32,
                     ),
 
-                    // ==================================================
+                    // ------------------------------------------------
                     // NAME
-                    // ==================================================
+                    // ------------------------------------------------
 
                     if (!_isLogin) ...[
                       TextFormField(
@@ -349,7 +365,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             TextInputAction.next,
                         decoration:
                             const InputDecoration(
-                          labelText: 'Name',
+                          labelText:
+                              'Name',
                           prefixIcon:
                               Icon(
                             Icons
@@ -358,9 +375,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           border:
                               OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                        validator:
+                            (value) {
+                          if (value ==
+                                  null ||
+                              value
+                                  .trim()
+                                  .isEmpty) {
                             return _localizedText(
                               context,
                               english:
@@ -378,9 +399,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         height: 16,
                       ),
 
-                      // ==================================================
+                      // ------------------------------------------------
                       // PHONE
-                      // ==================================================
+                      // ------------------------------------------------
 
                       TextFormField(
                         controller:
@@ -393,7 +414,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             TextInputAction.next,
                         decoration:
                             const InputDecoration(
-                          labelText: 'Phone',
+                          labelText:
+                              'Phone',
                           prefixIcon:
                               Icon(
                             Icons
@@ -402,9 +424,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           border:
                               OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                        validator:
+                            (value) {
+                          if (value ==
+                                  null ||
+                              value
+                                  .trim()
+                                  .isEmpty) {
                             return _localizedText(
                               context,
                               english:
@@ -423,9 +449,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ],
 
-                    // ==================================================
+                    // ------------------------------------------------
                     // EMAIL
-                    // ==================================================
+                    // ------------------------------------------------
 
                     TextFormField(
                       controller:
@@ -433,12 +459,14 @@ class _AuthScreenState extends State<AuthScreen> {
                       enabled:
                           !auth.isLoading,
                       keyboardType:
-                          TextInputType.emailAddress,
+                          TextInputType
+                              .emailAddress,
                       textInputAction:
                           TextInputAction.next,
                       decoration:
                           const InputDecoration(
-                        labelText: 'Email',
+                        labelText:
+                            'Email',
                         prefixIcon:
                             Icon(
                           Icons
@@ -447,9 +475,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         border:
                             OutlineInputBorder(),
                       ),
-                      validator: (value) {
-                        final String email =
-                            value?.trim() ?? '';
+                      validator:
+                          (value) {
+                        final email =
+                            value
+                                    ?.trim() ??
+                                '';
 
                         if (email.isEmpty) {
                           return _localizedText(
@@ -461,7 +492,14 @@ class _AuthScreenState extends State<AuthScreen> {
                           );
                         }
 
-                        if (!email.contains('@')) {
+                        if (!email
+                                .contains(
+                              '@',
+                            ) ||
+                            !email
+                                .contains(
+                              '.',
+                            )) {
                           return _localizedText(
                             context,
                             english:
@@ -479,9 +517,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       height: 16,
                     ),
 
-                    // ==================================================
+                    // ------------------------------------------------
                     // PASSWORD
-                    // ==================================================
+                    // ------------------------------------------------
 
                     TextFormField(
                       controller:
@@ -492,17 +530,21 @@ class _AuthScreenState extends State<AuthScreen> {
                           _obscurePassword,
                       textInputAction:
                           TextInputAction.done,
-                      onFieldSubmitted: (_) {
-                        if (!auth.isLoading) {
+                      onFieldSubmitted:
+                          (_) {
+                        if (!auth
+                            .isLoading) {
                           _submit();
                         }
                       },
                       decoration:
                           InputDecoration(
-                        labelText: 'Password',
+                        labelText:
+                            'Password',
                         prefixIcon:
                             const Icon(
-                          Icons.lock_outline,
+                          Icons
+                              .lock_outline,
                         ),
                         border:
                             const OutlineInputBorder(),
@@ -516,12 +558,15 @@ class _AuthScreenState extends State<AuthScreen> {
                               auth.isLoading
                                   ? null
                                   : () {
-                                      setState(() {
-                                        _obscurePassword =
-                                            !_obscurePassword;
-                                      });
+                                      setState(
+                                        () {
+                                          _obscurePassword =
+                                              !_obscurePassword;
+                                        },
+                                      );
                                     },
-                          icon: Icon(
+                          icon:
+                              Icon(
                             _obscurePassword
                                 ? Icons
                                     .visibility_outlined
@@ -530,11 +575,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                       ),
-                      validator: (value) {
-                        final String password =
+                      validator:
+                          (value) {
+                        final password =
                             value ?? '';
 
-                        if (password.isEmpty) {
+                        if (password
+                            .isEmpty) {
                           return _localizedText(
                             context,
                             english:
@@ -545,7 +592,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         }
 
                         if (!_isLogin &&
-                            password.length < 6) {
+                            password.length <
+                                6) {
                           return _localizedText(
                             context,
                             english:
@@ -559,24 +607,29 @@ class _AuthScreenState extends State<AuthScreen> {
                       },
                     ),
 
-                    // ==================================================
+                    // ------------------------------------------------
                     // ERROR
-                    // ==================================================
+                    // ------------------------------------------------
 
-                    if (auth.errorMessage != null) ...[
+                    if (auth
+                            .errorMessage !=
+                        null) ...[
                       const SizedBox(
                         height: 16,
                       ),
-
                       Container(
                         padding:
-                            const EdgeInsets.all(12),
+                            const EdgeInsets
+                                .all(12),
                         decoration:
                             BoxDecoration(
                           color:
                               Colors.red.shade50,
                           borderRadius:
-                              BorderRadius.circular(8),
+                              BorderRadius
+                                  .circular(
+                            8,
+                          ),
                           border:
                               Border.all(
                             color:
@@ -586,7 +639,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: Text(
                           auth.errorMessage!,
                           textAlign:
-                              TextAlign.center,
+                              TextAlign
+                                  .center,
                           style: TextStyle(
                             color:
                                 Colors.red.shade700,
@@ -601,36 +655,39 @@ class _AuthScreenState extends State<AuthScreen> {
                       height: 24,
                     ),
 
-                    // ==================================================
-                    // SUBMIT BUTTON
-                    // ==================================================
+                    // ------------------------------------------------
+                    // SUBMIT
+                    // ------------------------------------------------
 
                     SizedBox(
                       height: 52,
-                      child: FilledButton(
+                      child:
+                          FilledButton(
                         onPressed:
                             auth.isLoading
                                 ? null
                                 : _submit,
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                _isLogin
-                                    ? 'LOGIN'
-                                    : 'CREATE ACCOUNT',
-                                style:
-                                    const TextStyle(
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
+                        child:
+                            auth.isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth:
+                                          2,
+                                    ),
+                                  )
+                                : Text(
+                                    _isLogin
+                                        ? 'LOGIN'
+                                        : 'CREATE ACCOUNT',
+                                    style:
+                                        const TextStyle(
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
                       ),
                     ),
 
@@ -638,16 +695,17 @@ class _AuthScreenState extends State<AuthScreen> {
                       height: 12,
                     ),
 
-                    // ==================================================
-                    // SWITCH LOGIN / SIGNUP
-                    // ==================================================
+                    // ------------------------------------------------
+                    // SWITCH MODE
+                    // ------------------------------------------------
 
                     TextButton(
                       onPressed:
                           auth.isLoading
                               ? null
                               : _toggleMode,
-                      child: Text(
+                      child:
+                          Text(
                         _isLogin
                             ? 'Create a new account'
                             : 'Already have an account? Sign in',
@@ -664,7 +722,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       textAlign:
                           TextAlign.center,
                       style:
-                          Theme.of(context)
+                          Theme.of(
+                        context,
+                      )
                               .textTheme
                               .bodySmall,
                     ),
@@ -688,18 +748,19 @@ class _AuthScreenState extends State<AuthScreen> {
         Image.asset(
           'assets/health_logo.png',
           height: 72,
-          errorBuilder: (_, __, ___) {
+          errorBuilder:
+              (_, __, ___) {
             return const Icon(
-              Icons.health_and_safety,
+              Icons
+                  .health_and_safety,
               size: 72,
+              color: Colors.teal,
             );
           },
         ),
-
         const SizedBox(
           height: 12,
         ),
-
         Text(
           _isLogin
               ? 'Welcome back'
@@ -715,21 +776,23 @@ class _AuthScreenState extends State<AuthScreen> {
                     FontWeight.bold,
               ),
         ),
-
         const SizedBox(
           height: 8,
         ),
-
         Text(
           _isLogin
-              ? 'Sign in to access your health information.'
-              : 'Keep your health information organized in one place.',
+              ? 'Sign in to continue to SANA.'
+              : 'Create your account to get started.',
           textAlign:
               TextAlign.center,
           style:
               Theme.of(context)
                   .textTheme
-                  .bodyMedium,
+                  .bodyMedium
+                  ?.copyWith(
+                color: Colors
+                    .grey.shade600,
+              ),
         ),
       ],
     );

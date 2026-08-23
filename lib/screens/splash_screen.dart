@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/routes/app_routes.dart';
 import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({
+    super.key,
+  });
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -16,48 +17,50 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _start();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initialize();
+    });
   }
 
-  Future<void> _start() async {
+  Future<void> _initialize() async {
     final auth = context.read<AuthProvider>();
     final language = context.read<LanguageProvider>();
 
-    await Future.wait([
-      _waitForAuth(auth),
-      _initializeLanguage(language),
-      Future<void>.delayed(const Duration(milliseconds: 800)),
-    ]);
-
-    if (!mounted) {
-      return;
-    }
-
-    if (auth.isAuthenticated) {
-      Navigator.of(context).pushReplacementNamed(
-        AppRoutes.home,
-      );
-    } else {
-      Navigator.of(context).pushReplacementNamed(
-        AppRoutes.home,
+    try {
+      await Future.wait([
+        _initializeAuth(auth),
+        _initializeLanguage(language),
+        Future<void>.delayed(
+          const Duration(milliseconds: 800),
+        ),
+      ]);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Splash initialization failed: '
+        '$error\n$stackTrace',
       );
     }
   }
 
-  Future<void> _waitForAuth(AuthProvider auth) async {
-    while (auth.isLoading) {
-      await Future<void>.delayed(
-        const Duration(milliseconds: 50),
-      );
+  Future<void> _initializeAuth(
+    AuthProvider auth,
+  ) async {
+    if (auth.isInitialized) {
+      return;
     }
+
+    await auth.initialize();
   }
 
   Future<void> _initializeLanguage(
     LanguageProvider language,
   ) async {
-    if (!language.isInitialized) {
-      await language.init();
+    if (language.isInitialized) {
+      return;
     }
+
+    await language.init();
   }
 
   @override

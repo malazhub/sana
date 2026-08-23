@@ -1,64 +1,40 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../models/pharmacy.dart';
-import '../services/supabase_service.dart';
 
 class PharmacyProvider extends ChangeNotifier {
   final List<Pharmacy> _pharmacies = [];
-
   bool _isLoading = false;
   String? _userId;
-
   StreamSubscription<AuthState>? _authSubscription;
+  int _loadGeneration = 0;
 
-  List<Pharmacy> get pharmacies =>
-      List.unmodifiable(_pharmacies);
-
+  List<Pharmacy> get pharmacies => List.unmodifiable(_pharmacies);
   bool get isLoading => _isLoading;
-
   String? get userId => _userId;
-
   SupabaseClient get _client => Supabase.instance.client;
 
   PharmacyProvider() {
     _userId = _client.auth.currentUser?.id;
-
     _authSubscription = _client.auth.onAuthStateChange.listen(
       _handleAuthStateChange,
       onError: (Object error, StackTrace stackTrace) {
-        debugPrint(
-          'Pharmacy auth listener error: '
-          '$error\n$stackTrace',
-        );
+        debugPrint('Pharmacy auth listener error: $error\n$stackTrace');
       },
     );
-
     if (_userId != null) {
       loadPharmacies();
     }
   }
 
-  // ============================================================
-  // AUTHENTICATION
-  // ============================================================
-
-  void _handleAuthStateChange(
-    AuthState authState,
-  ) {
+  void _handleAuthStateChange(AuthState authState) {
     final newUserId = authState.session?.user.id;
+    if (_userId == newUserId) return;
 
-    if (_userId == newUserId) {
-      return;
-    }
-
+    _loadGeneration++;
     _userId = newUserId;
-
-    // Never expose another user's pharmacies.
     _pharmacies.clear();
-
     notifyListeners();
 
     if (newUserId != null) {
@@ -66,232 +42,76 @@ class PharmacyProvider extends ChangeNotifier {
     }
   }
 
-  String? _authenticatedUserId() {
-    final currentUserId =
-        _client.auth.currentUser?.id;
-
-    if (currentUserId == null ||
-        currentUserId.isEmpty) {
-      _userId = null;
-      return null;
-    }
-
-    _userId = currentUserId;
-    return currentUserId;
-  }
-
-  // ============================================================
-  // LOAD
-  // ============================================================
-
   Future<void> loadPharmacies() async {
-    final uid = _authenticatedUserId();
-
-    if (uid == null) {
+    final currentGen = _loadGeneration;
+    final user = _client.auth.currentUser;
+    if (user == null) {
       _pharmacies.clear();
       notifyListeners();
       return;
     }
 
-    if (_isLoading) {
-      return;
-    }
-
-    _setLoading(true);
+    _isLoading = true;
+    notifyListeners();
 
     try {
-      final data = await SupabaseService.fetchFiltered(
-        'pharmacies',
-        'user_id',
-        uid,
-      );
+      final response = await _client
+          .from('pharmacies')
+          .select()
+          .eq('user_id', user.id)
+          .order('name', ascending: true);
 
-      final loadedPharmacies = <Pharmacy>[];
+      if (currentGen != _loadGeneration) return;
 
-      for (final map in data) {
+      _pharmacies.clear();
+      for (final item in response) {
         try {
-          final pharmacy = Pharmacy.fromMap(
-            Map<String, dynamic>.from(map),
-          );
-
-          if (pharmacy.id.isEmpty) {
-            continue;
-          }
-
-          loadedPharmacies.add(pharmacy);
-        } catch (error) {
-          debugPrint(
-            'Invalid pharmacy record: $error',
-          );
+          _pharmacies.add(Pharmacy.fromMap(Map<String, dynamic>.from(item)));
+        } catch (e) {
+          debugPrint('Error parsing pharmacy: $e');
         }
       }
-
-      _pharmacies
-        ..clear()
-        ..addAll(loadedPharmacies);
-    } catch (error, stackTrace) {
-      debugPrint(
-        'Load pharmacies error: '
-        '$error\n$stackTrace',
-      );
+    } catch (e) {
+      debugPrint('Error loading pharmacies: $e');
     } finally {
-      _setLoading(false);
+      if (currentGen == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
-  // ============================================================
-  // ADD
-  // ============================================================
-
-  Future<void> addPharmacy(
-    Pharmacy pharmacy,
-  ) async {
-    final uid = _authenticatedUserId();
-
-    if (uid == null) {
-      throw StateError(
-        'You must be signed in to save a pharmacy.',
-      );
-    }
+  Future<bool> addPharmacy(Pharmacy pharmacy) async {
+    final user = _client.auth.currentUser;
+    if (user == null) return false;
 
     try {
-      final map = pharmacy.toMap();
-
-      // Never trust a user ID supplied by the UI.
-      map['user_id'] = uid;
-
-      await SupabaseService.insert(
-        'pharmacies',
-        map,
-      );
-
-      // Reload so the local state matches Supabase.
-      await loadPharmacies();
-    } catch (error, stackTrace) {
-      debugPrint(
-        'Add pharmacy error: '
-        '$error\n$stackTrace',
-      );
-
-      rethrow;
-    }
-  }
-
-  // ============================================================
-  // UPDATE
-  // ============================================================
-
-  Future<void> updatePharmacy(
-    Pharmacy pharmacy,
-  ) async {
-    final uid = _authenticatedUserId();
-
-    if (uid == null) {
-      throw StateError(
-        'You must be signed in to update a pharmacy.',
-      );
-    }
-
-    final existingIndex = _pharmacies.indexWhere(
-      (item) => item.id == pharmacy.id,
-    );
-
-    if (existingIndex < 0) {
-      throw StateError(
-        'Pharmacy not found.',
-      );
-    }
-
-    try {
-      final map = pharmacy.toMap();
-
-      // Always bind the record to the current user.
-      map['user_id'] = uid;
-
-      await SupabaseService.update(
-        'pharmacies',
-        map,
-        pharmacy.id,
-      );
-
-      await loadPharmacies();
-    } catch (error, stackTrace) {
-      debugPrint(
-        'Update pharmacy error: '
-        '$error\n$stackTrace',
-      );
-
-      rethrow;
-    }
-  }
-
-  // ============================================================
-  // DELETE
-  // ============================================================
-
-  Future<void> deletePharmacy(
-    String id,
-  ) async {
-    final uid = _authenticatedUserId();
-
-    if (uid == null) {
-      throw StateError(
-        'You must be signed in to delete a pharmacy.',
-      );
-    }
-
-    final pharmacyIndex = _pharmacies.indexWhere(
-      (pharmacy) => pharmacy.id == id,
-    );
-
-    if (pharmacyIndex < 0) {
-      return;
-    }
-
-    try {
-      await SupabaseService.delete(
-        'pharmacies',
-        id,
-      );
-
-      _pharmacies.removeAt(pharmacyIndex);
-
+      final pharmMap = pharmacy.toMap()..['user_id'] = user.id;
+      final response = await _client.from('pharmacies').insert(pharmMap).select().single();
+      final newPharmacy = Pharmacy.fromMap(Map<String, dynamic>.from(response));
+      _pharmacies.insert(0, newPharmacy);
       notifyListeners();
-    } catch (error, stackTrace) {
-      debugPrint(
-        'Delete pharmacy error: '
-        '$error\n$stackTrace',
-      );
-
-      rethrow;
+      return true;
+    } catch (e) {
+      debugPrint('Error adding pharmacy: $e');
+      return false;
     }
   }
 
-  // ============================================================
-  // CLEAR
-  // ============================================================
+  Future<bool> deletePharmacy(String id) async {
+    final user = _client.auth.currentUser;
+    if (user == null) return false;
 
-  void clear() {
-    _pharmacies.clear();
-    notifyListeners();
-  }
-
-  // ============================================================
-  // STATE
-  // ============================================================
-
-  void _setLoading(bool value) {
-    if (_isLoading == value) {
-      return;
+    try {
+      await _client.from('pharmacies').delete().eq('id', id).eq('user_id', user.id);
+      _pharmacies.removeWhere((p) => p.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting pharmacy: $e');
+      return false;
     }
-
-    _isLoading = value;
-    notifyListeners();
   }
-
-  // ============================================================
-  // CLEANUP
-  // ============================================================
 
   @override
   void dispose() {

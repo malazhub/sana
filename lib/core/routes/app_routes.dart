@@ -34,6 +34,9 @@ class AppRoutes {
   static final Map<String, WidgetBuilder> routes = {
     splash: (_) => const SplashScreen(),
     auth: (_) => const AuthScreen(),
+
+    // Kept for existing internal navigation compatibility.
+    // Authentication authorization is handled by AuthGate.
     home: (_) => const HomeScreen(),
 
     adminLogin: (_) => const AdminLoginScreen(),
@@ -51,6 +54,10 @@ class AppRoutes {
     RouteSettings settings,
   ) {
     final name = settings.name ?? '';
+
+    // ----------------------------------------------------------
+    // SHARE LINKS
+    // ----------------------------------------------------------
 
     final uri = Uri.tryParse(name);
 
@@ -76,6 +83,10 @@ class AppRoutes {
       }
     }
 
+    // ----------------------------------------------------------
+    // REGISTERED ROUTES
+    // ----------------------------------------------------------
+
     final builder = routes[name];
 
     if (builder != null) {
@@ -84,6 +95,14 @@ class AppRoutes {
         settings: settings,
       );
     }
+
+    // ----------------------------------------------------------
+    // UNKNOWN ROUTES
+    // ----------------------------------------------------------
+    //
+    // Do NOT redirect unknown routes directly to Home.
+    // Home requires the authentication/subscription gate.
+    //
 
     return MaterialPageRoute(
       builder: (_) => const _UnknownRouteScreen(),
@@ -104,12 +123,11 @@ class _UnknownRouteScreen extends StatelessWidget {
       body: Center(
         child: FilledButton(
           onPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              AppRoutes.home,
-              (route) => false,
+            Navigator.of(context).popUntil(
+              (route) => route.isFirst,
             );
           },
-          child: const Text('Go to Home'),
+          child: const Text('Return'),
         ),
       ),
     );

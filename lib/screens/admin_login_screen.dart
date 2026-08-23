@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
-import 'admin_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({
@@ -19,12 +18,10 @@ class _AdminLoginScreenState
   final GlobalKey<FormState> _formKey =
       GlobalKey<FormState>();
 
-  final TextEditingController
-      _emailController =
+  final TextEditingController _emailController =
       TextEditingController();
 
-  final TextEditingController
-      _passwordController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
   bool _obscurePassword = true;
@@ -36,6 +33,10 @@ class _AdminLoginScreenState
     super.dispose();
   }
 
+  // ============================================================
+  // ADMIN LOGIN
+  // ============================================================
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -43,79 +44,66 @@ class _AdminLoginScreenState
 
     FocusScope.of(context).unfocus();
 
-    final AuthProvider auth =
+    final auth =
         context.read<AuthProvider>();
 
     auth.clearError();
 
-    final LoginResult result =
-        await auth.signIn(
-      email:
-          _emailController.text.trim(),
-      password:
-          _passwordController.text,
+    final success = await auth.signIn(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
     );
 
     if (!mounted) {
       return;
     }
 
-    switch (result) {
-      case LoginResult.admin:
-        /*
-         * signIn() has already loaded the users-table
-         * profile. Verify the role once more immediately
-         * before opening the protected administrator screen.
-         */
-        if (!auth.isAuthenticated ||
-            !auth.isAdmin) {
-          await auth.signOut();
-
-          if (!mounted) {
-            return;
-          }
-
-          _showError(
-            'Administrator access required.',
-          );
-
-          return;
-        }
-
-        await Navigator.of(context)
-            .pushReplacement(
-          MaterialPageRoute(
-            builder: (_) =>
-                const AdminScreen(),
-          ),
-        );
-
-        return;
-
-      case LoginResult.activeUser:
-      case LoginResult.notActivated:
-      case LoginResult.userNotFound:
-        await auth.signOut();
-
-        if (!mounted) {
-          return;
-        }
-
-        _showError(
-          'Administrator access required.',
-        );
-
-        return;
-
-      case LoginResult.failed:
-        _showError(
-          auth.errorMessage ??
-              'Unable to sign in. Please check your email and password.',
-        );
-
-        return;
+    if (!success) {
+      _showError(
+        auth.errorMessage ??
+            'Unable to sign in. Please check your email and password.',
+      );
+      return;
     }
+
+    /*
+     * Authentication succeeded, but authentication alone
+     * does NOT grant administrator access.
+     *
+     * AuthProvider.loadProfile() has loaded the users.role
+     * value before signIn() returns.
+     */
+    if (!auth.isAuthenticated || !auth.isAdmin) {
+      await auth.signOut();
+
+      if (!mounted) {
+        return;
+      }
+
+      _showError(
+        'Administrator access required.',
+      );
+
+      return;
+    }
+
+    /*
+     * Do not manually push AdminScreen here.
+     *
+     * The application-level AuthGate is responsible for
+     * choosing AdminScreen after AuthProvider changes.
+     *
+     * If this screen is reached from another navigation path,
+     * simply return to the root.
+     */
+    Navigator.of(context).popUntil(
+      (route) => route.isFirst,
+    );
   }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
 
   void _showError(
     String message,
@@ -128,32 +116,41 @@ class _AdminLoginScreenState
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content:
-              Text(message),
+          content: Text(message),
           backgroundColor:
               Colors.red.shade700,
         ),
       );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    final AuthProvider auth =
+  Widget build(BuildContext context) {
+    final auth =
         context.watch<AuthProvider>();
 
     return Scaffold(
+      backgroundColor:
+          const Color(0xFFF4FAF9),
       appBar: AppBar(
+        backgroundColor:
+            const Color(0xFF009688),
+        foregroundColor:
+            Colors.white,
         title: const Text(
           'Administrator Login',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: Center(
-          child:
-              SingleChildScrollView(
+          child: SingleChildScrollView(
             padding:
                 const EdgeInsets.all(24),
             child: ConstrainedBox(
@@ -162,9 +159,15 @@ class _AdminLoginScreenState
                 maxWidth: 460,
               ),
               child: Card(
+                elevation: 0,
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(22),
+                ),
                 child: Padding(
                   padding:
-                      const EdgeInsets.all(24),
+                      const EdgeInsets.all(26),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -175,7 +178,9 @@ class _AdminLoginScreenState
                         const Icon(
                           Icons
                               .admin_panel_settings,
-                          size: 80,
+                          size: 78,
+                          color:
+                              Color(0xFF009688),
                         ),
 
                         const SizedBox(
@@ -186,8 +191,7 @@ class _AdminLoginScreenState
                           'Administrator Access',
                           textAlign:
                               TextAlign.center,
-                          style:
-                              TextStyle(
+                          style: TextStyle(
                             fontSize: 26,
                             fontWeight:
                                 FontWeight.bold,
@@ -206,12 +210,17 @@ class _AdminLoginScreenState
                             color: Colors
                                 .grey
                                 .shade700,
+                            height: 1.4,
                           ),
                         ),
 
                         const SizedBox(
                           height: 28,
                         ),
+
+                        // ------------------------------------------------
+                        // EMAIL
+                        // ------------------------------------------------
 
                         TextFormField(
                           controller:
@@ -224,6 +233,9 @@ class _AdminLoginScreenState
                           textInputAction:
                               TextInputAction
                                   .next,
+                          autofillHints: const [
+                            AutofillHints.email,
+                          ],
                           decoration:
                               const InputDecoration(
                             labelText:
@@ -251,9 +263,7 @@ class _AdminLoginScreenState
                             }
 
                             if (!email
-                                .contains(
-                              '@',
-                            )) {
+                                .contains('@')) {
                               return 'Please enter a valid email.';
                             }
 
@@ -265,6 +275,10 @@ class _AdminLoginScreenState
                           height: 16,
                         ),
 
+                        // ------------------------------------------------
+                        // PASSWORD
+                        // ------------------------------------------------
+
                         TextFormField(
                           controller:
                               _passwordController,
@@ -275,6 +289,9 @@ class _AdminLoginScreenState
                           textInputAction:
                               TextInputAction
                                   .done,
+                          autofillHints: const [
+                            AutofillHints.password,
+                          ],
                           onFieldSubmitted:
                               (_) {
                             if (!auth
@@ -310,8 +327,7 @@ class _AdminLoginScreenState
                                             },
                                           );
                                         },
-                              icon:
-                                  Icon(
+                              icon: Icon(
                                 _obscurePassword
                                     ? Icons
                                         .visibility_outlined
@@ -336,6 +352,10 @@ class _AdminLoginScreenState
                           height: 24,
                         ),
 
+                        // ------------------------------------------------
+                        // LOGIN
+                        // ------------------------------------------------
+
                         SizedBox(
                           height: 52,
                           child:
@@ -348,22 +368,21 @@ class _AdminLoginScreenState
                             icon:
                                 auth.isLoading
                                     ? const SizedBox(
-                                        width:
-                                            20,
-                                        height:
-                                            20,
+                                        width: 20,
+                                        height: 20,
                                         child:
                                             CircularProgressIndicator(
                                           strokeWidth:
                                               2,
+                                          color:
+                                              Colors.white,
                                         ),
                                       )
                                     : const Icon(
                                         Icons
                                             .login,
                                       ),
-                            label:
-                                Text(
+                            label: Text(
                               auth.isLoading
                                   ? 'Signing in...'
                                   : 'SIGN IN AS ADMINISTRATOR',
@@ -374,6 +393,10 @@ class _AdminLoginScreenState
                         const SizedBox(
                           height: 12,
                         ),
+
+                        // ------------------------------------------------
+                        // CANCEL
+                        // ------------------------------------------------
 
                         TextButton(
                           onPressed:
@@ -387,6 +410,23 @@ class _AdminLoginScreenState
                           child:
                               const Text(
                             'Cancel',
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 8,
+                        ),
+
+                        Text(
+                          'Administrator privileges are determined by the server-side users.role value.',
+                          textAlign:
+                              TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors
+                                .grey
+                                .shade600,
+                            height: 1.4,
                           ),
                         ),
                       ],

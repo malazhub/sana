@@ -10,22 +10,6 @@ class SubscriptionService {
   // ADMIN: CONFIRM PAYMENT + ACTIVATE SUBSCRIPTION
   // ============================================================
 
-  /// Confirms a customer's payment and activates the customer's
-  /// subscription through the PostgreSQL RPC.
-  ///
-  /// IMPORTANT:
-  /// Flutter does NOT calculate the subscription expiry date.
-  ///
-  /// PostgreSQL is responsible for:
-  /// - creating/updating the subscription
-  /// - setting activated_at
-  /// - calculating expires_at
-  /// - setting the subscription status
-  /// - recording the payment
-  ///
-  /// RPC:
-  ///
-  ///   public.admin_confirm_payment(...)
   static Future<void> adminConfirmPayment({
     required String userId,
     required String transactionId,
@@ -34,7 +18,8 @@ class SubscriptionService {
     DateTime? paidAt,
     String? notes,
   }) async {
-    final normalizedUserId = userId.trim();
+    final normalizedUserId =
+        userId.trim();
 
     final normalizedTransactionId =
         transactionId.trim();
@@ -66,18 +51,42 @@ class SubscriptionService {
     }
 
     try {
+      /*
+       * IMPORTANT:
+       *
+       * Flutter deliberately does NOT calculate:
+       *
+       *     expires_at
+       *
+       * The protected PostgreSQL RPC is responsible for:
+       *
+       * - authorization
+       * - payment recording
+       * - activation
+       * - activated_at
+       * - expires_at
+       * - subscription status
+       *
+       * This prevents the client from choosing its own
+       * subscription expiry date.
+       */
       await _supabase.rpc(
         'admin_confirm_payment',
         params: {
-          'target_user_id': normalizedUserId,
+          'target_user_id':
+              normalizedUserId,
           'p_transaction_id':
               normalizedTransactionId,
-          'p_amount': amount,
-          'p_currency': normalizedCurrency,
-          'p_paid_at': paidAt
-              ?.toUtc()
-              .toIso8601String(),
-          'p_notes': normalizedNotes,
+          'p_amount':
+              amount,
+          'p_currency':
+              normalizedCurrency,
+          'p_paid_at':
+              paidAt
+                  ?.toUtc()
+                  .toIso8601String(),
+          'p_notes':
+              normalizedNotes,
         },
       );
     } on PostgrestException catch (error) {
@@ -94,6 +103,12 @@ class SubscriptionService {
     } catch (error) {
       final message =
           error.toString().trim();
+
+      if (message.isEmpty) {
+        throw Exception(
+          'Unable to confirm payment.',
+        );
+      }
 
       if (message.startsWith(
         'Exception: ',
@@ -113,11 +128,6 @@ class SubscriptionService {
   // CURRENT USER SUBSCRIPTION
   // ============================================================
 
-  /// Returns the authenticated user's subscription.
-  ///
-  /// Returns null when:
-  /// - there is no authenticated user
-  /// - the user has no subscription record
   static Future<Map<String, dynamic>?>
       getCurrentSubscription() async {
     final user =
@@ -127,44 +137,43 @@ class SubscriptionService {
       return null;
     }
 
-    final response =
-        await _supabase
-            .from('user_subscriptions')
-            .select(
-              'id, '
-              'user_id, '
-              'user_email, '
-              'user_phone, '
-              'status, '
-              'activated_at, '
-              'expires_at, '
-              'reminder_20day_sent, '
-              'created_at',
-            )
-            .eq(
-              'user_id',
-              user.id,
-            )
-            .maybeSingle();
+    try {
+      final response =
+          await _supabase
+              .from('user_subscriptions')
+              .select(
+                'id, '
+                'user_id, '
+                'user_email, '
+                'user_phone, '
+                'status, '
+                'activated_at, '
+                'expires_at, '
+                'reminder_20day_sent, '
+                'created_at',
+              )
+              .eq(
+                'user_id',
+                user.id,
+              )
+              .maybeSingle();
 
-    if (response == null) {
-      return null;
+      if (response == null) {
+        return null;
+      }
+
+      return Map<String, dynamic>.from(
+        response,
+      );
+    } on PostgrestException {
+      rethrow;
     }
-
-    return Map<String, dynamic>.from(
-      response,
-    );
   }
 
   // ============================================================
-  // ACTIVE SUBSCRIPTION CHECK
+  // ACTIVE SUBSCRIPTION
   // ============================================================
 
-  /// Returns true only when:
-  ///
-  /// 1. A subscription exists.
-  /// 2. Its status is active.
-  /// 3. expires_at is in the future.
   static Future<bool>
       hasActiveSubscription() async {
     final subscription =
@@ -203,7 +212,6 @@ class SubscriptionService {
   // EXPIRY DATE
   // ============================================================
 
-  /// Returns the authenticated user's subscription expiry date.
   static Future<DateTime?>
       getCurrentSubscriptionExpiry() async {
     final subscription =
@@ -222,12 +230,6 @@ class SubscriptionService {
   // REMAINING DAYS
   // ============================================================
 
-  /// Returns the number of complete days remaining.
-  ///
-  /// Returns 0 when:
-  /// - no subscription exists
-  /// - expiry date is missing
-  /// - subscription has expired
   static Future<int>
       getRemainingDays() async {
     final expiresAt =
@@ -250,11 +252,9 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // EXPIRY STATUS
+  // EXPIRED
   // ============================================================
 
-  /// Returns true when an expiry date exists and is no longer
-  /// in the future.
   static Future<bool>
       hasExpiredSubscription() async {
     final expiresAt =
@@ -270,11 +270,9 @@ class SubscriptionService {
   }
 
   // ============================================================
-  // 20-DAY REMINDER WINDOW
+  // 20-DAY REMINDER
   // ============================================================
 
-  /// Returns true when an active subscription expires within
-  /// the next 20 days.
   static Future<bool>
       expiresWithin20Days() async {
     final subscription =
@@ -311,11 +309,11 @@ class SubscriptionService {
       return false;
     }
 
-    final difference =
-        expiresAt.difference(now);
-
-    return difference <=
-        const Duration(days: 20);
+    return expiresAt
+            .difference(now) <=
+        const Duration(
+          days: 20,
+        );
   }
 
   // ============================================================

@@ -57,55 +57,135 @@ class MyApp extends StatelessWidget {
   });
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<LanguageProvider>(
           create: (_) => LanguageProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<MedicationProvider>(
           create: (_) => MedicationProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<DoctorProvider>(
           create: (_) => DoctorProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<PharmacyProvider>(
           create: (_) => PharmacyProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<DocumentProvider>(
           create: (_) => DocumentProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<InsuranceProvider>(
           create: (_) => InsuranceProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<AdminProvider>(
           create: (_) => AdminProvider(),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<AuthProvider>(
           create: (_) => AuthProvider(),
         ),
       ],
-      child: Consumer<LanguageProvider>(
-        builder: (
-          context,
-          language,
-          child,
-        ) {
-          return MaterialApp(
-            title: 'SANA',
-            debugShowCheckedModeBanner: false,
-            locale: language.locale,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.teal,
-              ),
-              useMaterial3: true,
+      child: const _SanaApp(),
+    );
+  }
+}
+
+class _SanaApp extends StatefulWidget {
+  const _SanaApp();
+
+  @override
+  State<_SanaApp> createState() => _SanaAppState();
+}
+
+class _SanaAppState extends State<_SanaApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      context.read<AuthProvider>().initialize();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<LanguageProvider, AuthProvider>(
+      builder: (
+        context,
+        language,
+        auth,
+        child,
+      ) {
+        return MaterialApp(
+          title: 'SANA',
+          debugShowCheckedModeBanner: false,
+          locale: language.locale,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.teal,
             ),
-            home: const HomeScreen(),
-          );
-        },
+            useMaterial3: true,
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(
+              centerTitle: true,
+            ),
+          ),
+          home: _buildHome(auth),
+        );
+      },
+    );
+  }
+
+  Widget _buildHome(AuthProvider auth) {
+    if (!auth.isInitialized) {
+      return const _AuthLoadingScreen();
+    }
+
+    return const HomeScreen();
+  }
+}
+
+class _AuthLoadingScreen extends StatelessWidget {
+  const _AuthLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.health_and_safety,
+              color: Colors.teal,
+              size: 56,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'SANA',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                color: Colors.teal,
+              ),
+            ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: 30,
+              height: 30,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: Colors.teal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

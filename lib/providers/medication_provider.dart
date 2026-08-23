@@ -8,11 +8,9 @@ import '../models/medication.dart';
 import '../models/medication_log.dart';
 
 class MedicationProvider extends ChangeNotifier {
-  static const String _medicationsStorageKey =
-      'saved_medications_v2';
+  static const String _medicationsStorageKey = 'saved_medications_v2';
 
-  static const String _logsStorageKey =
-      'saved_medication_logs_v2';
+  static const String _logsStorageKey = 'saved_medication_logs_v2';
 
   final List<Medication> _medications = [];
   final List<MedicationLog> _logs = [];
@@ -20,11 +18,9 @@ class MedicationProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  List<Medication> get medications =>
-      List.unmodifiable(_medications);
+  List<Medication> get medications => List.unmodifiable(_medications);
 
-  List<MedicationLog> get logs =>
-      List.unmodifiable(_logs);
+  List<MedicationLog> get logs => List.unmodifiable(_logs);
 
   bool get isLoading => _isLoading;
 
@@ -163,9 +159,7 @@ class MedicationProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      await client
-          .from('medications')
-          .upsert(
+      await client.from('medications').upsert(
             medicationToSave.toSupabaseMap(),
             onConflict: 'id',
           );
@@ -397,11 +391,9 @@ class MedicationProvider extends ChangeNotifier {
       );
     }
 
-    final normalizedStatus =
-        status.trim().toLowerCase();
+    final normalizedStatus = status.trim().toLowerCase();
 
-    if (normalizedStatus != 'taken' &&
-        normalizedStatus != 'not_taken') {
+    if (normalizedStatus != 'taken' && normalizedStatus != 'not_taken') {
       throw ArgumentError(
         'Status must be "taken" or "not_taken".',
       );
@@ -487,8 +479,7 @@ class MedicationProvider extends ChangeNotifier {
     final medicationIds = _medications
         .where(
           (medication) =>
-              medication.userId == userId &&
-              medication.id.isNotEmpty,
+              medication.userId == userId && medication.id.isNotEmpty,
         )
         .map(
           (medication) => medication.id,
@@ -540,11 +531,9 @@ class MedicationProvider extends ChangeNotifier {
 
   Future<void> _loadLocalMedications() async {
     try {
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-      final data =
-          prefs.getString(
+      final data = prefs.getString(
             _medicationsStorageKey,
           ) ??
           prefs.getString(
@@ -569,8 +558,7 @@ class MedicationProvider extends ChangeNotifier {
         }
 
         try {
-          final medication =
-              Medication.fromMap(
+          final medication = Medication.fromMap(
             Map<String, dynamic>.from(item),
           );
 
@@ -585,10 +573,8 @@ class MedicationProvider extends ChangeNotifier {
             continue;
           }
 
-          final exists =
-              _medications.any(
-            (existing) =>
-                existing.id == medication.id,
+          final exists = _medications.any(
+            (existing) => existing.id == medication.id,
           );
 
           if (!exists) {
@@ -612,13 +598,11 @@ class MedicationProvider extends ChangeNotifier {
 
   Future<void> _loadLocalLogs() async {
     try {
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-      final data =
-          prefs.getString(
-            _logsStorageKey,
-          );
+      final data = prefs.getString(
+        _logsStorageKey,
+      );
 
       if (data == null || data.trim().isEmpty) {
         return;
@@ -632,13 +616,11 @@ class MedicationProvider extends ChangeNotifier {
 
       _logs.clear();
 
-      final medicationIds =
-          _medications
-              .map(
-                (medication) =>
-                    medication.id,
-              )
-              .toSet();
+      final medicationIds = _medications
+          .map(
+            (medication) => medication.id,
+          )
+          .toSet();
 
       for (final item in decoded) {
         if (item is! Map) {
@@ -646,8 +628,7 @@ class MedicationProvider extends ChangeNotifier {
         }
 
         try {
-          final log =
-              MedicationLog.fromMap(
+          final log = MedicationLog.fromMap(
             Map<String, dynamic>.from(item),
           );
 
@@ -683,13 +664,11 @@ class MedicationProvider extends ChangeNotifier {
 
   Future<void> _saveMedicationsToLocal() async {
     try {
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
       final data = _medications
           .map(
-            (medication) =>
-                medication.toMap(),
+            (medication) => medication.toMap(),
           )
           .toList();
 
@@ -706,8 +685,7 @@ class MedicationProvider extends ChangeNotifier {
 
   Future<void> _saveLogsToLocal() async {
     try {
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
       final data = _logs
           .map(
@@ -761,8 +739,7 @@ class MedicationProvider extends ChangeNotifier {
     _medications.clear();
     _logs.clear();
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.remove(
       _medicationsStorageKey,

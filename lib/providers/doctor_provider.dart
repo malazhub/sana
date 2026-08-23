@@ -14,6 +14,12 @@ class DoctorProvider extends ChangeNotifier {
 
   StreamSubscription<AuthState>? _authSubscription;
 
+  /*
+   * Used to prevent an older asynchronous load from writing
+   * another user's data into the current user's provider state.
+   */
+  int _loadGeneration = 0;
+
   List<Doctor> get doctors => List.unmodifiable(_doctors);
 
   bool get isLoading => _isLoading;
@@ -25,7 +31,8 @@ class DoctorProvider extends ChangeNotifier {
   DoctorProvider() {
     _userId = _client.auth.currentUser?.id;
 
-    _authSubscription = _client.auth.onAuthStateChange.listen(
+    _authSubscription =
+        _client.auth.onAuthStateChange.listen(
       _handleAuthStateChange,
       onError: (Object error, StackTrace stackTrace) {
         debugPrint(
@@ -47,11 +54,18 @@ class DoctorProvider extends ChangeNotifier {
   void _handleAuthStateChange(
     AuthState authState,
   ) {
-    final newUserId = authState.session?.user.id;
+    final newUserId =
+        authState.session?.user.id;
 
     if (_userId == newUserId) {
       return;
     }
+
+    /*
+     * Invalidate every load that was started for the previous
+     * authentication state.
+     */
+    _loadGeneration++;
 
     _userId = newUserId;
 
@@ -87,6 +101,8 @@ class DoctorProvider extends ChangeNotifier {
     final uid = _authenticatedUserId();
 
     if (uid == null) {
+      _loadGeneration++;
+
       _doctors.clear();
       notifyListeners();
       return;
@@ -96,14 +112,33 @@ class DoctorProvider extends ChangeNotifier {
       return;
     }
 
+    /*
+     * Capture the current authentication generation.
+     *
+     * If authentication changes while Supabase is loading,
+     * the result will be discarded instead of being displayed
+     * to the new user.
+     */
+    final loadGeneration =
+        ++_loadGeneration;
+
     _setLoading(true);
 
     try {
-      final data = await SupabaseService.fetchFiltered(
+      final data =
+          await SupabaseService.fetchFiltered(
         'doctors',
         'user_id',
         uid,
       );
+
+      /*
+       * Do not apply a response belonging to a previous user.
+       */
+      if (loadGeneration != _loadGeneration ||
+          _client.auth.currentUser?.id != uid) {
+        return;
+      }
 
       final loadedDoctors = <Doctor>[];
 
@@ -121,16 +156,39 @@ class DoctorProvider extends ChangeNotifier {
         }
       }
 
+      /*
+       * Verify authentication one more time immediately before
+       * replacing the local collection.
+       */
+      if (loadGeneration != _loadGeneration ||
+          _client.auth.currentUser?.id != uid) {
+        return;
+      }
+
       _doctors
         ..clear()
         ..addAll(loadedDoctors);
     } catch (error, stackTrace) {
+      /*
+       * Ignore errors from a request that is no longer relevant
+       * to the current authentication state.
+       */
+      if (loadGeneration != _loadGeneration) {
+        return;
+      }
+
       debugPrint(
         'Load doctors error: '
         '$error\n$stackTrace',
       );
     } finally {
-      _setLoading(false);
+      /*
+       * Only the currently relevant load is allowed to change
+       * the loading state.
+       */
+      if (loadGeneration == _loadGeneration) {
+        _setLoading(false);
+      }
     }
   }
 
@@ -190,7 +248,8 @@ class DoctorProvider extends ChangeNotifier {
       );
     }
 
-    final existingIndex = _doctors.indexWhere(
+    final existingIndex =
+        _doctors.indexWhere(
       (item) => item.id == doctor.id,
     );
 
@@ -238,7 +297,8 @@ class DoctorProvider extends ChangeNotifier {
       );
     }
 
-    final doctorIndex = _doctors.indexWhere(
+    final doctorIndex =
+        _doctors.indexWhere(
       (doctor) => doctor.id == id,
     );
 
@@ -257,9 +317,27 @@ class DoctorProvider extends ChangeNotifier {
         id,
       );
 
-      _doctors.removeAt(doctorIndex);
+      /*
+       * Make sure the authenticated account did not change
+       * while the delete request was running.
+       */
+      if (_client.auth.currentUser?.id != uid) {
+        return;
+      }
 
-      notifyListeners();
+      /*
+       * Re-check the collection because another operation may
+       * have refreshed it while the delete was in progress.
+       */
+      final currentIndex =
+          _doctors.indexWhere(
+        (doctor) => doctor.id == id,
+      );
+
+      if (currentIndex >= 0) {
+        _doctors.removeAt(currentIndex);
+        notifyListeners();
+      }
     } catch (error, stackTrace) {
       debugPrint(
         'Delete doctor error: '
@@ -275,6 +353,8 @@ class DoctorProvider extends ChangeNotifier {
   // ============================================================
 
   void clear() {
+    _loadGeneration++;
+
     _doctors.clear();
     notifyListeners();
   }
@@ -298,7 +378,11 @@ class DoctorProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _loadGeneration++;
+
     _authSubscription?.cancel();
+    _authSubscription = null;
+
     super.dispose();
   }
 }

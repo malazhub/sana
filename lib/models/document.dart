@@ -4,6 +4,7 @@ import 'dart:typed_data';
 class DocumentModel {
   final String id;
   final String userId;
+  final String guestId;
   final String name;
   final String fileType;
   final String? fileUrl;
@@ -14,6 +15,7 @@ class DocumentModel {
   const DocumentModel({
     required this.id,
     required this.userId,
+    required this.guestId,
     required this.name,
     required this.fileType,
     required this.date,
@@ -31,21 +33,35 @@ class DocumentModel {
   ) {
     return DocumentModel(
       id: map['id']?.toString() ?? '',
-      userId: map['user_id']?.toString() ?? map['userId']?.toString() ?? '',
+      userId:
+          map['user_id']?.toString() ??
+          map['userId']?.toString() ??
+          '',
+      guestId:
+          map['guest_id']?.toString() ??
+          map['guestId']?.toString() ??
+          '',
       name: map['name']?.toString() ?? '',
       fileType:
-          map['file_type']?.toString() ?? map['fileType']?.toString() ?? 'file',
+          map['file_type']?.toString() ??
+          map['fileType']?.toString() ??
+          'file',
       fileUrl: _nullableString(
-        map['file_url'] ?? map['fileUrl'] ?? map['path'],
+        map['file_url'] ??
+            map['fileUrl'] ??
+            map['path'],
       ),
       storagePath: _nullableString(
-        map['storage_path'] ?? map['storagePath'],
+        map['storage_path'] ??
+            map['storagePath'],
       ),
       date: _parseDate(
-        map['date'] ?? map['upload_date'],
+        map['date'] ??
+            map['upload_date'],
       ),
       bytes: _parseBytes(
-        map['bytes_data'] ?? map['bytes'],
+        map['bytes_data'] ??
+            map['bytes'],
       ),
     );
   }
@@ -57,17 +73,16 @@ class DocumentModel {
   Map<String, dynamic> toMap() {
     String bytesData = '';
 
-    // Keep large files out of SharedPreferences.
-    //
-    // Actual document files are stored in Supabase Storage.
-    // Small byte arrays are retained only for local compatibility.
-    if (bytes != null && bytes!.isNotEmpty && bytes!.length <= 300000) {
+    if (bytes != null &&
+        bytes!.isNotEmpty &&
+        bytes!.length <= 300000) {
       bytesData = base64Encode(bytes!);
     }
 
     return {
       'id': id,
       'user_id': userId,
+      'guest_id': guestId,
       'name': name,
       'file_type': fileType,
       'file_url': fileUrl ?? '',
@@ -81,19 +96,35 @@ class DocumentModel {
   // SUPABASE MAP
   // ============================================================
 
-  /// Payload matching the Supabase `documents` table.
-  ///
-  /// The actual file is stored in the `documents` Storage bucket.
-  /// `path` remains compatible with the existing database schema.
   Map<String, dynamic> toSupabaseMap() {
-    return {
+    final map = <String, dynamic>{
       'id': id,
-      'user_id': userId,
       'name': name,
       'file_type': fileType,
       'path': fileUrl ?? '',
       'upload_date': date.toIso8601String(),
     };
+
+    /*
+     * Guest records belong to the shared guest database.
+     *
+     * Registered records belong only to their authenticated
+     * account.
+     *
+     * Never send both ownership fields for the same record.
+     */
+    if (userId.trim().isNotEmpty) {
+      map['user_id'] = userId;
+      map['guest_id'] = null;
+    } else {
+      map['user_id'] = null;
+      map['guest_id'] =
+          guestId.trim().isEmpty
+              ? 'guest'
+              : guestId.trim();
+    }
+
+    return map;
   }
 
   // ============================================================
@@ -103,6 +134,7 @@ class DocumentModel {
   DocumentModel copyWith({
     String? id,
     String? userId,
+    String? guestId,
     String? name,
     String? fileType,
     String? fileUrl,
@@ -113,6 +145,7 @@ class DocumentModel {
     return DocumentModel(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      guestId: guestId ?? this.guestId,
       name: name ?? this.name,
       fileType: fileType ?? this.fileType,
       fileUrl: fileUrl ?? this.fileUrl,
@@ -144,7 +177,9 @@ class DocumentModel {
         final values = rawBytes
             .whereType<int>()
             .where(
-              (value) => value >= 0 && value <= 255,
+              (value) =>
+                  value >= 0 &&
+                  value <= 255,
             )
             .toList();
 
@@ -155,29 +190,35 @@ class DocumentModel {
         return Uint8List.fromList(values);
       }
 
-      final value = rawBytes.toString().trim();
+      final value =
+          rawBytes.toString().trim();
 
       if (value.isEmpty) {
         return null;
       }
 
-      // Supports data URLs such as:
-      // data:image/png;base64,...
       if (value.startsWith('data:')) {
-        final data = Uri.tryParse(value)?.data;
+        final data =
+            Uri.tryParse(value)?.data;
 
         if (data != null) {
-          final result = data.contentAsBytes();
+          final result =
+              data.contentAsBytes();
 
-          return result.isEmpty ? null : result;
+          return result.isEmpty
+              ? null
+              : result;
         }
 
         return null;
       }
 
-      final result = base64Decode(value);
+      final result =
+          base64Decode(value);
 
-      return result.isEmpty ? null : result;
+      return result.isEmpty
+          ? null
+          : result;
     } catch (_) {
       return null;
     }
@@ -204,8 +245,11 @@ class DocumentModel {
       return null;
     }
 
-    final result = value.toString().trim();
+    final result =
+        value.toString().trim();
 
-    return result.isEmpty ? null : result;
+    return result.isEmpty
+        ? null
+        : result;
   }
 }

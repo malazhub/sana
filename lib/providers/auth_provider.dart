@@ -3,29 +3,19 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum LoginResult {
-  admin,
-  activeUser,
-  notActivated,
-  userNotFound,
-  failed,
-}
-
 class AuthProvider extends ChangeNotifier {
-  AuthProvider() {
-    _initialize();
-  }
-
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase =
+      Supabase.instance.client;
 
   StreamSubscription<AuthState>? _authSubscription;
 
-  User? _user;
+  User? _currentUser;
+
   Map<String, dynamic>? _profile;
 
-  bool _isAuthenticated = false;
-  bool _isGuest = true;
-  bool _isLoading = true;
+  bool _isLoading = false;
+
+  bool _isInitialized = false;
 
   String? _errorMessage;
 
@@ -33,218 +23,280 @@ class AuthProvider extends ChangeNotifier {
   // GETTERS
   // ============================================================
 
-  User? get user => _user;
-
-  User? get currentUser => _user;
+  User? get currentUser => _currentUser;
 
   Map<String, dynamic>? get profile => _profile;
 
-  bool get isAuthenticated => _isAuthenticated;
-
-  bool get isGuest => _isGuest;
-
   bool get isLoading => _isLoading;
+
+  bool get isInitialized => _isInitialized;
 
   String? get errorMessage => _errorMessage;
 
-  String? get userId => _user?.id;
+  bool get isAuthenticated =>
+      _currentUser != null;
 
-  bool get isAdmin {
-    final role = _profile?['role']?.toString().trim().toLowerCase();
+  String get userId =>
+      _currentUser?.id ?? '';
 
-    return role == 'admin';
+  String get email =>
+      _currentUser?.email ?? '';
+
+  String get role =>
+      _profile?['role']
+              ?.toString()
+              .trim()
+              .toLowerCase() ??
+          'user';
+
+  bool get isAdmin =>
+      isAuthenticated &&
+      role == 'admin';
+
+  bool get isActive {
+    final value =
+        _profile?['is_active'];
+
+    if (value is bool) {
+      return value;
+    }
+
+    return false;
   }
 
-  bool get isActiveUser {
-    final role = _profile?['role']?.toString().trim().toLowerCase();
+  DateTime? get expiryDate {
+    final value =
+        _profile?['expiry_date'];
 
-    final isActive = _profile?['is_active'] == true;
+    if (value == null) {
+      return null;
+    }
 
-    return role != 'admin' && isActive;
+    final text =
+        value.toString().trim();
+
+    if (text.isEmpty) {
+      return null;
+    }
+
+    return DateTime.tryParse(
+      text,
+    )?.toUtc();
+  }
+
+  bool get hasValidSubscription {
+    if (!isAuthenticated) {
+      return false;
+    }
+
+    /*
+     * Administrators do not require a customer
+     * subscription to access the admin panel.
+     */
+    if (isAdmin) {
+      return true;
+    }
+
+    if (!isActive) {
+      return false;
+    }
+
+    final expiry =
+        expiryDate;
+
+    if (expiry == null) {
+      return false;
+    }
+
+    return expiry.isAfter(
+      DateTime.now().toUtc(),
+    );
+  }
+
+  bool get subscriptionExpired {
+    final expiry =
+        expiryDate;
+
+    if (expiry == null) {
+      return false;
+    }
+
+    return !expiry.isAfter(
+      DateTime.now().toUtc(),
+    );
+  }
+
+  int? get daysRemaining {
+    final expiry =
+        expiryDate;
+
+    if (expiry == null) {
+      return null;
+    }
+
+    final now =
+        DateTime.now().toUtc();
+
+    if (!expiry.isAfter(now)) {
+      return 0;
+    }
+
+    return expiry
+        .difference(now)
+        .inDays;
   }
 
   // ============================================================
   // INITIALIZATION
   // ============================================================
 
-  Future<void> _initialize() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> initialize() async {
+    if (_isInitialized) {
+      return;
+    }
+
+    _setLoading(true);
+    _clearError();
 
     try {
-      final session = _supabase.auth.currentSession;
+      _currentUser =
+          _supabase.auth.currentUser;
 
-      if (session == null) {
-        _setGuest(notify: false);
-      } else {
-        await _restoreSessionUser(
-          session.user,
-          notify: false,
-        );
-      }
-
-      _authSubscription = _supabase.auth.onAuthStateChange.listen(
-        (AuthState state) async {
-          await _handleAuthStateChange(state);
+      /*
+       * Listen for login, logout, token refresh,
+       * and other Supabase authentication changes.
+       */
+      _authSubscription ??=
+          _supabase.auth.onAuthStateChange.listen(
+        (AuthState state) {
+          unawaited(
+            _handleAuthStateChange(
+              state,
+            ),
+          );
         },
-        onError: (Object error, StackTrace stackTrace) {
+        onError: (Object error) {
           debugPrint(
-            'AUTH LISTENER ERROR:\n$error\n$stackTrace',
+            'Auth state listener error: $error',
           );
         },
       );
+
+      if (_currentUser != null) {
+        await loadProfile();
+      } else {
+        _profile = null;
+      }
+
+      _isInitialized = true;
     } catch (error, stackTrace) {
       debugPrint(
-        'AUTH INITIALIZATION ERROR:\n$error\n$stackTrace',
+        'Auth initialization failed: '
+        '$error\n$stackTrace',
       );
 
-      _setGuest(notify: false);
-
-      _errorMessage = 'Unable to restore your session.';
+      _setError(
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to initialize authentication.',
+        ),
+      );
     } finally {
-      _isLoading = false;
+      _setLoading(false);
       notifyListeners();
     }
   }
 
-  // ============================================================
-  // CHECK AUTH STATUS
-  // ============================================================
-
-  Future<void> checkAuthStatus() async {
+  Future<void> _handleAuthStateChange(
+    AuthState state,
+  ) async {
     try {
-      final session = _supabase.auth.currentSession;
+      _currentUser =
+          state.session?.user;
 
-      if (session == null) {
-        _setGuest();
+      if (_currentUser == null) {
+        _profile = null;
+        notifyListeners();
         return;
       }
 
-      await _restoreSessionUser(session.user);
+      await loadProfile();
+
+      notifyListeners();
     } catch (error, stackTrace) {
       debugPrint(
-        'CHECK AUTH STATUS ERROR:\n$error\n$stackTrace',
+        'Auth state handling failed: '
+        '$error\n$stackTrace',
       );
-
-      _setGuest();
-
-      _setError('Unable to load user.');
     }
   }
 
   // ============================================================
-  // AUTH STATE LISTENER
+  // LOAD PROFILE
   // ============================================================
 
-  Future<void> _handleAuthStateChange(
-    AuthState authState,
-  ) async {
-    final session = authState.session;
+  Future<bool> loadProfile() async {
+    final user =
+        _supabase.auth.currentUser;
 
-    debugPrint(
-      'AUTH EVENT: ${authState.event}',
-    );
-
-    switch (authState.event) {
-      case AuthChangeEvent.initialSession:
-      case AuthChangeEvent.signedIn:
-      case AuthChangeEvent.tokenRefreshed:
-      case AuthChangeEvent.userUpdated:
-      case AuthChangeEvent.passwordRecovery:
-      case AuthChangeEvent.mfaChallengeVerified:
-        if (session == null) {
-          _setGuest();
-        } else {
-          await _restoreSessionUser(session.user);
-        }
-        break;
-
-      case AuthChangeEvent.signedOut:
-      case AuthChangeEvent.userDeleted:
-        _setGuest();
-        break;
+    if (user == null) {
+      _currentUser = null;
+      _profile = null;
+      notifyListeners();
+      return false;
     }
-  }
 
-  // ============================================================
-  // LOAD APPLICATION PROFILE
-  // ============================================================
-
-  Future<Map<String, dynamic>?> _loadProfile(
-    String authUserId,
-  ) async {
     try {
-      debugPrint(
-        'Loading application profile for user: $authUserId',
-      );
-
-      final response = await _supabase
-          .from('users')
-          .select()
-          .eq('user_id', authUserId)
-          .maybeSingle();
+      final response =
+          await _supabase
+              .from('users')
+              .select(
+                'id, name, email, phone, '
+                'created_at, is_active, '
+                'expiry_date, role',
+              )
+              .eq(
+                'id',
+                user.id,
+              )
+              .maybeSingle();
 
       if (response == null) {
-        debugPrint(
-          'No application profile found for: $authUserId',
-        );
-
-        return null;
+        /*
+         * A Supabase Auth account may exist before the
+         * application profile has been created.
+         */
+        _profile = null;
+        notifyListeners();
+        return false;
       }
 
-      final loadedProfile = Map<String, dynamic>.from(response);
+      _currentUser = user;
 
-      debugPrint(
-        'Application profile loaded: '
-        'role=${loadedProfile['role']}, '
-        'is_active=${loadedProfile['is_active']}',
+      _profile =
+          Map<String, dynamic>.from(
+        response,
       );
 
-      return loadedProfile;
-    } catch (error, stackTrace) {
-      debugPrint(
-        'LOAD PROFILE ERROR:\n$error\n$stackTrace',
-      );
-
-      // Database/RLS errors must not become "user not found".
-      rethrow;
-    }
-  }
-
-  // ============================================================
-  // RESTORE AUTHENTICATED USER
-  // ============================================================
-
-  Future<void> _restoreSessionUser(
-    User authenticatedUser, {
-    bool notify = true,
-  }) async {
-    _user = authenticatedUser;
-    _isAuthenticated = true;
-    _isGuest = false;
-    _errorMessage = null;
-
-    try {
-      final loadedProfile = await _loadProfile(authenticatedUser.id);
-
-      _profile = loadedProfile;
-
-      if (loadedProfile == null) {
-        debugPrint(
-          'Authenticated user has no application profile.',
-        );
-      }
-    } catch (error, stackTrace) {
-      debugPrint(
-        'RESTORE USER PROFILE ERROR:\n$error\n$stackTrace',
-      );
-
-      _profile = null;
-      _errorMessage = 'Unable to load user.';
-    }
-
-    if (notify) {
       notifyListeners();
+
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Load user profile failed: '
+        '$error\n$stackTrace',
+      );
+
+      _setError(
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to load user profile.',
+        ),
+      );
+
+      return false;
     }
   }
 
@@ -252,148 +304,74 @@ class AuthProvider extends ChangeNotifier {
   // SIGN IN
   // ============================================================
 
-  Future<LoginResult> signIn({
+  Future<bool> signIn({
     required String email,
     required String password,
   }) async {
-    final normalizedEmail = email.trim();
+    final cleanEmail =
+        email.trim();
 
-    if (normalizedEmail.isEmpty) {
-      _setError('Please enter your email.');
-      return LoginResult.failed;
+    if (cleanEmail.isEmpty) {
+      _setError(
+        'Email is required.',
+      );
+      return false;
     }
 
     if (password.isEmpty) {
-      _setError('Please enter your password.');
-      return LoginResult.failed;
+      _setError(
+        'Password is required.',
+      );
+      return false;
     }
 
     _setLoading(true);
-    _clearError(notify: false);
+    _clearError();
 
     try {
-      debugPrint(
-        'Signing in: $normalizedEmail',
-      );
-
-      final response = await _supabase.auth.signInWithPassword(
-        email: normalizedEmail,
+      final response =
+          await _supabase.auth
+              .signInWithPassword(
+        email: cleanEmail,
         password: password,
       );
 
-      final authenticatedUser = response.user;
+      _currentUser =
+          response.user;
 
-      if (authenticatedUser == null) {
-        _setGuest(notify: false);
-        _setError('Unable to sign in.');
-
-        return LoginResult.failed;
-      }
-
-      debugPrint(
-        'Supabase Auth login successful: '
-        '${authenticatedUser.id}',
-      );
-
-      Map<String, dynamic>? loadedProfile;
-
-      try {
-        loadedProfile = await _loadProfile(authenticatedUser.id);
-      } catch (error, stackTrace) {
-        debugPrint(
-          'PROFILE QUERY FAILED:\n$error\n$stackTrace',
+      if (_currentUser == null) {
+        _setError(
+          'Unable to sign in.',
         );
-
-        await _safeSignOut();
-
-        _setGuest(notify: false);
-        _setError('Unable to load user.');
-
-        return LoginResult.failed;
+        return false;
       }
 
-      if (loadedProfile == null) {
-        debugPrint(
-          'Authenticated user has no users-table profile.',
-        );
+      await loadProfile();
 
-        await _safeSignOut();
-
-        _setGuest(notify: false);
-
-        return LoginResult.userNotFound;
-      }
-
-      _user = authenticatedUser;
-      _profile = loadedProfile;
-      _isAuthenticated = true;
-      _isGuest = false;
-      _errorMessage = null;
-
-      final role = loadedProfile['role']?.toString().trim().toLowerCase();
-
-      final isActive = loadedProfile['is_active'] == true;
-
-      debugPrint(
-        'LOGIN PROFILE: '
-        'role=$role '
-        'is_active=$isActive',
+      return true;
+    } on AuthException catch (error) {
+      _setError(
+        error.message.isNotEmpty
+            ? error.message
+            : 'Unable to sign in.',
       );
 
-      // ========================================================
-      // ADMIN
-      // ========================================================
-
-      if (role == 'admin') {
-        notifyListeners();
-        return LoginResult.admin;
-      }
-
-      // ========================================================
-      // NORMAL USER
-      // ========================================================
-
-      if (!isActive) {
-        await _safeSignOut();
-
-        _setGuest(notify: false);
-
-        notifyListeners();
-
-        return LoginResult.notActivated;
-      }
-
-      // ========================================================
-      // ACTIVE USER
-      // ========================================================
-
-      notifyListeners();
-
-      return LoginResult.activeUser;
-    } on AuthException catch (error, stackTrace) {
-      debugPrint(
-        'SUPABASE AUTH ERROR:\n'
-        '${error.message}\n'
-        '$stackTrace',
-      );
-
-      _setGuest(notify: false);
-
-      _setError(error.message);
-
-      return LoginResult.failed;
+      return false;
     } catch (error, stackTrace) {
       debugPrint(
-        'SIGN IN ERROR:\n$error\n$stackTrace',
+        'Sign in failed: '
+        '$error\n$stackTrace',
       );
-
-      _setGuest(notify: false);
 
       _setError(
-        'Unable to sign in. Please try again.',
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to sign in.',
+        ),
       );
 
-      return LoginResult.failed;
+      return false;
     } finally {
       _setLoading(false);
     }
@@ -404,32 +382,31 @@ class AuthProvider extends ChangeNotifier {
   // ============================================================
 
   Future<bool> signUp({
-    required String name,
-    required String phone,
     required String email,
     required String password,
+    String name = '',
+    String phone = '',
   }) async {
-    final normalizedName = name.trim();
-    final normalizedPhone = phone.trim();
-    final normalizedEmail = email.trim();
+    final cleanEmail =
+        email.trim();
 
-    if (normalizedName.isEmpty) {
-      _setError('Please enter your name.');
-      return false;
-    }
+    final cleanName =
+        name.trim();
 
-    if (normalizedPhone.isEmpty) {
-      _setError('Please enter your phone number.');
-      return false;
-    }
+    final cleanPhone =
+        phone.trim();
 
-    if (normalizedEmail.isEmpty) {
-      _setError('Please enter your email.');
+    if (cleanEmail.isEmpty) {
+      _setError(
+        'Email is required.',
+      );
       return false;
     }
 
     if (password.isEmpty) {
-      _setError('Please enter a password.');
+      _setError(
+        'Password is required.',
+      );
       return false;
     }
 
@@ -437,115 +414,113 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         'Password must contain at least 6 characters.',
       );
-
       return false;
     }
 
     _setLoading(true);
-    _clearError(notify: false);
+    _clearError();
 
     try {
-      final response = await _supabase.auth.signUp(
-        email: normalizedEmail,
+      final response =
+          await _supabase.auth.signUp(
+        email: cleanEmail,
         password: password,
         data: {
-          'name': normalizedName,
-          'phone': normalizedPhone,
+          'name': cleanName,
+          'phone': cleanPhone,
         },
       );
 
-      final createdUser = response.user;
+      _currentUser =
+          response.user;
 
-      if (createdUser == null) {
-        _setError(
-          'Unable to create your account.',
+      /*
+       * If email confirmation is disabled, the user may
+       * already have a session and can continue immediately.
+       *
+       * If email confirmation is enabled, Supabase may
+       * return a user without an active session.
+       */
+      if (_currentUser != null) {
+        await _ensureUserProfile(
+          user: _currentUser!,
+          name: cleanName,
+          phone: cleanPhone,
         );
 
-        return false;
+        await loadProfile();
       }
-
-      debugPrint(
-        'ACCOUNT CREATED: ${createdUser.id}',
-      );
-
-      final session = response.session;
-
-      if (session == null) {
-        _setGuest(notify: false);
-
-        _setError(
-          'Account created. Please confirm your email before signing in.',
-        );
-
-        return true;
-      }
-
-      Map<String, dynamic>? loadedProfile;
-
-      try {
-        loadedProfile = await _loadProfile(createdUser.id);
-      } catch (error, stackTrace) {
-        debugPrint(
-          'SIGN UP PROFILE ERROR:\n$error\n$stackTrace',
-        );
-
-        await _safeSignOut();
-
-        _setGuest(notify: false);
-
-        _setError('Unable to load user.');
-
-        return false;
-      }
-
-      if (loadedProfile == null) {
-        await _safeSignOut();
-
-        _setGuest(notify: false);
-
-        _setError(
-          'Account created, but your application profile could not be loaded.',
-        );
-
-        return true;
-      }
-
-      _user = createdUser;
-      _profile = loadedProfile;
-      _isAuthenticated = true;
-      _isGuest = false;
-      _errorMessage = null;
-
-      notifyListeners();
 
       return true;
-    } on AuthException catch (error, stackTrace) {
-      debugPrint(
-        'SUPABASE SIGN UP ERROR:\n'
-        '${error.message}\n'
-        '$stackTrace',
+    } on AuthException catch (error) {
+      _setError(
+        error.message.isNotEmpty
+            ? error.message
+            : 'Unable to create account.',
       );
-
-      _setGuest(notify: false);
-
-      _setError(error.message);
 
       return false;
     } catch (error, stackTrace) {
       debugPrint(
-        'SIGN UP ERROR:\n$error\n$stackTrace',
+        'Sign up failed: '
+        '$error\n$stackTrace',
       );
 
-      _setGuest(notify: false);
-
       _setError(
-        'Unable to create your account. Please try again.',
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to create account.',
+        ),
       );
 
       return false;
     } finally {
       _setLoading(false);
     }
+  }
+
+  // ============================================================
+  // CREATE / UPDATE APPLICATION PROFILE
+  // ============================================================
+
+  Future<void> _ensureUserProfile({
+    required User user,
+    required String name,
+    required String phone,
+  }) async {
+    final existing =
+        await _supabase
+            .from('users')
+            .select('id')
+            .eq(
+              'id',
+              user.id,
+            )
+            .maybeSingle();
+
+    if (existing != null) {
+      return;
+    }
+
+    /*
+     * New customers start inactive.
+     *
+     * The administrator activates the account after
+     * payment confirmation.
+     */
+    await _supabase.from('users').insert({
+      'id': user.id,
+      'name': name,
+      'email': user.email ?? '',
+      'phone': phone,
+      'created_at': DateTime.now()
+          .toUtc()
+          .toIso8601String(),
+      'is_active': false,
+      'expiry_date': null,
+      'role': 'user',
+    });
   }
 
   // ============================================================
@@ -554,66 +529,161 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() async {
     _setLoading(true);
-    _clearError(notify: false);
+    _clearError();
 
     try {
       await _supabase.auth.signOut();
 
-      _setGuest(notify: false);
-    } on AuthException catch (error, stackTrace) {
-      debugPrint(
-        'SIGN OUT AUTH ERROR:\n'
-        '${error.message}\n'
-        '$stackTrace',
+      _currentUser = null;
+      _profile = null;
+    } on AuthException catch (error) {
+      _setError(
+        error.message.isNotEmpty
+            ? error.message
+            : 'Unable to sign out.',
       );
-
-      _setError(error.message);
     } catch (error, stackTrace) {
       debugPrint(
-        'SIGN OUT ERROR:\n$error\n$stackTrace',
+        'Sign out failed: '
+        '$error\n$stackTrace',
       );
 
-      _setError('Unable to sign out.');
+      _setError(
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to sign out.',
+        ),
+      );
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  // ============================================================
+  // REFRESH
+  // ============================================================
+
+  Future<bool> refresh() async {
+    final user =
+        _supabase.auth.currentUser;
+
+    if (user == null) {
+      _currentUser = null;
+      _profile = null;
+      notifyListeners();
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      _currentUser = user;
+
+      return await loadProfile();
     } finally {
       _setLoading(false);
     }
   }
 
   // ============================================================
-  // SAFE SIGN OUT
+  // ADMIN CHECK
   // ============================================================
 
-  Future<void> _safeSignOut() async {
+  Future<bool> refreshAdminStatus() async {
+    if (!isAuthenticated) {
+      return false;
+    }
+
+    await loadProfile();
+
+    return isAdmin;
+  }
+
+  // ============================================================
+  // PASSWORD RESET
+  // ============================================================
+
+  Future<bool> resetPassword(
+    String email,
+  ) async {
+    final cleanEmail =
+        email.trim();
+
+    if (cleanEmail.isEmpty) {
+      _setError(
+        'Email is required.',
+      );
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
     try {
-      await _supabase.auth.signOut();
+      await _supabase.auth
+          .resetPasswordForEmail(
+        cleanEmail,
+      );
+
+      return true;
+    } on AuthException catch (error) {
+      _setError(
+        error.message.isNotEmpty
+            ? error.message
+            : 'Unable to send password reset email.',
+      );
+
+      return false;
     } catch (error, stackTrace) {
       debugPrint(
-        'SAFE SIGN OUT ERROR:\n$error\n$stackTrace',
+        'Password reset failed: '
+        '$error\n$stackTrace',
       );
+
+      _setError(
+        _cleanErrorMessage(
+          error,
+          fallback:
+              'Unable to send password reset email.',
+        ),
+      );
+
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
   // ============================================================
-  // STATE
+  // CLEAR ERROR
   // ============================================================
 
-  void _setGuest({
-    bool notify = true,
-  }) {
-    final changed =
-        _user != null || _profile != null || _isAuthenticated || !_isGuest;
-
-    _user = null;
-    _profile = null;
-    _isAuthenticated = false;
-    _isGuest = true;
-
-    if (notify && changed) {
-      notifyListeners();
-    }
+  void clearError() {
+    _clearError();
   }
 
-  void _setLoading(bool value) {
+  void _clearError() {
+    if (_errorMessage == null) {
+      return;
+    }
+
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  void _setError(
+    String message,
+  ) {
+    _errorMessage = message;
+    notifyListeners();
+  }
+
+  void _setLoading(
+    bool value,
+  ) {
     if (_isLoading == value) {
       return;
     }
@@ -622,42 +692,51 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _setError(
-    String message, {
-    bool notify = true,
+  String _cleanErrorMessage(
+    Object error, {
+    required String fallback,
   }) {
-    _errorMessage = message;
+    final message =
+        error.toString().trim();
 
-    if (notify) {
-      notifyListeners();
-    }
-  }
-
-  void _clearError({
-    bool notify = true,
-  }) {
-    if (_errorMessage == null) {
-      return;
+    if (message.isEmpty) {
+      return fallback;
     }
 
-    _errorMessage = null;
-
-    if (notify) {
-      notifyListeners();
+    if (message.startsWith(
+      'Exception: ',
+    )) {
+      return message.substring(
+        'Exception: '.length,
+      );
     }
-  }
 
-  void clearError() {
-    _clearError();
+    return message;
   }
 
   // ============================================================
-  // CLEANUP
+  // RESET PROVIDER
+  // ============================================================
+
+  void reset() {
+    _currentUser = null;
+    _profile = null;
+    _isLoading = false;
+    _isInitialized = false;
+    _errorMessage = null;
+
+    notifyListeners();
+  }
+
+  // ============================================================
+  // DISPOSE
   // ============================================================
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _authSubscription = null;
+
     super.dispose();
   }
 }

@@ -1,20 +1,14 @@
-import 'package:shared_preferences/shared_preferences.dart';
-
 class GuestIdentityService {
   GuestIdentityService._();
 
-  static const String _key = 'meditrack_guest_id';
+  /// One canonical shared scope for every Guest session.
+  ///
+  /// Guests must never receive a per-device/per-install ID.
+  /// All Guest medical records therefore belong to the same
+  /// shared workspace.
+  static const String sharedGuestId = 'guest_shared_workspace';
 
   static Future<String> getGuestId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final existing = prefs.getString(_key);
-
-    if (existing != null && existing.trim().isNotEmpty) {
-      return existing;
-    }
-
-    final guestId = 'guest-${DateTime.now().microsecondsSinceEpoch}';
-    await prefs.setString(_key, guestId);
-    return guestId;
+    return sharedGuestId;
   }
 }

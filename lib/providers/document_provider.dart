@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/document.dart';
+import '../services/guest_identity_service.dart';
 
 class DocumentProvider extends ChangeNotifier {
   static const String _localStorageKey = 'saved_documents_v2';
@@ -31,7 +32,8 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  User? get _currentUser => _supabase?.auth.currentUser;
+  User? get _currentUser =>
+      _supabase?.auth.currentUser;
 
   DocumentProvider() {
     loadDocuments();
@@ -52,13 +54,6 @@ class DocumentProvider extends ChangeNotifier {
     _documents.clear();
 
     try {
-      final user = _currentUser;
-
-      if (user == null) {
-        await _loadLocalDocuments();
-        return;
-      }
-
       final client = _supabase;
 
       if (client == null) {
@@ -66,36 +61,43 @@ class DocumentProvider extends ChangeNotifier {
         return;
       }
 
-      final response = await client
-          .from('documents')
-          .select()
-          .eq('user_id', user.id)
-          .order(
-            'upload_date',
-            ascending: false,
-          );
+      final user = _currentUser;
 
-      for (final item in response) {
-        try {
-          final document = DocumentModel.fromMap(
-            Map<String, dynamic>.from(item),
-          );
+      if (user == null) {
+        final guestId =
+            await GuestIdentityService.getGuestId();
 
-          if (document.id.isEmpty) {
-            continue;
-          }
+        final response = await client
+            .from('documents')
+            .select()
+            .eq('guest_id', guestId)
+            .isFilter('user_id', null)
+            .order(
+              'upload_date',
+              ascending: false,
+            );
 
-          // Never allow another user's document into memory.
-          if (document.userId != user.id) {
-            continue;
-          }
+        _addDocumentsFromResponse(
+          response,
+          expectedUserId: null,
+          expectedGuestId: guestId,
+        );
+      } else {
+        final response = await client
+            .from('documents')
+            .select()
+            .eq('user_id', user.id)
+            .isFilter('guest_id', null)
+            .order(
+              'upload_date',
+              ascending: false,
+            );
 
-          _documents.add(document);
-        } catch (error) {
-          debugPrint(
-            'Invalid Supabase document: $error',
-          );
-        }
+        _addDocumentsFromResponse(
+          response,
+          expectedUserId: user.id,
+          expectedGuestId: null,
+        );
       }
 
       await _saveToLocal();
@@ -109,11 +111,57 @@ class DocumentProvider extends ChangeNotifier {
         'Unable to load your documents.',
       );
 
-      // Local cache is only a fallback.
       _documents.clear();
       await _loadLocalDocuments();
     } finally {
       _setLoading(false);
+    }
+  }
+
+  void _addDocumentsFromResponse(
+    dynamic response, {
+    required String? expectedUserId,
+    required String? expectedGuestId,
+  }) {
+    if (response is! List) {
+      return;
+    }
+
+    for (final item in response) {
+      try {
+        if (item is! Map) {
+          continue;
+        }
+
+        final document =
+            DocumentModel.fromMap(
+          Map<String, dynamic>.from(item),
+        );
+
+        if (document.id.isEmpty) {
+          continue;
+        }
+
+        if (expectedUserId != null) {
+          if (document.userId !=
+                  expectedUserId ||
+              document.guestId.isNotEmpty) {
+            continue;
+          }
+        } else {
+          if (document.guestId !=
+                  expectedGuestId ||
+              document.userId.isNotEmpty) {
+            continue;
+          }
+        }
+
+        _documents.add(document);
+      } catch (error) {
+        debugPrint(
+          'Invalid Supabase document: $error',
+        );
+      }
     }
   }
 
@@ -124,14 +172,6 @@ class DocumentProvider extends ChangeNotifier {
   Future<void> addDocument(
     DocumentModel document,
   ) async {
-    final user = _currentUser;
-
-    if (user == null) {
-      throw StateError(
-        'You must be signed in to save a document.',
-      );
-    }
-
     final client = _supabase;
 
     if (client == null) {
@@ -140,22 +180,44 @@ class DocumentProvider extends ChangeNotifier {
       );
     }
 
-    // A document belonging to another user must never be saved.
-    if (document.userId.isNotEmpty &&
-        document.userId != user.id) {
-      throw StateError(
-        'This document belongs to another user.',
+    _clearError();
+
+    final user = _currentUser;
+
+    late DocumentModel documentToSave;
+
+    if (user == null) {
+      final guestId =
+          await GuestIdentityService.getGuestId();
+
+      if (document.userId.isNotEmpty) {
+        throw StateError(
+          'A private user document cannot be saved in guest mode.',
+        );
+      }
+
+      documentToSave = document.copyWith(
+        userId: '',
+        guestId: guestId,
+      );
+    } else {
+      if (document.userId.isNotEmpty &&
+          document.userId != user.id) {
+        throw StateError(
+          'This document belongs to another user.',
+        );
+      }
+
+      documentToSave = document.copyWith(
+        userId: user.id,
+        guestId: '',
       );
     }
 
-    _clearError();
-
-    var documentToSave = document.copyWith(
-      userId: user.id,
-    );
-
     try {
-      if (_shouldUploadToStorage(documentToSave)) {
+      if (_shouldUploadToStorage(
+        documentToSave,
+      )) {
         documentToSave =
             await _uploadDocumentToStorage(
           documentToSave,
@@ -206,14 +268,6 @@ class DocumentProvider extends ChangeNotifier {
   Future<void> deleteDocument(
     String id,
   ) async {
-    final user = _currentUser;
-
-    if (user == null) {
-      throw StateError(
-        'You must be signed in to delete a document.',
-      );
-    }
-
     final client = _supabase;
 
     if (client == null) {
@@ -232,10 +286,27 @@ class DocumentProvider extends ChangeNotifier {
 
     final document = _documents[index];
 
-    if (document.userId != user.id) {
-      throw StateError(
-        'You cannot delete another user\'s document.',
-      );
+    final user = _currentUser;
+
+    String guestId = '';
+
+    if (user == null) {
+      guestId =
+          await GuestIdentityService.getGuestId();
+
+      if (document.guestId != guestId ||
+          document.userId.isNotEmpty) {
+        throw StateError(
+          'You cannot delete another user\'s document.',
+        );
+      }
+    } else {
+      if (document.userId != user.id ||
+          document.guestId.isNotEmpty) {
+        throw StateError(
+          'You cannot delete another user\'s document.',
+        );
+      }
     }
 
     _clearError();
@@ -257,22 +328,40 @@ class DocumentProvider extends ChangeNotifier {
             'Failed to remove document file: '
             '$error',
           );
-
-          // Continue with database deletion.
         }
       }
 
-      await client
+      var query = client
           .from('documents')
           .delete()
           .eq(
             'id',
             id,
-          )
-          .eq(
-            'user_id',
-            user.id,
           );
+
+      if (user == null) {
+        query = query
+            .eq(
+              'guest_id',
+              guestId,
+            )
+            .isFilter(
+              'user_id',
+              null,
+            );
+      } else {
+        query = query
+            .eq(
+              'user_id',
+              user.id,
+            )
+            .isFilter(
+              'guest_id',
+              null,
+            );
+      }
+
+      await query;
 
       _documents.removeAt(index);
 
@@ -303,12 +392,23 @@ class DocumentProvider extends ChangeNotifier {
   }) async {
     final user = _currentUser;
 
-    if (user == null ||
-        document.userId != user.id) {
-      return null;
+    if (user == null) {
+      final guestId =
+          await GuestIdentityService.getGuestId();
+
+      if (document.guestId != guestId ||
+          document.userId.isNotEmpty) {
+        return null;
+      }
+    } else {
+      if (document.userId != user.id ||
+          document.guestId.isNotEmpty) {
+        return null;
+      }
     }
 
-    final path = document.storagePath?.trim();
+    final path =
+        document.storagePath?.trim();
 
     if (path == null || path.isEmpty) {
       return document.fileUrl;
@@ -333,8 +433,6 @@ class DocumentProvider extends ChangeNotifier {
         '$error\n$stackTrace',
       );
 
-      // If the document already has a public URL,
-      // keep it available as a fallback.
       return document.fileUrl;
     }
   }
@@ -378,13 +476,21 @@ class DocumentProvider extends ChangeNotifier {
         return;
       }
 
-      final decoded = jsonDecode(localData);
+      final decoded =
+          jsonDecode(localData);
 
       if (decoded is! List) {
         return;
       }
 
       final user = _currentUser;
+
+      String? guestId;
+
+      if (user == null) {
+        guestId =
+            await GuestIdentityService.getGuestId();
+      }
 
       for (final item in decoded) {
         if (item is! Map) {
@@ -401,17 +507,22 @@ class DocumentProvider extends ChangeNotifier {
             continue;
           }
 
-          // If signed in, only load this user's cache.
           if (user != null) {
-            if (document.userId.isEmpty ||
-                document.userId != user.id) {
+            if (document.userId != user.id ||
+                document.guestId.isNotEmpty) {
+              continue;
+            }
+          } else {
+            if (document.guestId != guestId ||
+                document.userId.isNotEmpty) {
               continue;
             }
           }
 
           final exists = _documents.any(
             (existing) =>
-                existing.id == document.id,
+                existing.id ==
+                document.id,
           );
 
           if (!exists) {
@@ -434,22 +545,13 @@ class DocumentProvider extends ChangeNotifier {
 
   Future<void> _saveToLocal() async {
     try {
-      final user = _currentUser;
-
-      if (user == null) {
-        return;
-      }
-
       final prefs =
           await SharedPreferences.getInstance();
 
       final maps = _documents
-          .where(
-            (document) =>
-                document.userId == user.id,
-          )
           .map(
-            (document) => document.toMap(),
+            (document) =>
+                document.toMap(),
           )
           .toList();
 
@@ -490,7 +592,8 @@ class DocumentProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<DocumentModel> _uploadDocumentToStorage(
+  Future<DocumentModel>
+      _uploadDocumentToStorage(
     DocumentModel document,
   ) async {
     final client = _supabase;
@@ -513,8 +616,19 @@ class DocumentProvider extends ChangeNotifier {
       document.fileType,
     );
 
+    final owner =
+        document.userId.trim().isNotEmpty
+            ? document.userId.trim()
+            : document.guestId.trim();
+
+    if (owner.isEmpty) {
+      throw StateError(
+        'Document ownership is required.',
+      );
+    }
+
     final storagePath =
-        '${document.userId}/${document.id}.$extension';
+        '$owner/${document.id}.$extension';
 
     await client.storage
         .from(_storageBucket)
@@ -570,7 +684,8 @@ class DocumentProvider extends ChangeNotifier {
   String _normalizeExtension(
     String fileType,
   ) {
-    switch (fileType.trim().toLowerCase()) {
+    switch (
+        fileType.trim().toLowerCase()) {
       case 'jpeg':
       case 'jpg':
         return 'jpg';

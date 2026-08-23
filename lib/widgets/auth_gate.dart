@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/admin_screen.dart';
 import '../screens/home_screen.dart';
-import '../screens/login_screen.dart';
-import '../screens/subscription_screen.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({
@@ -25,34 +23,54 @@ class AuthGate extends StatelessWidget {
     }
 
     // ============================================================
-    // NOT AUTHENTICATED
+    // GUEST MODE
     // ============================================================
+    //
+    // No authenticated user = Guest Mode.
+    //
+    // Guest can open and use the normal SANA application.
+    // Login is available from the application wherever you
+    // provide the login entry point.
+    //
 
     if (!auth.isAuthenticated) {
-      return const LoginScreen();
+      return const HomeScreen();
     }
 
     // ============================================================
     // ADMIN
     // ============================================================
+    //
+    // Authenticated administrator goes directly to AdminScreen.
+    //
 
     if (auth.isAdmin) {
       return const AdminScreen();
     }
 
     // ============================================================
-    // VALID CUSTOMER SUBSCRIPTION
+    // ACTIVE AUTHENTICATED USER
     // ============================================================
+    //
+    // A valid active user gets the normal application.
+    //
 
     if (auth.hasValidSubscription) {
       return const HomeScreen();
     }
 
     // ============================================================
-    // AUTHENTICATED BUT NO VALID SUBSCRIPTION
+    // NON-ACTIVE AUTHENTICATED USER
     // ============================================================
+    //
+    // According to the required SANA behavior:
+    //
+    // non-active user -> Guest Mode
+    //
+    // We therefore do NOT send this user to SubscriptionScreen.
+    //
 
-    return const SubscriptionScreen();
+    return const HomeScreen();
   }
 }
 

@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../models/doctor.dart';
 import '../models/medication.dart';
-import '../models/pharmacy.dart';
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/document_provider.dart';
@@ -14,6 +12,7 @@ import '../providers/insurance_provider.dart';
 import '../providers/language_provider.dart';
 import '../providers/medication_provider.dart';
 import '../providers/pharmacy_provider.dart';
+
 import 'about_sana_screen.dart';
 import 'add_doctor_screen.dart';
 import 'add_medication_screen.dart';
@@ -24,16 +23,11 @@ import 'insurance_screen.dart';
 import 'medication_detail_screen.dart';
 import 'sharing_screen.dart';
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
 const String _sanaShareUrl = 'https://malazhub.github.io/sana/';
+
 const String _getCopyPaymentUrl =
     'https://link.payoneer.com/Token?t=CA1D522054524AC081ACCB17B5D8571B&src=pl';
 
-// ============================================================================
-// HOME ACTION
-// ============================================================================
 enum HomeAction {
   medications,
   doctors,
@@ -44,9 +38,6 @@ enum HomeAction {
   sharing,
 }
 
-// ============================================================================
-// HOME ITEM
-// ============================================================================
 class HomeItem {
   final IconData icon;
   final String label;
@@ -63,9 +54,6 @@ class HomeItem {
   });
 }
 
-// ============================================================================
-// TRANSLATIONS
-// ============================================================================
 class SanaTranslations {
   final String medications;
   final String doctors;
@@ -112,6 +100,7 @@ class SanaTranslations {
           about: 'حول',
           admin: 'مدير',
         );
+
       case 'es':
         return const SanaTranslations(
           medications: 'Medicamentos',
@@ -127,6 +116,7 @@ class SanaTranslations {
           about: 'Acerca de',
           admin: 'Administrador',
         );
+
       case 'fr':
         return const SanaTranslations(
           medications: 'Médicaments',
@@ -142,6 +132,7 @@ class SanaTranslations {
           about: 'À propos',
           admin: 'Admin',
         );
+
       case 'de':
         return const SanaTranslations(
           medications: 'Medikamente',
@@ -157,6 +148,7 @@ class SanaTranslations {
           about: 'Über',
           admin: 'Admin',
         );
+
       case 'tr':
         return const SanaTranslations(
           medications: 'İlaçlar',
@@ -172,6 +164,7 @@ class SanaTranslations {
           about: 'Hakkında',
           admin: 'Yönetici',
         );
+
       case 'hi':
         return const SanaTranslations(
           medications: 'दवाएं',
@@ -187,6 +180,7 @@ class SanaTranslations {
           about: 'के बारे में',
           admin: 'व्यवस्थापक',
         );
+
       case 'zh':
         return const SanaTranslations(
           medications: '药物',
@@ -202,6 +196,7 @@ class SanaTranslations {
           about: '关于',
           admin: '管理员',
         );
+
       case 'en':
       default:
         return const SanaTranslations(
@@ -244,9 +239,6 @@ class SanaTranslations {
   }
 }
 
-// ============================================================================
-// COMMON HELPERS
-// ============================================================================
 String _cleanPhoneNumber(String phone) {
   return phone.replaceAll(RegExp(r'[^\d]'), '');
 }
@@ -256,11 +248,12 @@ Future<void> _launchExternalUrl(
   Uri uri,
 ) async {
   try {
-    final launched = await launchUrl(
+    final result = await launchUrl(
       uri,
       mode: LaunchMode.externalApplication,
     );
-    if (!launched && context.mounted) {
+
+    if (!result && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Unable to open this link.'),
@@ -283,9 +276,15 @@ Future<void> _callPhone(
   String phone,
 ) async {
   final value = phone.trim();
-  if (value.isEmpty) return;
-  final uri = Uri.parse('tel:$value');
-  await _launchExternalUrl(context, uri);
+
+  if (value.isEmpty) {
+    return;
+  }
+
+  await _launchExternalUrl(
+    context,
+    Uri.parse('tel:$value'),
+  );
 }
 
 Future<void> _openWhatsApp(
@@ -293,17 +292,21 @@ Future<void> _openWhatsApp(
   String phone,
 ) async {
   final number = _cleanPhoneNumber(phone);
-  if (number.isEmpty) return;
-  final uri = Uri.https('wa.me', '/$number');
-  await _launchExternalUrl(context, uri);
+
+  if (number.isEmpty) {
+    return;
+  }
+
+  await _launchExternalUrl(
+    context,
+    Uri.parse('https://wa.me/$number'),
+  );
 }
 
 Future<bool> _confirmDelete(
   BuildContext context, {
   required String title,
   required String message,
-  String deleteText = 'Delete',
-  String cancelText = 'Cancel',
 }) async {
   final result = await showDialog<bool>(
     context: context,
@@ -313,53 +316,54 @@ Future<bool> _confirmDelete(
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(cancelText),
+            onPressed: () {
+              Navigator.pop(dialogContext, false);
+            },
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(deleteText),
+            onPressed: () {
+              Navigator.pop(dialogContext, true);
+            },
+            child: const Text('Delete'),
           ),
         ],
       );
     },
   );
+
   return result ?? false;
 }
 
-// ============================================================================
-// HOME SCREEN
-// ============================================================================
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  int _getInsuranceCount(BuildContext context) {
-    final provider = Provider.of<InsuranceProvider>(context, listen: false);
-    return provider.cards.length;
+  int _insuranceCount(BuildContext context) {
+    return context.read<InsuranceProvider>().cards.length;
   }
 
-  Future<void> _openGetCopyLink(BuildContext context) async {
-    final uri = Uri.parse(_getCopyPaymentUrl);
+  void _openGetCopyLink(BuildContext context) async {
     try {
       final launched = await launchUrl(
-        uri,
+        Uri.parse(_getCopyPaymentUrl),
         mode: LaunchMode.externalApplication,
       );
+
       if (!launched && context.mounted) {
-        _showCopyModal(context);
+        _showCopyDialog(context);
       }
     } catch (_) {
       if (context.mounted) {
-        _showCopyModal(context);
+        _showCopyDialog(context);
       }
     }
   }
 
-  void _showCopyModal(BuildContext context) {
+  void _showCopyDialog(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -371,7 +375,9 @@ class HomeScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text('Close'),
             ),
           ],
@@ -380,66 +386,58 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLangChip(
+  Widget _languageChip(
     BuildContext context,
-    String langCode,
+    String code,
     String label,
     String activeCode,
   ) {
-    final isSelected = langCode == activeCode;
+    final selected = code == activeCode;
+
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: () {
-        Provider.of<LanguageProvider>(
-          context,
-          listen: false,
-        ).setLanguage(langCode);
+        context.read<LanguageProvider>().setLanguage(code);
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(
-          horizontal: 9,
-          vertical: 5,
+          horizontal: 10,
+          vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.teal.shade700,
-          borderRadius: BorderRadius.circular(16),
+          color: selected ? Colors.white : Colors.teal.shade700,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected ? Colors.amber.shade700 : Colors.white38,
-            width: isSelected ? 2 : 1,
+            color: selected
+                ? Colors.amber.shade700
+                : Colors.white38,
+            width: selected ? 2 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
         child: Text(
           label,
-          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? Colors.teal.shade900 : Colors.white,
+            fontWeight:
+                selected ? FontWeight.bold : FontWeight.w500,
+            color: selected
+                ? Colors.teal.shade900
+                : Colors.white,
           ),
         ),
       ),
     );
   }
 
-  List<HomeItem> _buildHomeItems(
+  List<HomeItem> _items(
     BuildContext context,
     SanaTranslations t,
   ) {
-    final medications = Provider.of<MedicationProvider>(context);
-    final doctors = Provider.of<DoctorProvider>(context);
-    final pharmacies = Provider.of<PharmacyProvider>(context);
-    final documents = Provider.of<DocumentProvider>(context);
+    final medications = context.watch<MedicationProvider>();
+    final doctors = context.watch<DoctorProvider>();
+    final pharmacies = context.watch<PharmacyProvider>();
+    final documents = context.watch<DocumentProvider>();
 
     return [
       HomeItem(
@@ -480,7 +478,7 @@ class HomeScreen extends StatelessWidget {
       HomeItem(
         icon: Icons.credit_card,
         label: t.insuranceCards,
-        count: _getInsuranceCount(context).toString(),
+        count: _insuranceCount(context).toString(),
         color: Colors.indigo,
         action: HomeAction.insurance,
       ),
@@ -494,7 +492,7 @@ class HomeScreen extends StatelessWidget {
     ];
   }
 
-  void _openHomeAction(
+  void _openAction(
     BuildContext context,
     HomeAction action,
   ) {
@@ -502,61 +500,64 @@ class HomeScreen extends StatelessWidget {
       case HomeAction.medications:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const MedicationListScreen()),
+          MaterialPageRoute(
+            builder: (_) => const MedicationListScreen(),
+          ),
         );
         break;
+
       case HomeAction.doctors:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DoctorListScreen()),
+          MaterialPageRoute(
+            builder: (_) => const DoctorListScreen(),
+          ),
         );
         break;
+
       case HomeAction.pharmacies:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const PharmacyListScreen()),
+          MaterialPageRoute(
+            builder: (_) => const PharmacyListScreen(),
+          ),
         );
         break;
+
       case HomeAction.reminders:
         _showReminderDialog(context);
         break;
+
       case HomeAction.documents:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DocumentsScreen()),
+          MaterialPageRoute(
+            builder: (_) => const DocumentsScreen(),
+          ),
         );
         break;
+
       case HomeAction.insurance:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const InsuranceScreen()),
+          MaterialPageRoute(
+            builder: (_) => const InsuranceScreen(),
+          ),
         );
         break;
+
       case HomeAction.sharing:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const SharingScreen()),
+          MaterialPageRoute(
+            builder: (_) => const SharingScreen(),
+          ),
         );
         break;
     }
   }
 
-  Widget _buildHomeRow(
-    BuildContext context,
-    HomeItem left,
-    HomeItem right,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: _buildHomeCard(context, left)),
-        const SizedBox(width: 8),
-        Expanded(child: _buildHomeCard(context, right)),
-      ],
-    );
-  }
-
-  Widget _buildHomeCard(
+  Widget _homeCard(
     BuildContext context,
     HomeItem item,
   ) {
@@ -564,20 +565,24 @@ class HomeScreen extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => _openHomeAction(context, item.action),
+        onTap: () {
+          _openAction(context, item.action);
+        },
         child: Container(
-          constraints: const BoxConstraints(minHeight: 105),
+          constraints: const BoxConstraints(
+            minHeight: 105,
+          ),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.92),
+            color: Colors.white.withOpacity(0.92),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: item.color.withValues(alpha: 0.65),
+              color: item.color.withOpacity(0.65),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: item.color.withValues(alpha: 0.10),
+                color: item.color.withOpacity(0.10),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -586,26 +591,31 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(item.icon, color: item.color, size: 30),
+              Icon(
+                item.icon,
+                color: item.color,
+                size: 30,
+              ),
               const SizedBox(height: 5),
-              Flexible(
-                child: Text(
-                  item.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: item.color,
-                  ),
+              Text(
+                item.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: item.color,
                 ),
               ),
               const SizedBox(height: 5),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 2,
+                ),
                 decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: 0.12),
+                  color: item.color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: Text(
@@ -624,57 +634,87 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Widget _homeRow(
+    BuildContext context,
+    HomeItem left,
+    HomeItem right,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _homeCard(context, left),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _homeCard(context, right),
+        ),
+      ],
+    );
+  }
+
   void _showReminderDialog(BuildContext context) {
-    final medProvider = Provider.of<MedicationProvider>(context, listen: false);
-    final language = Provider.of<LanguageProvider>(context, listen: false);
-    final code = language.locale.languageCode;
+    final medicationProvider = context.read<MedicationProvider>();
+    final languageProvider = context.read<LanguageProvider>();
+
+    final code = languageProvider.locale.languageCode;
 
     String title = 'Active Reminders';
-    String noData = 'No active reminders.';
+    String empty = 'No active reminders.';
     String dosage = 'Dosage';
 
     switch (code) {
       case 'ar':
         title = 'التذكيرات النشطة';
-        noData = 'لا توجد تذكيرات نشطة.';
+        empty = 'لا توجد تذكيرات نشطة.';
         dosage = 'الجرعة';
         break;
+
       case 'es':
         title = 'Recordatorios Activos';
-        noData = 'No hay recordatorios activos.';
+        empty = 'No hay recordatorios activos.';
         dosage = 'Dosis';
         break;
+
       case 'fr':
         title = 'Rappels Actifs';
-        noData = 'Aucun rappel actif.';
+        empty = 'Aucun rappel actif.';
         dosage = 'Dosage';
         break;
+
       case 'de':
         title = 'Aktive Erinnerungen';
-        noData = 'Keine aktiven Erinnerungen.';
+        empty = 'Keine aktiven Erinnerungen.';
         dosage = 'Dosierung';
         break;
+
       case 'tr':
         title = 'Aktif Hatırlatıcılar';
-        noData = 'Aktif hatırlatıcı yok.';
+        empty = 'Aktif hatırlatıcı yok.';
         dosage = 'Doz';
         break;
+
       case 'hi':
         title = 'सक्रिय अनुस्मारक';
-        noData = 'कोई सक्रिय अनुस्मारक नहीं।';
+        empty = 'कोई सक्रिय अनुस्मारक नहीं।';
         dosage = 'खुराक';
         break;
+
       case 'zh':
         title = '活动提醒';
-        noData = '暂无活动提醒。';
+        empty = '暂无活动提醒。';
         dosage = '剂量';
         break;
     }
 
     final alarms = <Map<String, dynamic>>[];
-    for (final medication in medProvider.medications) {
+
+    for (final medication in medicationProvider.medications) {
       for (final time in medication.reminderTimes) {
-        alarms.add({'medication': medication, 'time': time});
+        alarms.add({
+          'medication': medication,
+          'time': time,
+        });
       }
     }
 
@@ -687,32 +727,53 @@ class HomeScreen extends StatelessWidget {
             width: double.maxFinite,
             height: 320,
             child: alarms.isEmpty
-                ? Center(child: Text(noData))
+                ? Center(
+                    child: Text(empty),
+                  )
                 : ListView.builder(
                     itemCount: alarms.length,
                     itemBuilder: (context, index) {
-                      final item = alarms[index];
-                      final medication = item['medication'] as Medication;
-                      final timeDisplay = item['time'] as String;
+                      final alarm = alarms[index];
+
+                      final medication =
+                          alarm['medication'] as Medication;
+
+                      final time =
+                          alarm['time'] as String;
+
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.teal.shade50,
-                          child: const Icon(Icons.alarm, color: Colors.teal),
+                          child: const Icon(
+                            Icons.alarm,
+                            color: Colors.teal,
+                          ),
                         ),
                         title: Text(
                           medication.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        subtitle: Text('$timeDisplay - $dosage: ${medication.dosage}'),
+                        subtitle: Text(
+                          '$time - $dosage: ${medication.dosage}',
+                        ),
                         trailing: IconButton(
                           tooltip: 'Inspect',
-                          icon: const Icon(Icons.visibility, color: Colors.teal),
+                          icon: const Icon(
+                            Icons.visibility,
+                            color: Colors.teal,
+                          ),
                           onPressed: () {
                             Navigator.pop(dialogContext);
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => MedicationDetailScreen(medication: medication),
+                                builder: (_) =>
+                                    MedicationDetailScreen(
+                                  medication: medication,
+                                ),
                               ),
                             );
                           },
@@ -723,7 +784,9 @@ class HomeScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
               child: const Text('Close'),
             ),
           ],
@@ -734,11 +797,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final language = Provider.of<LanguageProvider>(context);
-    final auth = Provider.of<AuthProvider>(context);
-    final activeCode = language.locale.languageCode;
-    final translations = SanaTranslations.fromCode(activeCode);
-    final items = _buildHomeItems(context, translations);
+    final language = context.watch<LanguageProvider>();
+    final auth = context.watch<AuthProvider>();
+
+    final code = language.locale.languageCode;
+    final t = SanaTranslations.fromCode(code);
+    final items = _items(context, t);
 
     return Scaffold(
       backgroundColor: const Color(0xFFE6F3F1),
@@ -748,52 +812,107 @@ class HomeScreen extends StatelessWidget {
         elevation: 2,
         title: Row(
           children: [
-            const Icon(Icons.health_and_safety, color: Colors.white, size: 26),
+            const Icon(
+              Icons.health_and_safety,
+              size: 26,
+            ),
             const SizedBox(width: 8),
-            Text(
+            const Text(
               'SANA',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
               ),
             ),
             const Spacer(),
+
             if (auth.isAdmin)
               IconButton(
                 tooltip: 'Admin Panel',
-                icon: const Icon(Icons.admin_panel_settings, color: Colors.amber),
+                icon: const Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.amber,
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AdminScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const AdminScreen(),
+                    ),
                   );
                 },
               ),
+
             IconButton(
               tooltip: 'Share Sana',
-              icon: const Icon(Icons.share, color: Colors.white),
+              icon: const Icon(Icons.share),
               onPressed: () {
-                Share.share('Check out SANA smart health tracker: $_sanaShareUrl');
+                Share.share(
+                  'Check out SANA smart health tracker:\n'
+                  '$_sanaShareUrl',
+                );
               },
             ),
           ],
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
-          child: Container(
+          child: SizedBox(
             height: 38,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
             child: ListView(
               scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+              ),
               children: [
-                _buildLangChip(context, 'en', 'English', activeCode),
-                _buildLangChip(context, 'ar', 'العربية', activeCode),
-                _buildLangChip(context, 'es', 'Español', activeCode),
-                _buildLangChip(context, 'fr', 'Français', activeCode),
-                _buildLangChip(context, 'de', 'Deutsch', activeCode),
-                _buildLangChip(context, 'tr', 'Türkçe', activeCode),
-                _buildLangChip(context, 'hi', 'हिन्दी', activeCode),
-                _buildLangChip(context, 'zh', '中文', activeCode),
+                _languageChip(
+                  context,
+                  'en',
+                  'English',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'ar',
+                  'العربية',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'es',
+                  'Español',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'fr',
+                  'Français',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'de',
+                  'Deutsch',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'tr',
+                  'Türkçe',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'hi',
+                  'हिन्दी',
+                  code,
+                ),
+                _languageChip(
+                  context,
+                  'zh',
+                  '中文',
+                  code,
+                ),
               ],
             ),
           ),
@@ -801,64 +920,103 @@ class HomeScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+          padding: const EdgeInsets.fromLTRB(
+            12,
+            12,
+            12,
+            24,
+          ),
           child: Column(
             children: [
               SizedBox(
                 height: 108,
-                child: _buildHomeRow(context, items[0], items[1]),
+                child: _homeRow(
+                  context,
+                  items[0],
+                  items[1],
+                ),
               ),
               const SizedBox(height: 8),
+
               SizedBox(
                 height: 108,
-                child: _buildHomeRow(context, items[2], items[3]),
+                child: _homeRow(
+                  context,
+                  items[2],
+                  items[3],
+                ),
               ),
               const SizedBox(height: 8),
+
               SizedBox(
                 height: 108,
-                child: _buildHomeRow(context, items[4], items[5]),
+                child: _homeRow(
+                  context,
+                  items[4],
+                  items[5],
+                ),
               ),
               const SizedBox(height: 8),
+
               SizedBox(
                 height: 108,
-                child: _buildHomeCard(context, items[6]),
+                child: _homeCard(
+                  context,
+                  items[6],
+                ),
               ),
+
               const SizedBox(height: 12),
+
               Row(
                 children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.admin_panel_settings, size: 16),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AdminScreen()),
-                        );
-                      },
-                      label: Text(
-                        translations.admin,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.teal,
-                          fontWeight: FontWeight.bold,
+                  if (auth.isAdmin)
+                    Expanded(
+                      child: TextButton.icon(
+                        icon: const Icon(
+                          Icons.admin_panel_settings,
+                          size: 16,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const AdminScreen(),
+                            ),
+                          );
+                        },
+                        label: Text(
+                          t.admin,
+                          style: const TextStyle(
+                            color: Colors.teal,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+
                   Expanded(
                     child: TextButton.icon(
-                      icon: const Icon(Icons.info_outline, size: 16),
+                      icon: const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AboutSanaScreen()),
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const AboutSanaScreen(),
+                          ),
                         );
                       },
                       label: Text(
-                        translations.about,
+                        t.about,
                         style: const TextStyle(
-                          fontSize: 13,
                           color: Colors.teal,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -866,12 +1024,16 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+
               const SizedBox(height: 4),
+
               SizedBox(
                 width: double.infinity,
-                height: 42,
+                height: 44,
                 child: ElevatedButton.icon(
-                  onPressed: () => _openGetCopyLink(context),
+                  onPressed: () {
+                    _openGetCopyLink(context);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal.shade800,
                     foregroundColor: Colors.white,
@@ -879,8 +1041,13 @@ class HomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                  label: Text(translations.getCopyButton(activeCode)),
+                  icon: const Icon(
+                    Icons.shopping_bag_outlined,
+                    size: 18,
+                  ),
+                  label: Text(
+                    t.getCopyButton(code),
+                  ),
                 ),
               ),
             ],
@@ -891,25 +1058,30 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// MEDICATION LIST SCREEN
-// ============================================================================
+// ============================================================
+// MEDICATIONS
+// ============================================================
+
 class MedicationListScreen extends StatefulWidget {
   const MedicationListScreen({super.key});
 
   @override
-  State<MedicationListScreen> createState() => _MedicationListScreenState();
+  State<MedicationListScreen> createState() =>
+      _MedicationListScreenState();
 }
 
-class _MedicationListScreenState extends State<MedicationListScreen> {
-  String _searchQuery = '';
+class _MedicationListScreenState
+    extends State<MedicationListScreen> {
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    final medProvider = Provider.of<MedicationProvider>(context);
-    final medications = medProvider.medications.where((m) {
-      return m.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          m.purpose.toLowerCase().contains(_searchQuery.toLowerCase());
+    final provider = context.watch<MedicationProvider>();
+
+    final query = searchQuery.trim().toLowerCase();
+
+    final medications = provider.medications.where((med) {
+      return med.name.toLowerCase().contains(query);
     }).toList();
 
     return Scaffold(
@@ -925,70 +1097,96 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
             child: TextField(
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Search medications or purpose...',
+                hintText: 'Search medications...',
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              onChanged: (val) => setState(() => _searchQuery = val),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
             ),
           ),
+
           Expanded(
             child: medications.isEmpty
                 ? const Center(
                     child: Text(
                       'No medications added yet.',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                    ),
                     itemCount: medications.length,
                     itemBuilder: (context, index) {
-                      final med = medications[index];
+                      final medication = medications[index];
+
                       return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        margin: const EdgeInsets.only(
+                          bottom: 10,
                         ),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Colors.blue.shade50,
-                            child: const Icon(Icons.medication, color: Colors.blue),
+                            backgroundColor:
+                                Colors.blue.shade50,
+                            child: const Icon(
+                              Icons.medication,
+                              color: Colors.blue,
+                            ),
                           ),
                           title: Text(
-                            med.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            medication.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          subtitle: Text('Dosage: ${med.dosage} • ${med.frequency}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () async {
-                                  final confirm = await _confirmDelete(
-                                    context,
-                                    title: 'Delete Medication',
-                                    message: 'Are you sure you want to delete ${med.name}?',
-                                  );
-                                  if (confirm && context.mounted) {
-                                    medProvider.deleteMedication(med.id);
-                                  }
-                                },
-                              ),
-                            ],
+                          subtitle: Text(
+                            'Dosage: ${medication.dosage}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
+                            onPressed: () async {
+                              final confirmed =
+                                  await _confirmDelete(
+                                context,
+                                title: 'Delete Medication',
+                                message:
+                                    'Are you sure you want to delete '
+                                    '${medication.name}?',
+                              );
+
+                              if (confirmed &&
+                                  context.mounted) {
+                                await context
+                                    .read<MedicationProvider>()
+                                    .deleteMedication(
+                                      medication.id,
+                                    );
+                              }
+                            },
                           ),
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => MedicationDetailScreen(medication: med),
+                                builder: (_) =>
+                                    MedicationDetailScreen(
+                                  medication: medication,
+                                ),
                               ),
                             );
                           },
@@ -1005,7 +1203,9 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddMedicationScreen()),
+            MaterialPageRoute(
+              builder: (_) => const AddMedicationScreen(),
+            ),
           );
         },
         child: const Icon(Icons.add),
@@ -1014,16 +1214,17 @@ class _MedicationListScreenState extends State<MedicationListScreen> {
   }
 }
 
-// ============================================================================
-// DOCTOR LIST SCREEN
-// ============================================================================
+// ============================================================
+// DOCTORS
+// ============================================================
+
 class DoctorListScreen extends StatelessWidget {
   const DoctorListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final docProvider = Provider.of<DoctorProvider>(context);
-    final doctors = docProvider.doctors;
+    final provider = context.watch<DoctorProvider>();
+    final doctors = provider.doctors;
 
     return Scaffold(
       appBar: AppBar(
@@ -1035,82 +1236,134 @@ class DoctorListScreen extends StatelessWidget {
           ? const Center(
               child: Text(
                 'No doctors registered yet.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
               ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: doctors.length,
               itemBuilder: (context, index) {
-                final doc = doctors[index];
+                final doctor = doctors[index];
+
+                final specialty =
+                    doctor.specialty?.trim() ?? '';
+
+                final phone =
+                    doctor.phone?.trim() ?? '';
+
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  margin: const EdgeInsets.only(
+                    bottom: 12,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: Colors.green.shade50,
-                              child: const Icon(Icons.person, color: Colors.green),
+                              backgroundColor:
+                                  Colors.green.shade50,
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.green,
+                              ),
                             ),
                             const SizedBox(width: 12),
+
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    doc.name,
+                                    doctor.name,
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight:
+                                          FontWeight.bold,
                                       fontSize: 16,
                                     ),
                                   ),
-                                  Text(
-                                    doc.specialty,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 14,
+                                  if (specialty.isNotEmpty)
+                                    Text(
+                                      specialty,
+                                      style: TextStyle(
+                                        color:
+                                            Colors.grey.shade600,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
+
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
                               onPressed: () async {
-                                final confirm = await _confirmDelete(
+                                final confirmed =
+                                    await _confirmDelete(
                                   context,
                                   title: 'Delete Doctor',
-                                  message: 'Are you sure you want to remove Dr. ${doc.name}?',
+                                  message:
+                                      'Are you sure you want to remove '
+                                      'Dr. ${doctor.name}?',
                                 );
-                                if (confirm && context.mounted) {
-                                  docProvider.deleteDoctor(doc.id);
+
+                                if (confirmed &&
+                                    context.mounted) {
+                                  await context
+                                      .read<DoctorProvider>()
+                                      .deleteDoctor(
+                                        doctor.id,
+                                      );
                                 }
                               },
                             ),
                           ],
                         ),
-                        if (doc.phone.isNotEmpty) ...[
+
+                        if (phone.isNotEmpty) ...[
                           const SizedBox(height: 10),
+
                           Row(
                             children: [
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.phone, size: 16),
+                                icon: const Icon(
+                                  Icons.phone,
+                                  size: 16,
+                                ),
                                 label: const Text('Call'),
-                                onPressed: () => _callPhone(context, doc.phone),
+                                onPressed: () {
+                                  _callPhone(
+                                    context,
+                                    phone,
+                                  );
+                                },
                               ),
+
                               const SizedBox(width: 8),
+
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.chat, size: 16),
-                                label: const Text('WhatsApp'),
-                                onPressed: () => _openWhatsApp(context, doc.phone),
+                                icon: const Icon(
+                                  Icons.chat,
+                                  size: 16,
+                                ),
+                                label: const Text(
+                                  'WhatsApp',
+                                ),
+                                onPressed: () {
+                                  _openWhatsApp(
+                                    context,
+                                    phone,
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -1127,7 +1380,9 @@ class DoctorListScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddDoctorScreen()),
+            MaterialPageRoute(
+              builder: (_) => const AddDoctorScreen(),
+            ),
           );
         },
         child: const Icon(Icons.add),
@@ -1136,16 +1391,17 @@ class DoctorListScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// PHARMACY LIST SCREEN
-// ============================================================================
+// ============================================================
+// PHARMACIES
+// ============================================================
+
 class PharmacyListScreen extends StatelessWidget {
   const PharmacyListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final pharmProvider = Provider.of<PharmacyProvider>(context);
-    final pharmacies = pharmProvider.pharmacies;
+    final provider = context.watch<PharmacyProvider>();
+    final pharmacies = provider.pharmacies;
 
     return Scaffold(
       appBar: AppBar(
@@ -1157,83 +1413,137 @@ class PharmacyListScreen extends StatelessWidget {
           ? const Center(
               child: Text(
                 'No pharmacies registered yet.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
               ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: pharmacies.length,
               itemBuilder: (context, index) {
-                final pharm = pharmacies[index];
+                final pharmacy = pharmacies[index];
+
+                final address =
+                    pharmacy.address?.trim() ?? '';
+
+                final phone =
+                    pharmacy.phone?.trim() ?? '';
+
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  margin: const EdgeInsets.only(
+                    bottom: 12,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: Colors.orange.shade50,
-                              child: const Icon(Icons.local_pharmacy, color: Colors.orange),
+                              backgroundColor:
+                                  Colors.orange.shade50,
+                              child: const Icon(
+                                Icons.local_pharmacy,
+                                color: Colors.orange,
+                              ),
                             ),
+
                             const SizedBox(width: 12),
+
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    pharm.name,
+                                    pharmacy.name,
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight:
+                                          FontWeight.bold,
                                       fontSize: 16,
                                     ),
                                   ),
-                                  if (pharm.address.isNotEmpty)
+
+                                  if (address.isNotEmpty)
                                     Text(
-                                      pharm.address,
+                                      address,
                                       style: TextStyle(
-                                        color: Colors.grey.shade600,
+                                        color:
+                                            Colors.grey.shade600,
                                         fontSize: 13,
                                       ),
                                     ),
                                 ],
                               ),
                             ),
+
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
                               onPressed: () async {
-                                final confirm = await _confirmDelete(
+                                final confirmed =
+                                    await _confirmDelete(
                                   context,
                                   title: 'Delete Pharmacy',
-                                  message: 'Are you sure you want to remove ${pharm.name}?',
+                                  message:
+                                      'Are you sure you want to remove '
+                                      '${pharmacy.name}?',
                                 );
-                                if (confirm && context.mounted) {
-                                  pharmProvider.deletePharmacy(pharm.id);
+
+                                if (confirmed &&
+                                    context.mounted) {
+                                  await context
+                                      .read<PharmacyProvider>()
+                                      .deletePharmacy(
+                                        pharmacy.id,
+                                      );
                                 }
                               },
                             ),
                           ],
                         ),
-                        if (pharm.phone.isNotEmpty) ...[
+
+                        if (phone.isNotEmpty) ...[
                           const SizedBox(height: 10),
+
                           Row(
                             children: [
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.phone, size: 16),
+                                icon: const Icon(
+                                  Icons.phone,
+                                  size: 16,
+                                ),
                                 label: const Text('Call'),
-                                onPressed: () => _callPhone(context, pharm.phone),
+                                onPressed: () {
+                                  _callPhone(
+                                    context,
+                                    phone,
+                                  );
+                                },
                               ),
+
                               const SizedBox(width: 8),
+
                               OutlinedButton.icon(
-                                icon: const Icon(Icons.chat, size: 16),
-                                label: const Text('WhatsApp'),
-                                onPressed: () => _openWhatsApp(context, pharm.phone),
+                                icon: const Icon(
+                                  Icons.chat,
+                                  size: 16,
+                                ),
+                                label: const Text(
+                                  'WhatsApp',
+                                ),
+                                onPressed: () {
+                                  _openWhatsApp(
+                                    context,
+                                    phone,
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -1250,7 +1560,9 @@ class PharmacyListScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AddPharmacyScreen()),
+            MaterialPageRoute(
+              builder: (_) => const AddPharmacyScreen(),
+            ),
           );
         },
         child: const Icon(Icons.add),

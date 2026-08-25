@@ -18,12 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  bool _isLogin = true;
+  bool _isLoginMode = true;
   bool _obscurePassword = true;
-
-  static const Color _teal = Color(0xFF00897B);
-  static const Color _darkTeal = Color(0xFF00695C);
-  static const Color _background = Color(0xFFF4FAF9);
 
   @override
   void dispose() {
@@ -42,53 +38,53 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final auth = context.read<AuthProvider>();
-
     auth.clearError();
 
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final name = _nameController.text.trim();
-    final phone = _phoneController.text.trim();
+    final success = _isLoginMode
+        ? await auth.signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          )
+        : await auth.signUp(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            name: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+          );
 
-    final bool success;
-
-    if (_isLogin) {
-      success = await auth.signIn(
-        email: email,
-        password: password,
-      );
-    } else {
-      success = await auth.signUp(
-        email: email,
-        password: password,
-        name: name,
-        phone: phone,
-      );
+    if (!mounted) {
+      return;
     }
-
-    if (!mounted) return;
 
     if (!success) {
       _showError(
         auth.errorMessage ??
-            (_isLogin
-                ? 'Unable to sign in. Please check your details.'
-                : 'Unable to create your account.'),
+            (_isLoginMode
+                ? 'Unable to sign in.'
+                : 'Unable to create account.'),
       );
       return;
     }
 
-    // AuthGate is responsible for navigation.
-    if (!_isLogin && auth.currentUser == null) {
-      _showInfoDialog(
+    if (!_isLoginMode && auth.currentUser == null) {
+      _showMessage(
         title: 'Account Created',
         message:
-            'Your account has been created successfully.\n\n'
-            'Please check your email and confirm your email address '
-            'before signing in.',
+            'Your account was created successfully. Please confirm your email before signing in.',
         icon: Icons.mark_email_read_outlined,
       );
+      return;
     }
+
+    /*
+     * There is deliberately NO separate admin login.
+     *
+     * One LOGIN operation handles both:
+     *   administrator -> AuthGate/AdminScreen
+     *   active user    -> AuthGate/HomeScreen
+     *   inactive user  -> AuthGate/HomeScreen in guest mode
+     */
+    Navigator.of(context).pop(true);
   }
 
   void _toggleMode() {
@@ -98,126 +94,105 @@ class _LoginScreenState extends State<LoginScreen> {
     _formKey.currentState?.reset();
 
     setState(() {
-      _isLogin = !_isLogin;
-      _obscurePassword = true;
+      _isLoginMode = !_isLoginMode;
     });
   }
 
   Future<void> _resetPassword() async {
-    FocusScope.of(context).unfocus();
-
     final email = _emailController.text.trim();
 
-    if (email.isEmpty) {
+    if (email.isEmpty || !email.contains('@')) {
       _showError('Enter your email address first.');
-      return;
-    }
-
-    final emailIsValid =
-        RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-
-    if (!emailIsValid) {
-      _showError('Enter a valid email address first.');
       return;
     }
 
     final auth = context.read<AuthProvider>();
 
-    auth.clearError();
-
     final success = await auth.resetPassword(email);
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (success) {
-      _showInfoDialog(
+      _showMessage(
         title: 'Password Reset',
         message:
-            'If an account exists for this email address, '
-            'a password reset email has been sent.',
-        icon: Icons.lock_reset_outlined,
+            'If the email exists, a password reset message has been sent.',
+        icon: Icons.mark_email_read_outlined,
       );
     } else {
       _showError(
-        auth.errorMessage ??
-            'Unable to send the password reset email.',
+        auth.errorMessage ?? 'Unable to send password reset email.',
       );
     }
   }
 
   void _showError(String message) {
-    if (!mounted) return;
-
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.red.shade700,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Row(
-            children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(message),
-              ),
-            ],
-          ),
+          content: Text(message),
         ),
       );
   }
 
-  void _showInfoDialog({
+  void _showMessage({
     required String title,
     required String message,
     required IconData icon,
   }) {
-    showDialog<void>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          icon: Icon(
-            icon,
-            size: 48,
-            color: _teal,
-          ),
-          title: Text(
-            title,
-            textAlign: TextAlign.center,
-          ),
-          content: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              height: 1.45,
-            ),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: _teal,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 52,
+                  color: theme.colorScheme.primary,
                 ),
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                },
-                child: const Text('OK'),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                    },
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -228,223 +203,206 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: const Color(0xFFF4FAF9),
       appBar: AppBar(
-        backgroundColor: _darkTeal,
+        backgroundColor: const Color(0xFF009688),
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'SANA',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.5,
-          ),
+        title: Text(
+          _isLoginMode ? 'Login' : 'Create Account',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              28,
-              20,
-              32,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 460,
-              ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeader(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildHeader(),
 
-                    const SizedBox(height: 30),
+                        const SizedBox(height: 32),
 
-                    if (!_isLogin) ...[
-                      _buildTextField(
-                        controller: _nameController,
-                        label: 'Full Name',
-                        hint: 'Enter your name',
-                        icon: Icons.person_outline,
-                        enabled: !auth.isLoading,
-                        textInputAction:
-                            TextInputAction.next,
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
-                            return 'Please enter your name.';
-                          }
+                        if (!_isLoginMode) ...[
+                          TextFormField(
+                            controller: _nameController,
+                            enabled: !auth.isLoading,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Name',
+                              prefixIcon: Icon(Icons.person_outline),
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if ((value ?? '').trim().isEmpty) {
+                                return 'Please enter your name.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _phoneController,
+                            enabled: !auth.isLoading,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Phone',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if ((value ?? '').trim().isEmpty) {
+                                return 'Please enter your phone number.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
-                          if (value.trim().length < 2) {
-                            return 'Please enter a valid name.';
-                          }
+                        TextFormField(
+                          controller: _emailController,
+                          enabled: !auth.isLoading,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            final email = value?.trim() ?? '';
 
-                          return null;
-                        },
-                      ),
+                            if (email.isEmpty) {
+                              return 'Please enter your email.';
+                            }
 
-                      const SizedBox(height: 15),
+                            if (!email.contains('@') ||
+                                !email.contains('.')) {
+                              return 'Please enter a valid email.';
+                            }
 
-                      _buildTextField(
-                        controller: _phoneController,
-                        label: 'Phone',
-                        hint: 'Enter your phone number',
-                        icon: Icons.phone_outlined,
-                        enabled: !auth.isLoading,
-                        keyboardType: TextInputType.phone,
-                        textInputAction:
-                            TextInputAction.next,
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
-                            return 'Please enter your phone number.';
-                          }
+                            return null;
+                          },
+                        ),
 
-                          return null;
-                        },
-                      ),
+                        const SizedBox(height: 16),
 
-                      const SizedBox(height: 15),
-                    ],
+                        TextFormField(
+                          controller: _passwordController,
+                          enabled: !auth.isLoading,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) {
+                            if (!auth.isLoading) {
+                              _submit();
+                            }
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              onPressed: auth.isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _obscurePassword =
+                                            !_obscurePassword;
+                                      });
+                                    },
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                            ),
+                          ),
+                          validator: (value) {
+                            final password = value ?? '';
 
-                    _buildTextField(
-                      controller: _emailController,
-                      label: 'Email',
-                      hint: 'Enter your email address',
-                      icon: Icons.email_outlined,
-                      enabled: !auth.isLoading,
-                      keyboardType:
-                          TextInputType.emailAddress,
-                      textInputAction:
-                          TextInputAction.next,
-                      validator: (value) {
-                        final email =
-                            value?.trim() ?? '';
+                            if (password.isEmpty) {
+                              return 'Please enter your password.';
+                            }
 
-                        if (email.isEmpty) {
-                          return 'Please enter your email.';
-                        }
+                            if (!_isLoginMode && password.length < 6) {
+                              return 'Password must contain at least 6 characters.';
+                            }
 
-                        final valid = RegExp(
-                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                        ).hasMatch(email);
+                            return null;
+                          },
+                        ),
 
-                        if (!valid) {
-                          return 'Please enter a valid email.';
-                        }
+                        if (auth.errorMessage != null) ...[
+                          const SizedBox(height: 16),
+                          _buildError(auth.errorMessage!),
+                        ],
 
-                        return null;
-                      },
-                    ),
+                        const SizedBox(height: 24),
 
-                    const SizedBox(height: 15),
-
-                    _buildPasswordField(auth),
-
-                    if (auth.errorMessage != null) ...[
-                      const SizedBox(height: 15),
-                      _buildError(auth.errorMessage!),
-                    ],
-
-                    const SizedBox(height: 22),
-
-                    SizedBox(
-                      height: 54,
-                      child: FilledButton(
-                        onPressed:
-                            auth.isLoading ? null : _submit,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _teal,
-                          disabledBackgroundColor:
-                              Colors.teal.shade200,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(14),
+                        SizedBox(
+                          height: 52,
+                          child: FilledButton(
+                            onPressed: auth.isLoading ? null : _submit,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF009688),
+                            ),
+                            child: auth.isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    _isLoginMode
+                                        ? 'LOGIN'
+                                        : 'CREATE ACCOUNT',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                _isLogin
-                                    ? 'SIGN IN'
-                                    : 'CREATE ACCOUNT',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                      ),
-                    ),
 
-                    const SizedBox(height: 14),
+                        const SizedBox(height: 12),
 
-                    OutlinedButton(
-                      onPressed:
-                          auth.isLoading ? null : _toggleMode,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _teal,
-                        side: BorderSide(
-                          color: _teal.withValues(alpha: 0.5),
+                        TextButton(
+                          onPressed: auth.isLoading ? null : _toggleMode,
+                          child: Text(
+                            _isLoginMode
+                                ? 'Create a new account'
+                                : 'Already have an account? Sign in',
+                          ),
                         ),
-                        minimumSize:
-                            const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        _isLogin
-                            ? 'Create a new account'
-                            : 'I already have an account',
-                      ),
+
+                        if (_isLoginMode)
+                          TextButton(
+                            onPressed:
+                                auth.isLoading ? null : _resetPassword,
+                            child: const Text('Forgot password?'),
+                          ),
+                      ],
                     ),
-
-                    if (_isLogin) ...[
-                      const SizedBox(height: 4),
-                      TextButton(
-                        onPressed: auth.isLoading
-                            ? null
-                            : _resetPassword,
-                        child: const Text(
-                          'Forgot your password?',
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 18),
-
-                    Text(
-                      'SANA • Smart Health Tracker',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -454,220 +412,52 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Container(
-          width: 92,
-          height: 92,
+          width: 82,
+          height: 82,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                _teal.withValues(alpha: 0.15),
-                _teal.withValues(alpha: 0.05),
-              ],
-            ),
+            color: const Color(0xFF009688).withValues(alpha: 0.10),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: _teal.withValues(alpha: 0.18),
-            ),
           ),
           child: const Icon(
             Icons.health_and_safety,
-            size: 52,
-            color: _teal,
+            size: 48,
+            color: Color(0xFF009688),
           ),
         ),
-
-        const SizedBox(height: 18),
-
+        const SizedBox(height: 16),
         Text(
-          _isLogin
-              ? 'Welcome to SANA'
-              : 'Create your SANA account',
+          _isLoginMode ? 'Welcome to SANA' : 'Join SANA',
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 27,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
           ),
         ),
-
         const SizedBox(height: 8),
-
         Text(
-          _isLogin
-              ? 'Sign in to manage your health records'
-              : 'Keep your health information organized in one place',
+          _isLoginMode
+              ? 'Sign in to continue'
+              : 'Create your account to get started',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.grey.shade700,
-            fontSize: 14,
-            height: 1.4,
+            fontSize: 15,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required bool enabled,
-    required String? Function(String?) validator,
-    TextInputType? keyboardType,
-    TextInputAction? textInputAction,
-  }) {
-    return TextFormField(
-      controller: controller,
-      enabled: enabled,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      textCapitalization:
-          keyboardType == TextInputType.emailAddress
-              ? TextCapitalization.none
-              : TextCapitalization.sentences,
-      autocorrect: false,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.grey.shade300,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.grey.shade300,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: _teal,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.red.shade400,
-          ),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.red.shade600,
-            width: 2,
-          ),
-        ),
-      ),
-      validator: validator,
-    );
-  }
-
-  Widget _buildPasswordField(AuthProvider auth) {
-    return TextFormField(
-      controller: _passwordController,
-      enabled: !auth.isLoading,
-      obscureText: _obscurePassword,
-      textInputAction: TextInputAction.done,
-      onFieldSubmitted: (_) {
-        if (!auth.isLoading) {
-          _submit();
-        }
-      },
-      decoration: InputDecoration(
-        labelText: 'Password',
-        hintText:
-            _isLogin
-                ? 'Enter your password'
-                : 'At least 6 characters',
-        prefixIcon: const Icon(
-          Icons.lock_outline,
-        ),
-        suffixIcon: IconButton(
-          tooltip: _obscurePassword
-              ? 'Show password'
-              : 'Hide password',
-          onPressed: auth.isLoading
-              ? null
-              : () {
-                  setState(() {
-                    _obscurePassword =
-                        !_obscurePassword;
-                  });
-                },
-          icon: Icon(
-            _obscurePassword
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-          ),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.grey.shade300,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.grey.shade300,
-          ),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(14),
-          ),
-          borderSide: BorderSide(
-            color: _teal,
-            width: 2,
-          ),
-        ),
-      ),
-      validator: (value) {
-        final password = value ?? '';
-
-        if (password.isEmpty) {
-          return 'Please enter your password.';
-        }
-
-        if (!_isLogin && password.length < 6) {
-          return 'Password must contain at least 6 characters.';
-        }
-
-        return null;
-      },
-    );
-  }
-
   Widget _buildError(String message) {
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.red.shade200,
-        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red.shade200),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             Icons.error_outline,
@@ -678,10 +468,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Text(
               message,
               style: TextStyle(
-                color: Colors.red.shade800,
-                fontSize: 13,
+                color: Colors.red.shade700,
                 fontWeight: FontWeight.w500,
-                height: 1.35,
               ),
             ),
           ),

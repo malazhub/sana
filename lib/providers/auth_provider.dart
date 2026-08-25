@@ -9,21 +9,23 @@ class AuthProvider extends ChangeNotifier {
   final SupabaseClient _supabase =
       Supabase.instance.client;
 
-  StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<AuthState>?
+      _authSubscription;
 
   User? _currentUser;
+
   Map<String, dynamic>? _profile;
+
   Map<String, dynamic>? _subscription;
 
   bool _isLoading = false;
   bool _isInitialized = false;
+
   String? _errorMessage;
 
-  // ============================================================
-  // GETTERS
-  // ============================================================
-
   User? get currentUser => _currentUser;
+
+  User? get user => _currentUser;
 
   Map<String, dynamic>? get profile => _profile;
 
@@ -32,12 +34,20 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
-  bool get isInitialized => _isInitialized;
+  bool get isInitialized =>
+      _isInitialized;
 
-  String? get errorMessage => _errorMessage;
+  String? get errorMessage =>
+      _errorMessage;
 
   bool get isAuthenticated =>
       _currentUser != null;
+
+  bool get isGuest =>
+      !isAuthenticated || !isActive;
+
+  bool get isLoggedIn =>
+      isAuthenticated;
 
   String get userId =>
       _currentUser?.id ?? '';
@@ -51,20 +61,21 @@ class AuthProvider extends ChangeNotifier {
   String get phone =>
       _profile?['phone']?.toString() ?? '';
 
-  String get role =>
-      _profile?['role']
-          ?.toString()
-          .trim()
-          .toLowerCase() ??
-      'user';
+  String get role {
+    final value = _profile?['role']
+        ?.toString()
+        .trim()
+        .toLowerCase();
+
+    if (value == null || value.isEmpty) {
+      return 'user';
+    }
+
+    return value;
+  }
 
   bool get isAdmin =>
-      isAuthenticated &&
-      role == 'admin';
-
-  // ============================================================
-  // ACCOUNT ACCESS
-  // ============================================================
+      isAuthenticated && role == 'admin';
 
   bool get isActive {
     if (!isAuthenticated) {
@@ -75,14 +86,30 @@ class AuthProvider extends ChangeNotifier {
       return true;
     }
 
-    final status =
-        _subscription?['status']
-            ?.toString()
-            .trim()
-            .toLowerCase() ??
-        '';
+    return hasValidSubscription;
+  }
 
-    if (status != 'active') {
+  bool get hasValidSubscription {
+    if (!isAuthenticated) {
+      return false;
+    }
+
+    if (isAdmin) {
+      return true;
+    }
+
+    final profileActive =
+        _profile?['is_active'] == true;
+
+    if (!profileActive) {
+      return false;
+    }
+
+    return subscriptionStatus == 'active';
+  }
+
+  bool get subscriptionExpired {
+    if (!isAuthenticated || isAdmin) {
       return false;
     }
 
@@ -92,18 +119,15 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
-    return expiry.isAfter(
+    return !expiry.isAfter(
       DateTime.now().toUtc(),
     );
   }
 
-  // ============================================================
-  // SUBSCRIPTION
-  // ============================================================
-
   DateTime? get expiryDate {
     return _parseDate(
-      _subscription?['expires_at'],
+      _subscription?['expires_at'] ??
+          _profile?['expiry_date'],
     );
   }
 
@@ -118,19 +142,20 @@ class AuthProvider extends ChangeNotifier {
             .trim()
             .toLowerCase();
 
-    if (status == null ||
-        status.isEmpty) {
-      return 'pending';
-    }
-
     final expiry = expiryDate;
 
-    if (status == 'active' &&
-        expiry != null &&
-        expiry.isAfter(
-          DateTime.now().toUtc(),
-        )) {
-      return 'active';
+    if (status == 'active') {
+      if (expiry == null) {
+        return 'pending';
+      }
+
+      if (expiry.isAfter(
+        DateTime.now().toUtc(),
+      )) {
+        return 'active';
+      }
+
+      return 'expired';
     }
 
     if (expiry != null &&
@@ -140,36 +165,9 @@ class AuthProvider extends ChangeNotifier {
       return 'expired';
     }
 
-    return status;
-  }
-
-  bool get hasValidSubscription {
-    if (!isAuthenticated) {
-      return false;
-    }
-
-    if (isAdmin) {
-      return true;
-    }
-
-    return subscriptionStatus == 'active';
-  }
-
-  bool get subscriptionExpired {
-    if (!isAuthenticated ||
-        isAdmin) {
-      return false;
-    }
-
-    final expiry = expiryDate;
-
-    if (expiry == null) {
-      return false;
-    }
-
-    return !expiry.isAfter(
-      DateTime.now().toUtc(),
-    );
+    return status == null || status.isEmpty
+        ? 'pending'
+        : status;
   }
 
   int? get daysRemaining {
@@ -195,10 +193,6 @@ class AuthProvider extends ChangeNotifier {
         .inDays;
   }
 
-  // ============================================================
-  // INITIALIZATION
-  // ============================================================
-
   Future<void> initialize() async {
     if (_isInitialized) {
       return;
@@ -212,7 +206,8 @@ class AuthProvider extends ChangeNotifier {
           _supabase.auth.currentUser;
 
       _authSubscription ??=
-          _supabase.auth.onAuthStateChange.listen(
+          _supabase.auth.onAuthStateChange
+              .listen(
         (AuthState state) {
           unawaited(
             _handleAuthStateChange(state),
@@ -234,7 +229,7 @@ class AuthProvider extends ChangeNotifier {
       _isInitialized = true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Auth initialization failed: '
+        'Auth initialization failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -250,10 +245,6 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // ============================================================
-  // AUTH STATE CHANGES
-  // ============================================================
 
   Future<void> _handleAuthStateChange(
     AuthState state,
@@ -273,7 +264,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     } catch (error, stackTrace) {
       debugPrint(
-        'Auth state handling failed: '
+        'Auth state handling failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -293,10 +284,6 @@ class AuthProvider extends ChangeNotifier {
     await loadProfile();
     await loadSubscription();
   }
-
-  // ============================================================
-  // PROFILE
-  // ============================================================
 
   Future<bool> loadProfile() async {
     final user =
@@ -321,10 +308,7 @@ class AuthProvider extends ChangeNotifier {
                 'expiry_date,'
                 'role',
               )
-              .eq(
-                'id',
-                user.id,
-              )
+              .eq('id', user.id)
               .maybeSingle();
 
       _currentUser = user;
@@ -342,7 +326,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Load user profile failed: '
+        'Load user profile failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -358,32 +342,36 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // SUBSCRIPTION
-  // ============================================================
-
   Future<bool> loadSubscription() async {
     if (!isAuthenticated) {
       _subscription = null;
       return false;
     }
 
+    if (isAdmin) {
+      _subscription = null;
+      return true;
+    }
+
     try {
-      final subscription =
+      final result =
           await SubscriptionService
               .getCurrentSubscription();
 
-      _subscription =
-          subscription == null
-              ? null
-              : Map<String, dynamic>.from(
-                  subscription,
-                );
+      if (result == null) {
+        _subscription = null;
+        return false;
+      }
 
-      return _subscription != null;
+      _subscription =
+          Map<String, dynamic>.from(
+        result,
+      );
+
+      return true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Load subscription failed: '
+        'Load subscription failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -401,10 +389,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // SIGN IN
-  // ============================================================
-
   Future<bool> signIn({
     required String email,
     required String password,
@@ -413,16 +397,14 @@ class AuthProvider extends ChangeNotifier {
         email.trim();
 
     if (cleanEmail.isEmpty) {
-      _setError(
-        'Email is required.',
-      );
+      _setError('Email is required.');
+      notifyListeners();
       return false;
     }
 
     if (password.isEmpty) {
-      _setError(
-        'Password is required.',
-      );
+      _setError('Password is required.');
+      notifyListeners();
       return false;
     }
 
@@ -441,9 +423,7 @@ class AuthProvider extends ChangeNotifier {
           response.user;
 
       if (_currentUser == null) {
-        _setError(
-          'Unable to sign in.',
-        );
+        _setError('Unable to sign in.');
         return false;
       }
 
@@ -460,15 +440,14 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (error, stackTrace) {
       debugPrint(
-        'Sign in failed: '
+        'Sign in failed:\n'
         '$error\n$stackTrace',
       );
 
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to sign in.',
+          fallback: 'Unable to sign in.',
         ),
       );
 
@@ -478,10 +457,6 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // ============================================================
-  // SIGN UP
-  // ============================================================
 
   Future<bool> signUp({
     required String email,
@@ -499,9 +474,8 @@ class AuthProvider extends ChangeNotifier {
         phone.trim();
 
     if (cleanEmail.isEmpty) {
-      _setError(
-        'Email is required.',
-      );
+      _setError('Email is required.');
+      notifyListeners();
       return false;
     }
 
@@ -509,6 +483,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         'Password must contain at least 6 characters.',
       );
+      notifyListeners();
       return false;
     }
 
@@ -528,15 +503,6 @@ class AuthProvider extends ChangeNotifier {
 
       _currentUser =
           response.user;
-
-      /*
-       * If email confirmation is disabled, Supabase normally
-       * returns a session immediately.
-       *
-       * If confirmation is enabled, the user may exist without
-       * an authenticated session. In that case the database
-       * trigger/migration should create the profile.
-       */
 
       if (_currentUser != null &&
           response.session != null) {
@@ -560,7 +526,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (error, stackTrace) {
       debugPrint(
-        'Sign up failed: '
+        'Sign up failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -579,10 +545,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // ENSURE PROFILE
-  // ============================================================
-
   Future<void> _ensureUserProfile({
     required User user,
     required String name,
@@ -592,35 +554,27 @@ class AuthProvider extends ChangeNotifier {
         await _supabase
             .from('users')
             .select('id')
-            .eq(
-              'id',
-              user.id,
-            )
+            .eq('id', user.id)
             .maybeSingle();
 
     if (existing != null) {
       return;
     }
 
-    await _supabase
-        .from('users')
-        .insert({
+    await _supabase.from('users').insert({
       'id': user.id,
       'name': name,
       'email': user.email ?? '',
       'phone': phone,
-      'created_at': DateTime.now()
-          .toUtc()
-          .toIso8601String(),
+      'created_at':
+          DateTime.now()
+              .toUtc()
+              .toIso8601String(),
       'is_active': false,
       'expiry_date': null,
       'role': 'user',
     });
   }
-
-  // ============================================================
-  // SIGN OUT
-  // ============================================================
 
   Future<void> signOut() async {
     _setLoading(true);
@@ -628,7 +582,6 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await _supabase.auth.signOut();
-
       _clearUserState();
     } on AuthException catch (error) {
       _setError(
@@ -638,15 +591,14 @@ class AuthProvider extends ChangeNotifier {
       );
     } catch (error, stackTrace) {
       debugPrint(
-        'Sign out failed: '
+        'Sign out failed:\n'
         '$error\n$stackTrace',
       );
 
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to sign out.',
+          fallback: 'Unable to sign out.',
         ),
       );
     } finally {
@@ -654,10 +606,6 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // ============================================================
-  // REFRESH
-  // ============================================================
 
   Future<bool> refresh() async {
     final user =
@@ -680,7 +628,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } catch (error, stackTrace) {
       debugPrint(
-        'Auth refresh failed: '
+        'Auth refresh failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -699,10 +647,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // ADMIN STATUS
-  // ============================================================
-
   Future<bool> refreshAdminStatus() async {
     if (!isAuthenticated) {
       return false;
@@ -711,16 +655,10 @@ class AuthProvider extends ChangeNotifier {
     final loaded =
         await loadProfile();
 
-    if (!loaded) {
-      return false;
-    }
+    notifyListeners();
 
-    return isAdmin;
+    return loaded && isAdmin;
   }
-
-  // ============================================================
-  // PASSWORD RESET
-  // ============================================================
 
   Future<bool> resetPassword(
     String email,
@@ -729,9 +667,8 @@ class AuthProvider extends ChangeNotifier {
         email.trim();
 
     if (cleanEmail.isEmpty) {
-      _setError(
-        'Email is required.',
-      );
+      _setError('Email is required.');
+      notifyListeners();
       return false;
     }
 
@@ -755,7 +692,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (error, stackTrace) {
       debugPrint(
-        'Password reset failed: '
+        'Password reset failed:\n'
         '$error\n$stackTrace',
       );
 
@@ -774,48 +711,29 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // CLEAR USER STATE
-  // ============================================================
-
   void _clearUserState() {
     _currentUser = null;
     _profile = null;
     _subscription = null;
   }
 
-  // ============================================================
-  // ERROR
-  // ============================================================
-
   void clearError() {
     _clearError();
+    notifyListeners();
   }
 
   void _clearError() {
     _errorMessage = null;
   }
 
-  void _setError(
-    String message,
-  ) {
+  void _setError(String message) {
     _errorMessage = message;
   }
 
-  // ============================================================
-  // LOADING
-  // ============================================================
-
-  void _setLoading(
-    bool value,
-  ) {
+  void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
-
-  // ============================================================
-  // ERROR CLEANING
-  // ============================================================
 
   String _cleanErrorMessage(
     Object error, {
@@ -839,13 +757,7 @@ class AuthProvider extends ChangeNotifier {
     return message;
   }
 
-  // ============================================================
-  // DATE
-  // ============================================================
-
-  DateTime? _parseDate(
-    dynamic value,
-  ) {
+  DateTime? _parseDate(dynamic value) {
     if (value == null) {
       return null;
     }
@@ -861,14 +773,9 @@ class AuthProvider extends ChangeNotifier {
       return null;
     }
 
-    return DateTime.tryParse(
-      text,
-    )?.toUtc();
+    return DateTime.tryParse(text)
+        ?.toUtc();
   }
-
-  // ============================================================
-  // RESET
-  // ============================================================
 
   void reset() {
     _clearUserState();
@@ -879,10 +786,6 @@ class AuthProvider extends ChangeNotifier {
 
     notifyListeners();
   }
-
-  // ============================================================
-  // DISPOSE
-  // ============================================================
 
   @override
   void dispose() {

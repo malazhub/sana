@@ -1,82 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../providers/auth_provider.dart';
-import '../screens/admin_screen.dart';
-import '../screens/home_screen.dart';
+import 'package:sana/providers/auth_provider.dart';
+import 'package:sana/screens/admin_screen.dart' as admin_screen;
+import 'package:sana/screens/home_screen.dart' as home_screen;
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({
-    super.key,
-  });
+  const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
-    // ============================================================
-    // AUTH INITIALIZATION
-    // ============================================================
-
+    // ------------------------------------------------------------
+    // 1. AUTH PROVIDER IS STILL INITIALIZING
+    // ------------------------------------------------------------
     if (!auth.isInitialized) {
       return const _AuthLoadingScreen();
     }
 
-    // ============================================================
-    // GUEST MODE
-    // ============================================================
-    //
-    // No authenticated user = Guest Mode.
-    //
-    // Guest can open and use the normal SANA application.
-    // Login is available from the application wherever you
-    // provide the login entry point.
-    //
-
+    // ------------------------------------------------------------
+    // 2. NO LOGIN -> GUEST HOME
+    // ------------------------------------------------------------
     if (!auth.isAuthenticated) {
-      return const HomeScreen();
+      return const home_screen.HomeScreen();
     }
 
-    // ============================================================
-    // ADMIN
-    // ============================================================
-    //
-    // Authenticated administrator goes directly to AdminScreen.
-    //
-
+    // ------------------------------------------------------------
+    // 3. LOGGED-IN ADMIN -> ADMIN PANEL
+    // ------------------------------------------------------------
     if (auth.isAdmin) {
-      return const AdminScreen();
+      return const admin_screen.AdminScreen();
     }
 
-    // ============================================================
-    // ACTIVE AUTHENTICATED USER
-    // ============================================================
-    //
-    // A valid active user gets the normal application.
-    //
-
-    if (auth.hasValidSubscription) {
-      return const HomeScreen();
-    }
-
-    // ============================================================
-    // NON-ACTIVE AUTHENTICATED USER
-    // ============================================================
-    //
-    // According to the required SANA behavior:
-    //
-    // non-active user -> Guest Mode
-    //
-    // We therefore do NOT send this user to SubscriptionScreen.
-    //
-
-    return const HomeScreen();
+    // ------------------------------------------------------------
+    // 4. LOGGED-IN NORMAL USER -> HOME
+    // ------------------------------------------------------------
+    return const home_screen.HomeScreen();
   }
 }
-
-// ================================================================
-// LOADING SCREEN
-// ================================================================
 
 class _AuthLoadingScreen extends StatelessWidget {
   const _AuthLoadingScreen();
@@ -85,24 +46,7 @@ class _AuthLoadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 42,
-              height: 42,
-              child: CircularProgressIndicator(),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Loading...',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+        child: CircularProgressIndicator(),
       ),
     );
   }

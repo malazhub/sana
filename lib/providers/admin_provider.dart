@@ -4,90 +4,98 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/subscription_service.dart';
 
 class AdminProvider extends ChangeNotifier {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase =
+      Supabase.instance.client;
 
-  List<Map<String, dynamic>> _users = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _users =
+      <Map<String, dynamic>>[];
 
   bool _isLoading = false;
-  String? _errorMessage;
 
-  // ============================================================
-  // GETTERS
-  // ============================================================
+  String? _errorMessage;
 
   List<Map<String, dynamic>> get users =>
       List.unmodifiable(_users);
 
   bool get isLoading => _isLoading;
 
-  String? get errorMessage => _errorMessage;
-
-  // ============================================================
-  // LOAD CUSTOMERS
-  // ============================================================
+  String? get errorMessage =>
+      _errorMessage;
 
   Future<bool> loadUsers() async {
     _setLoading(true);
     _clearError();
 
     try {
-      final usersResponse = await _supabase
-          .from('users')
-          .select(
-            'id, '
-            'name, '
-            'email, '
-            'phone, '
-            'role, '
-            'is_active, '
-            'expiry_date, '
-            'created_at',
-          )
-          .neq('role', 'admin')
-          .order(
-            'created_at',
-            ascending: false,
-          );
+      final usersResponse =
+          await _supabase
+              .from('users')
+              .select(
+                'id,'
+                'name,'
+                'email,'
+                'phone,'
+                'role,'
+                'is_active,'
+                'expiry_date,'
+                'created_at',
+              )
+              .neq('role', 'admin')
+              .order(
+                'created_at',
+                ascending: false,
+              );
 
-      final subscriptionsResponse = await _supabase
-          .from('user_subscriptions')
-          .select(
-            'id, '
-            'user_id, '
-            'user_email, '
-            'user_phone, '
-            'status, '
-            'activated_at, '
-            'expires_at, '
-            'reminder_20day_sent, '
-            'created_at',
-          );
+      final subscriptionsResponse =
+          await _supabase
+              .from('user_subscriptions')
+              .select(
+                'id,'
+                'user_id,'
+                'user_email,'
+                'user_phone,'
+                'status,'
+                'activated_at,'
+                'expires_at,'
+                'reminder_20day_sent,'
+                'created_at',
+              );
 
       final subscriptionsByUserId =
           <String, Map<String, dynamic>>{};
 
-      for (final rawSubscription in subscriptionsResponse) {
+      for (final raw
+          in subscriptionsResponse) {
         final subscription =
-            Map<String, dynamic>.from(rawSubscription);
+            Map<String, dynamic>.from(
+          raw,
+        );
 
-        final userId =
-            subscription['user_id']?.toString().trim() ?? '';
+        final id =
+            subscription['user_id']
+                    ?.toString()
+                    .trim() ??
+                '';
 
-        if (userId.isEmpty) {
-          continue;
+        if (id.isNotEmpty) {
+          subscriptionsByUserId[id] =
+              subscription;
         }
-
-        subscriptionsByUserId[userId] = subscription;
       }
 
-      final result = <Map<String, dynamic>>[];
+      final result =
+          <Map<String, dynamic>>[];
 
-      for (final rawUser in usersResponse) {
+      for (final rawUser
+          in usersResponse) {
         final user =
-            Map<String, dynamic>.from(rawUser);
+            Map<String, dynamic>.from(
+          rawUser,
+        );
 
         final userId =
-            user['id']?.toString().trim() ?? '';
+            user['id']?.toString().trim() ??
+                '';
 
         if (userId.isEmpty) {
           continue;
@@ -103,10 +111,9 @@ class AdminProvider extends ChangeNotifier {
           'user_phone': user['phone'],
           'role': user['role'],
           'created_at': user['created_at'],
-
           'is_active': user['is_active'],
-          'expiry_date': user['expiry_date'],
-
+          'expiry_date':
+              user['expiry_date'],
           'subscription_id':
               subscription?['id'],
           'subscription_status':
@@ -116,7 +123,8 @@ class AdminProvider extends ChangeNotifier {
           'expires_at':
               subscription?['expires_at'],
           'reminder_20day_sent':
-              subscription?['reminder_20day_sent'],
+              subscription?[
+                  'reminder_20day_sent'],
           'subscription_created_at':
               subscription?['created_at'],
         });
@@ -134,7 +142,8 @@ class AdminProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback: 'Unable to load customers.',
+          fallback:
+              'Unable to load customers.',
         ),
       );
 
@@ -144,24 +153,22 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // ACTIVE
-  // ============================================================
-
   bool isActive(
     Map<String, dynamic> user,
   ) {
-    final status = user['subscription_status']
-        ?.toString()
-        .trim()
-        .toLowerCase();
+    final status =
+        user['subscription_status']
+            ?.toString()
+            .trim()
+            .toLowerCase();
 
     final expiry = _parseDate(
       user['expires_at'] ??
           user['expiry_date'],
     );
 
-    if (status != null && status.isNotEmpty) {
+    if (status != null &&
+        status.isNotEmpty) {
       if (status != 'active') {
         return false;
       }
@@ -175,9 +182,7 @@ class AdminProvider extends ChangeNotifier {
       );
     }
 
-    final legacyActive = user['is_active'];
-
-    if (legacyActive is! bool || !legacyActive) {
+    if (user['is_active'] != true) {
       return false;
     }
 
@@ -190,26 +195,23 @@ class AdminProvider extends ChangeNotifier {
     );
   }
 
-  // ============================================================
-  // EXPIRED
-  // ============================================================
-
   bool isExpired(
     Map<String, dynamic> user,
   ) {
-    final status = user['subscription_status']
-        ?.toString()
-        .trim()
-        .toLowerCase();
+    final status =
+        user['subscription_status']
+            ?.toString()
+            .trim()
+            .toLowerCase();
+
+    if (status == 'expired') {
+      return true;
+    }
 
     final expiry = _parseDate(
       user['expires_at'] ??
           user['expiry_date'],
     );
-
-    if (status == 'expired') {
-      return true;
-    }
 
     if (expiry == null) {
       return false;
@@ -219,10 +221,6 @@ class AdminProvider extends ChangeNotifier {
       DateTime.now().toUtc(),
     );
   }
-
-  // ============================================================
-  // STATUS
-  // ============================================================
 
   String statusText(
     Map<String, dynamic> user,
@@ -238,10 +236,6 @@ class AdminProvider extends ChangeNotifier {
     return 'Pending';
   }
 
-  // ============================================================
-  // DAYS REMAINING
-  // ============================================================
-
   int? daysRemaining(
     Map<String, dynamic> user,
   ) {
@@ -254,18 +248,17 @@ class AdminProvider extends ChangeNotifier {
       return null;
     }
 
-    final now = DateTime.now().toUtc();
+    final now =
+        DateTime.now().toUtc();
 
     if (!expiry.isAfter(now)) {
       return 0;
     }
 
-    return expiry.difference(now).inDays;
+    return expiry
+        .difference(now)
+        .inDays;
   }
-
-  // ============================================================
-  // EXPIRING WITHIN 20 DAYS
-  // ============================================================
 
   bool expiresWithin20Days(
     Map<String, dynamic> user,
@@ -283,7 +276,8 @@ class AdminProvider extends ChangeNotifier {
       return false;
     }
 
-    final now = DateTime.now().toUtc();
+    final now =
+        DateTime.now().toUtc();
 
     if (!expiry.isAfter(now)) {
       return false;
@@ -293,15 +287,6 @@ class AdminProvider extends ChangeNotifier {
         const Duration(days: 20);
   }
 
-  // ============================================================
-  // ACTIVATE USER
-  //
-  // Payment confirmation and subscription activation are
-  // performed by the protected PostgreSQL RPC.
-  //
-  // Flutter NEVER calculates expires_at.
-  // ============================================================
-
   Future<bool> activateUser(
     String userId, {
     required String transactionId,
@@ -310,17 +295,26 @@ class AdminProvider extends ChangeNotifier {
     required DateTime paidAt,
     String? notes,
   }) async {
-    final cleanUserId = userId.trim();
-    final cleanTransactionId = transactionId.trim();
-    final cleanCurrency = currency.trim();
+    final cleanUserId =
+        userId.trim();
+
+    final cleanTransactionId =
+        transactionId.trim();
+
+    final cleanCurrency =
+        currency.trim();
 
     if (cleanUserId.isEmpty) {
-      _setError('Customer is required.');
+      _setError(
+        'Customer is required.',
+      );
       return false;
     }
 
     if (cleanTransactionId.length < 3) {
-      _setError('Transaction ID is required.');
+      _setError(
+        'Transaction ID is required.',
+      );
       return false;
     }
 
@@ -332,7 +326,9 @@ class AdminProvider extends ChangeNotifier {
     }
 
     if (cleanCurrency.isEmpty) {
-      _setError('Currency is required.');
+      _setError(
+        'Currency is required.',
+      );
       return false;
     }
 
@@ -340,9 +336,11 @@ class AdminProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      await SubscriptionService.adminConfirmPayment(
+      await SubscriptionService
+          .adminConfirmPayment(
         userId: cleanUserId,
-        transactionId: cleanTransactionId,
+        transactionId:
+            cleanTransactionId,
         amount: amount,
         currency: cleanCurrency,
         paidAt: paidAt,
@@ -359,7 +357,8 @@ class AdminProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback: 'Unable to activate customer.',
+          fallback:
+              'Unable to activate customer.',
         ),
       );
 
@@ -369,21 +368,16 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // DEACTIVATE USER
-  //
-  // The protected PostgreSQL RPC performs the actual change.
-  //
-  // No customer/application data is deleted.
-  // ============================================================
-
   Future<bool> deactivateUser(
     String userId,
   ) async {
-    final cleanUserId = userId.trim();
+    final cleanUserId =
+        userId.trim();
 
     if (cleanUserId.isEmpty) {
-      _setError('Customer is required.');
+      _setError(
+        'Customer is required.',
+      );
       return false;
     }
 
@@ -394,10 +388,8 @@ class AdminProvider extends ChangeNotifier {
       await _supabase.rpc(
         'admin_deactivate_user',
         params: {
-          // IMPORTANT:
-          // This must exactly match the SQL RPC parameter:
-          // admin_deactivate_user(target_user_id uuid)
-          'target_user_id': cleanUserId,
+          'target_user_id':
+              cleanUserId,
         },
       );
 
@@ -411,7 +403,8 @@ class AdminProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback: 'Unable to deactivate customer.',
+          fallback:
+              'Unable to deactivate customer.',
         ),
       );
 
@@ -421,24 +414,21 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // FIND USER
-  // ============================================================
-
   Map<String, dynamic>? findUser(
     String userId,
   ) {
-    final cleanUserId = userId.trim();
+    final cleanUserId =
+        userId.trim();
 
     if (cleanUserId.isEmpty) {
       return null;
     }
 
     for (final user in _users) {
-      final currentId =
-          user['user_id']?.toString().trim();
-
-      if (currentId == cleanUserId) {
+      if (user['user_id']
+              ?.toString()
+              .trim() ==
+          cleanUserId) {
         return user;
       }
     }
@@ -446,28 +436,18 @@ class AdminProvider extends ChangeNotifier {
     return null;
   }
 
-  // ============================================================
-  // REFRESH
-  // ============================================================
-
   Future<bool> refresh() {
     return loadUsers();
   }
 
-  // ============================================================
-  // CLEAR
-  // ============================================================
-
   void clear() {
-    _users = <Map<String, dynamic>>[];
+    _users =
+        <Map<String, dynamic>>[];
+
     _errorMessage = null;
 
     notifyListeners();
   }
-
-  // ============================================================
-  // ERROR
-  // ============================================================
 
   void clearError() {
     _clearError();
@@ -489,10 +469,6 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ============================================================
-  // LOADING
-  // ============================================================
-
   void _setLoading(
     bool value,
   ) {
@@ -504,10 +480,6 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ============================================================
-  // DATE
-  // ============================================================
-
   DateTime? _parseDate(
     dynamic value,
   ) {
@@ -515,36 +487,35 @@ class AdminProvider extends ChangeNotifier {
       return null;
     }
 
-    final text = value.toString().trim();
+    if (value is DateTime) {
+      return value.toUtc();
+    }
+
+    final text =
+        value.toString().trim();
 
     if (text.isEmpty) {
       return null;
     }
 
-    final parsed = DateTime.tryParse(text);
-
-    if (parsed == null) {
-      return null;
-    }
-
-    return parsed.toUtc();
+    return DateTime.tryParse(text)
+        ?.toUtc();
   }
-
-  // ============================================================
-  // ERROR CLEANING
-  // ============================================================
 
   String _cleanErrorMessage(
     Object error, {
     required String fallback,
   }) {
-    final message = error.toString().trim();
+    final message =
+        error.toString().trim();
 
     if (message.isEmpty) {
       return fallback;
     }
 
-    if (message.startsWith('Exception: ')) {
+    if (message.startsWith(
+      'Exception: ',
+    )) {
       return message.substring(
         'Exception: '.length,
       );

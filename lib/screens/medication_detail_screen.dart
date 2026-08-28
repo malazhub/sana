@@ -1,10 +1,11 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/medication.dart';
 import '../providers/language_provider.dart';
 import '../providers/medication_provider.dart';
+
 String notesLbl = 'Notes / Description';
 
 class MedicationDetailScreen extends StatelessWidget {
@@ -28,10 +29,10 @@ class MedicationDetailScreen extends StatelessWidget {
 
     if (code == 'ar') {
       // ...
-      notesLbl = 'ملاحظات / الوصف';
+      notesLbl = 'Ù…Ù„Ø§Ø­Ø¸Ø§Øª / Ø§Ù„ÙˆØµÙ';
     } else if (code == 'es') {
       // ...
-      notesLbl = 'Notas / Descripción';
+      notesLbl = 'Notas / DescripciÃ³n';
     } else if (code == 'fr') {
       // ...
       notesLbl = 'Notes / Description';
@@ -40,31 +41,51 @@ class MedicationDetailScreen extends StatelessWidget {
       notesLbl = 'Hinweise / Beschreibung';
     } else if (code == 'tr') {
       // ...
-      notesLbl = 'Notlar / Açıklama';
+      notesLbl = 'Notlar / AÃ§Ä±klama';
     } else if (code == 'hi') {
       // ...
-      notesLbl = 'नोट्स / विवरण';
+      notesLbl = 'à¤¨à¥‹à¤Ÿà¥à¤¸ / à¤µà¤¿à¤µà¤°à¤£';
     } else if (code == 'zh') {
       // ...
-      notesLbl = '备注 / 描述';
+      notesLbl = 'å¤‡æ³¨ / æè¿°';
     }
     Widget imageWidget;
-    if (medication.photoUrl != null && medication.photoUrl!.startsWith('data:image')) {
+    if (medication.photoUrl != null &&
+        medication.photoUrl!.startsWith('data:image')) {
       try {
         final base64Str = medication.photoUrl!.split(',').last;
         final bytes = base64Decode(base64Str);
-        imageWidget = ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(bytes, width: double.infinity, height: 200, fit: BoxFit.cover));
+        imageWidget = ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(bytes,
+                width: double.infinity, height: 200, fit: BoxFit.cover));
       } catch (_) {
-        imageWidget = Container(width: double.infinity, height: 150, decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.medication, size: 80, color: Colors.blue));
+        imageWidget = Container(
+            width: double.infinity,
+            height: 150,
+            decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.medication, size: 80, color: Colors.blue));
       }
     } else {
-      imageWidget = Container(width: double.infinity, height: 150, decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.medication, size: 80, color: Colors.blue));
+      imageWidget = Container(
+          width: double.infinity,
+          height: 150,
+          decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12)),
+          child: const Icon(Icons.medication, size: 80, color: Colors.blue));
     }
 
-    final shareText = 'SANA Medical Record\nMedication: ${medication.name}\nDosage: ${medication.dosage}\nStock: ${medication.quantity}\nReminders: ${medication.reminderTimes.join(', ')}\nRepeat: ${medication.repeatType}';
+    final shareText =
+        'SANA Medical Record\nMedication: ${medication.name}\nDosage: ${medication.dosage}\nStock: ${medication.quantity}\nReminders: ${medication.reminderTimes.join(', ')}\nRepeat: ${medication.repeatType}';
 
     return Scaffold(
-      appBar: AppBar(title: Text(title), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+      appBar: AppBar(
+          title: Text(title),
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -72,20 +93,37 @@ class MedicationDetailScreen extends StatelessWidget {
           children: [
             imageWidget,
             const SizedBox(height: 20),
-            Text(medication.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.teal)),
+            Text(medication.name,
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal)),
             const Divider(height: 30),
-            _buildDetailTile(Icons.medical_information, dosageLbl, medication.dosage),
-            _buildDetailTile(Icons.numbers, qtyLbl, medication.quantity.toString()),
-            _buildDetailTile(Icons.access_time, timesLbl, medication.reminderTimes.isEmpty ? 'N/A' : medication.reminderTimes.join(', ')),
+            _buildDetailTile(
+                Icons.medical_information, dosageLbl, medication.dosage),
+            _buildDetailTile(
+                Icons.numbers, qtyLbl, medication.quantity.toString()),
+            _buildDetailTile(
+                Icons.access_time,
+                timesLbl,
+                medication.reminderTimes.isEmpty
+                    ? 'N/A'
+                    : medication.reminderTimes.join(', ')),
             _buildDetailTile(Icons.repeat, repeatLbl, medication.repeatType),
             const SizedBox(height: 30),
-            
             SizedBox(
-              width: double.infinity, height: 48,
+              width: double.infinity,
+              height: 48,
               child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
                 icon: const Icon(Icons.share),
-                label: Text(shareBtn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                label: Text(shareBtn,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 onPressed: () {
                   SharePlus.instance.share(ShareParams(text: shareText));
                 },
@@ -93,13 +131,21 @@ class MedicationDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              width: double.infinity, height: 48,
+              width: double.infinity,
+              height: 48,
               child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
                 icon: const Icon(Icons.delete),
-                label: Text(deleteBtn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                label: Text(deleteBtn,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 onPressed: () {
-                  Provider.of<MedicationProvider>(context, listen: false).deleteMedication(medication.id);
+                  Provider.of<MedicationProvider>(context, listen: false)
+                      .deleteMedication(medication.id);
                   Navigator.pop(context);
                 },
               ),
@@ -122,9 +168,15 @@ class MedicationDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500)),
               ],
             ),
           ),

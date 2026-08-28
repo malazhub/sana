@@ -51,7 +51,7 @@ class SharingService {
     final buffer = StringBuffer();
 
     buffer.writeln(
-      '📋 Medical Summary'
+      'ðŸ“‹ Medical Summary'
       '${name != null && name.isNotEmpty ? ': $name' : ''}',
     );
 
@@ -65,21 +65,17 @@ class SharingService {
       '-----------------------------------',
     );
 
-    if (medications != null &&
-        medications.isNotEmpty) {
+    if (medications != null && medications.isNotEmpty) {
       buffer.writeln(
         '\nMEDICATIONS (${medications.length}):',
       );
 
       for (final medication in medications) {
-        final medicationName =
-            _value(medication, 'name');
+        final medicationName = _value(medication, 'name');
 
-        final dosage =
-            _value(medication, 'dosage');
+        final dosage = _value(medication, 'dosage');
 
-        final repeat =
-            _value(medication, 'repeatType');
+        final repeat = _value(medication, 'repeatType');
 
         buffer.writeln(
           '- $medicationName'
@@ -95,14 +91,11 @@ class SharingService {
       );
 
       for (final doctor in doctors) {
-        final doctorName =
-            _value(doctor, 'name');
+        final doctorName = _value(doctor, 'name');
 
-        final specialty =
-            _value(doctor, 'specialty');
+        final specialty = _value(doctor, 'specialty');
 
-        final phone =
-            _value(doctor, 'phone');
+        final phone = _value(doctor, 'phone');
 
         buffer.writeln(
           '- $doctorName'
@@ -112,21 +105,17 @@ class SharingService {
       }
     }
 
-    if (pharmacies != null &&
-        pharmacies.isNotEmpty) {
+    if (pharmacies != null && pharmacies.isNotEmpty) {
       buffer.writeln(
         '\nPHARMACIES (${pharmacies.length}):',
       );
 
       for (final pharmacy in pharmacies) {
-        final pharmacyName =
-            _value(pharmacy, 'name');
+        final pharmacyName = _value(pharmacy, 'name');
 
-        final address =
-            _value(pharmacy, 'address');
+        final address = _value(pharmacy, 'address');
 
-        final phone =
-            _value(pharmacy, 'phone');
+        final phone = _value(pharmacy, 'phone');
 
         buffer.writeln(
           '- $pharmacyName'
@@ -142,8 +131,7 @@ class SharingService {
       );
 
       for (final item in history) {
-        final description =
-            _value(item, 'name');
+        final description = _value(item, 'name');
 
         buffer.writeln(
           '- ${description.isNotEmpty ? description : item}',
@@ -151,15 +139,13 @@ class SharingService {
       }
     }
 
-    if (documents != null &&
-        documents.isNotEmpty) {
+    if (documents != null && documents.isNotEmpty) {
       buffer.writeln(
         '\nDOCUMENTS (${documents.length}):',
       );
 
       for (final document in documents) {
-        final documentName =
-            _value(document, 'name');
+        final documentName = _value(document, 'name');
 
         buffer.writeln(
           '- ${documentName.isNotEmpty ? documentName : document}',
@@ -167,15 +153,13 @@ class SharingService {
       }
     }
 
-    if (insuranceCards != null &&
-        insuranceCards.isNotEmpty) {
+    if (insuranceCards != null && insuranceCards.isNotEmpty) {
       buffer.writeln(
         '\nINSURANCE CARDS (${insuranceCards.length}):',
       );
 
       for (final card in insuranceCards) {
-        final cardName =
-            _value(card, 'name');
+        final cardName = _value(card, 'name');
 
         buffer.writeln(
           '- ${cardName.isNotEmpty ? cardName : card}',
@@ -185,8 +169,6 @@ class SharingService {
 
     return buffer.toString();
   }
-
-  
 
   // ============================================================
   // MAIN SHARE API
@@ -234,8 +216,7 @@ class SharingService {
     await SharePlus.instance.share(
       ShareParams(
         text: summary,
-        subject:
-            name ?? 'Medical Summary',
+        subject: name ?? 'Medical Summary',
       ),
     );
   }
@@ -274,8 +255,7 @@ class SharingService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin:
-            const pw.EdgeInsets.all(32),
+        margin: const pw.EdgeInsets.all(32),
         build: (context) {
           final widgets = <pw.Widget>[];
 
@@ -286,22 +266,19 @@ class SharingService {
                 'Medical Record Report',
                 style: pw.TextStyle(
                   fontSize: 22,
-                  fontWeight:
-                      pw.FontWeight.bold,
+                  fontWeight: pw.FontWeight.bold,
                 ),
               ),
             ),
           );
 
-          if (name != null &&
-              name.isNotEmpty) {
+          if (name != null && name.isNotEmpty) {
             widgets.add(
               pw.Text(
                 'Patient / Record: $name',
                 style: pw.TextStyle(
                   fontSize: 16,
-                  fontWeight:
-                      pw.FontWeight.bold,
+                  fontWeight: pw.FontWeight.bold,
                 ),
               ),
             );
@@ -328,8 +305,7 @@ class SharingService {
             List<dynamic>? items,
             String Function(dynamic) formatter,
           ) {
-            if (items == null ||
-                items.isEmpty) {
+            if (items == null || items.isEmpty) {
               return;
             }
 
@@ -342,8 +318,7 @@ class SharingService {
                 '$title (${items.length})',
                 style: pw.TextStyle(
                   fontSize: 14,
-                  fontWeight:
-                      pw.FontWeight.bold,
+                  fontWeight: pw.FontWeight.bold,
                   color: PdfColors.teal,
                 ),
               ),
@@ -356,14 +331,12 @@ class SharingService {
             for (final item in items) {
               widgets.add(
                 pw.Padding(
-                  padding:
-                      const pw.EdgeInsets.only(
+                  padding: const pw.EdgeInsets.only(
                     bottom: 6,
                   ),
                   child: pw.Text(
-                    '• ${formatter(item)}',
-                    style:
-                        const pw.TextStyle(
+                    'â€¢ ${formatter(item)}',
+                    style: const pw.TextStyle(
                       fontSize: 12,
                     ),
                   ),
@@ -376,20 +349,17 @@ class SharingService {
             'MEDICATIONS',
             medications,
             (medication) {
-              final medicationName =
-                  _value(
+              final medicationName = _value(
                 medication,
                 'name',
               );
 
-              final dosage =
-                  _value(
+              final dosage = _value(
                 medication,
                 'dosage',
               );
 
-              final repeat =
-                  _value(
+              final repeat = _value(
                 medication,
                 'repeatType',
               );
@@ -404,20 +374,17 @@ class SharingService {
             'DOCTORS',
             doctors,
             (doctor) {
-              final doctorName =
-                  _value(
+              final doctorName = _value(
                 doctor,
                 'name',
               );
 
-              final specialty =
-                  _value(
+              final specialty = _value(
                 doctor,
                 'specialty',
               );
 
-              final phone =
-                  _value(
+              final phone = _value(
                 doctor,
                 'phone',
               );
@@ -432,20 +399,17 @@ class SharingService {
             'PHARMACIES',
             pharmacies,
             (pharmacy) {
-              final pharmacyName =
-                  _value(
+              final pharmacyName = _value(
                 pharmacy,
                 'name',
               );
 
-              final address =
-                  _value(
+              final address = _value(
                 pharmacy,
                 'address',
               );
 
-              final phone =
-                  _value(
+              final phone = _value(
                 pharmacy,
                 'phone',
               );
@@ -460,12 +424,9 @@ class SharingService {
             'MEDICATION HISTORY',
             history,
             (item) {
-              final value =
-                  _value(item, 'name');
+              final value = _value(item, 'name');
 
-              return value.isNotEmpty
-                  ? value
-                  : item.toString();
+              return value.isNotEmpty ? value : item.toString();
             },
           );
 
@@ -473,12 +434,9 @@ class SharingService {
             'DOCUMENTS',
             documents,
             (item) {
-              final value =
-                  _value(item, 'name');
+              final value = _value(item, 'name');
 
-              return value.isNotEmpty
-                  ? value
-                  : item.toString();
+              return value.isNotEmpty ? value : item.toString();
             },
           );
 
@@ -486,12 +444,9 @@ class SharingService {
             'INSURANCE CARDS',
             insuranceCards,
             (item) {
-              final value =
-                  _value(item, 'name');
+              final value = _value(item, 'name');
 
-              return value.isNotEmpty
-                  ? value
-                  : item.toString();
+              return value.isNotEmpty ? value : item.toString();
             },
           );
 
@@ -502,8 +457,7 @@ class SharingService {
 
     await Printing.sharePdf(
       bytes: await pdf.save(),
-      filename:
-          'medical_report.pdf',
+      filename: 'medical_report.pdf',
     );
   }
 }

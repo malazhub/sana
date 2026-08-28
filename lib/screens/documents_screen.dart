@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +13,7 @@ class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
 
   @override
-  State<DocumentsScreen> createState() =>
-      _DocumentsScreenState();
+  State<DocumentsScreen> createState() => _DocumentsScreenState();
 }
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
@@ -62,8 +61,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         withData: true,
       );
 
-      if (result == null ||
-          result.files.isEmpty) {
+      if (result == null || result.files.isEmpty) {
         return;
       }
 
@@ -76,8 +74,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 ).readAsBytes()
               : null);
 
-      if (bytes == null ||
-          bytes.isEmpty) {
+      if (bytes == null || bytes.isEmpty) {
         throw StateError(
           'The selected file could not be read.',
         );
@@ -87,8 +84,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         return;
       }
 
-      final nameController =
-          TextEditingController(
+      final nameController = TextEditingController(
         text: picked.name,
       );
 
@@ -102,12 +98,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             content: TextField(
               controller: nameController,
               autofocus: true,
-              decoration:
-                  const InputDecoration(
-                labelText:
-                    'Document name',
-                border:
-                    OutlineInputBorder(),
+              decoration: const InputDecoration(
+                labelText: 'Document name',
+                border: OutlineInputBorder(),
               ),
             ),
             actions: [
@@ -123,9 +116,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
               FilledButton(
                 onPressed: () {
-                  final value =
-                      nameController.text
-                          .trim();
+                  final value = nameController.text.trim();
 
                   if (value.isNotEmpty) {
                     Navigator.pop(
@@ -145,13 +136,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
       nameController.dispose();
 
-      if (name == null ||
-          name.trim().isEmpty) {
+      if (name == null || name.trim().isEmpty) {
         return;
       }
 
-      final extension =
-          _extensionOf(picked.name);
+      final extension = _extensionOf(picked.name);
 
       /*
        * IMPORTANT:
@@ -175,9 +164,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         bytes: bytes,
       );
 
-      await context
-          .read<DocumentProvider>()
-          .addDocument(document);
+      await context.read<DocumentProvider>().addDocument(document);
 
       if (!mounted) {
         return;
@@ -217,8 +204,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   Future<void> _delete(
     DocumentModel document,
   ) async {
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -242,10 +228,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
             ),
             FilledButton(
-              style:
-                  FilledButton.styleFrom(
-                backgroundColor:
-                    Colors.red,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
               ),
               onPressed: () {
                 Navigator.pop(
@@ -262,15 +246,12 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       },
     );
 
-    if (confirmed != true ||
-        !mounted) {
+    if (confirmed != true || !mounted) {
       return;
     }
 
     try {
-      await context
-          .read<DocumentProvider>()
-          .deleteDocument(
+      await context.read<DocumentProvider>().deleteDocument(
             document.id,
           );
 
@@ -310,16 +291,12 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       /*
        * Local document bytes are preferred.
        */
-      if (document.bytes != null &&
-          document.bytes!.isNotEmpty) {
-        final tempDirectory =
-            await Directory.systemTemp
-                .createTemp(
+      if (document.bytes != null && document.bytes!.isNotEmpty) {
+        final tempDirectory = await Directory.systemTemp.createTemp(
           'sana_share_',
         );
 
-        final extension =
-            _extensionOf(
+        final extension = _extensionOf(
           document.name,
         );
 
@@ -335,8 +312,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
         await SharePlus.instance.share(
           ShareParams(
-            text:
-                'SANA medical document: '
+            text: 'SANA medical document: '
                 '${document.name}',
             files: [
               XFile(
@@ -359,12 +335,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         return;
       }
 
-      final provider =
-          context.read<DocumentProvider>();
+      final provider = context.read<DocumentProvider>();
 
-      final signedUrl =
-          await provider
-              .getSignedDocumentUrl(
+      final signedUrl = await provider.getSignedDocumentUrl(
         document,
       );
 
@@ -372,8 +345,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         return;
       }
 
-      if (signedUrl == null ||
-          signedUrl.isEmpty) {
+      if (signedUrl == null || signedUrl.isEmpty) {
         _showMessage(
           'This document cannot be shared right now.',
           isError: true,
@@ -384,8 +356,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
       await SharePlus.instance.share(
         ShareParams(
-          text:
-              'SANA medical document: '
+          text: 'SANA medical document: '
               '${document.name}\n\n'
               '$signedUrl',
         ),
@@ -415,20 +386,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   Future<void> _preview(
     DocumentModel document,
   ) async {
-    final provider =
-        context.read<DocumentProvider>();
+    final provider = context.read<DocumentProvider>();
 
     String? signedUrl;
 
-    if ((document.bytes == null ||
-            document.bytes!.isEmpty) &&
+    if ((document.bytes == null || document.bytes!.isEmpty) &&
         document.storagePath != null &&
-        document.storagePath!
-            .trim()
-            .isNotEmpty) {
-      signedUrl =
-          await provider
-              .getSignedDocumentUrl(
+        document.storagePath!.trim().isNotEmpty) {
+      signedUrl = await provider.getSignedDocumentUrl(
         document,
       );
     }
@@ -437,27 +402,23 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       return;
     }
 
-    final isImage =
-        _isImage(document);
+    final isImage = _isImage(document);
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return Dialog(
           child: ConstrainedBox(
-            constraints:
-                const BoxConstraints(
+            constraints: const BoxConstraints(
               maxWidth: 600,
               maxHeight: 700,
             ),
             child: Padding(
-              padding:
-                  const EdgeInsets.all(
+              padding: const EdgeInsets.all(
                 16,
               ),
               child: Column(
-                mainAxisSize:
-                    MainAxisSize.min,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
@@ -473,14 +434,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                         child: Text(
                           document.name,
                           maxLines: 2,
-                          overflow:
-                              TextOverflow
-                                  .ellipsis,
-                          style:
-                              const TextStyle(
-                            fontWeight:
-                                FontWeight
-                                    .bold,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
                             fontSize: 18,
                           ),
                         ),
@@ -501,8 +457,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                     height: 16,
                   ),
                   Flexible(
-                    child:
-                        _buildPreviewContent(
+                    child: _buildPreviewContent(
                       document,
                       signedUrl,
                       isImage,
@@ -554,8 +509,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     bool isImage,
   ) {
     if (isImage) {
-      if (document.bytes != null &&
-          document.bytes!.isNotEmpty) {
+      if (document.bytes != null && document.bytes!.isNotEmpty) {
         return InteractiveViewer(
           child: Image.memory(
             document.bytes!,
@@ -564,14 +518,12 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         );
       }
 
-      if (signedUrl != null &&
-          signedUrl.isNotEmpty) {
+      if (signedUrl != null && signedUrl.isNotEmpty) {
         return InteractiveViewer(
           child: Image.network(
             signedUrl,
             fit: BoxFit.contain,
-            errorBuilder:
-                (
+            errorBuilder: (
               context,
               error,
               stackTrace,
@@ -584,21 +536,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     }
 
     return _PreviewUnavailable(
-      message:
-          document.fileType
-                      .trim()
-                      .toLowerCase() ==
-                  'pdf'
-              ? 'PDF preview is not available here.\n'
-                  'Use Share to open it.'
-              : 'Preview is not available for this file type.',
-      icon:
-          document.fileType
-                      .trim()
-                      .toLowerCase() ==
-                  'pdf'
-              ? Icons.picture_as_pdf
-              : Icons.insert_drive_file,
+      message: document.fileType.trim().toLowerCase() == 'pdf'
+          ? 'PDF preview is not available here.\n'
+              'Use Share to open it.'
+          : 'Preview is not available for this file type.',
+      icon: document.fileType.trim().toLowerCase() == 'pdf'
+          ? Icons.picture_as_pdf
+          : Icons.insert_drive_file,
     );
   }
 
@@ -610,11 +554,9 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   Widget build(
     BuildContext context,
   ) {
-    final provider =
-        context.watch<DocumentProvider>();
+    final provider = context.watch<DocumentProvider>();
 
-    final language =
-        context.watch<LanguageProvider>();
+    final language = context.watch<LanguageProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -625,31 +567,24 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         ),
         actions: [
           IconButton(
-            onPressed:
-                provider.isLoading
-                    ? null
-                    : () {
-                        provider
-                            .loadDocuments();
-                      },
+            onPressed: provider.isLoading
+                ? null
+                : () {
+                    provider.loadDocuments();
+                  },
             icon: const Icon(
               Icons.refresh,
             ),
           ),
         ],
       ),
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed:
-            _isUploading
-                ? null
-                : _pickAndUpload,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isUploading ? null : _pickAndUpload,
         icon: _isUploading
             ? const SizedBox(
                 width: 20,
                 height: 20,
-                child:
-                    CircularProgressIndicator(
+                child: CircularProgressIndicator(
                   strokeWidth: 2,
                 ),
               )
@@ -657,14 +592,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 Icons.upload_file,
               ),
         label: Text(
-          _isUploading
-              ? 'Uploading...'
-              : 'Add document',
+          _isUploading ? 'Uploading...' : 'Add document',
         ),
       ),
       body: RefreshIndicator(
-        onRefresh:
-            provider.loadDocuments,
+        onRefresh: provider.loadDocuments,
         child: _buildBody(
           provider,
         ),
@@ -675,17 +607,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   Widget _buildBody(
     DocumentProvider provider,
   ) {
-    if (provider.isLoading &&
-        provider.documents.isEmpty) {
+    if (provider.isLoading && provider.documents.isEmpty) {
       return ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: const [
           SizedBox(
             height: 300,
             child: Center(
-              child:
-                  CircularProgressIndicator(),
+              child: CircularProgressIndicator(),
             ),
           ),
         ],
@@ -694,8 +623,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
     if (provider.documents.isEmpty) {
       return ListView(
-        physics:
-            const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: const [
           SizedBox(
             height: 120,
@@ -713,8 +641,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               'No documents added yet.',
               style: TextStyle(
                 fontSize: 17,
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -722,16 +649,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             height: 8,
           ),
           Padding(
-            padding:
-                EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               horizontal: 24,
             ),
             child: Center(
               child: Text(
                 'Upload prescriptions, reports, '
                 'scans and other health files.',
-                textAlign:
-                    TextAlign.center,
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -740,39 +665,29 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     }
 
     return ListView.separated(
-      physics:
-          const AlwaysScrollableScrollPhysics(),
-      padding:
-          const EdgeInsets.fromLTRB(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
         12,
         12,
         12,
         100,
       ),
-      itemCount:
-          provider.documents.length,
-      separatorBuilder:
-          (context, index) {
+      itemCount: provider.documents.length,
+      separatorBuilder: (context, index) {
         return const SizedBox(
           height: 8,
         );
       },
-      itemBuilder:
-          (context, index) {
-        final document =
-            provider.documents[
-                index];
+      itemBuilder: (context, index) {
+        final document = provider.documents[index];
 
         return Card(
           child: ListTile(
-            contentPadding:
-                const EdgeInsets
-                    .symmetric(
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 6,
             ),
-            leading:
-                CircleAvatar(
+            leading: CircleAvatar(
               child: Icon(
                 _iconFor(
                   document.fileType,
@@ -782,11 +697,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             title: Text(
               document.name,
               maxLines: 2,
-              overflow:
-                  TextOverflow.ellipsis,
+              overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
-              '${document.fileType.toUpperCase()} • '
+              '${document.fileType.toUpperCase()} â€¢ '
               '${_formatDate(document.date)}',
             ),
             onTap: () {
@@ -794,10 +708,8 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 document,
               );
             },
-            trailing:
-                PopupMenuButton<String>(
-              onSelected:
-                  (value) {
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) {
                 switch (value) {
                   case 'preview':
                     _preview(
@@ -818,60 +730,42 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                     break;
                 }
               },
-              itemBuilder:
-                  (context) {
+              itemBuilder: (context) {
                 return const [
                   PopupMenuItem(
-                    value:
-                        'preview',
+                    value: 'preview',
                     child: ListTile(
-                      leading:
-                          Icon(
-                        Icons
-                            .visibility,
+                      leading: Icon(
+                        Icons.visibility,
                       ),
-                      title:
-                          Text(
+                      title: Text(
                         'Preview',
                       ),
-                      contentPadding:
-                          EdgeInsets
-                              .zero,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                   PopupMenuItem(
-                    value:
-                        'share',
+                    value: 'share',
                     child: ListTile(
-                      leading:
-                          Icon(
+                      leading: Icon(
                         Icons.share,
                       ),
-                      title:
-                          Text(
+                      title: Text(
                         'Share',
                       ),
-                      contentPadding:
-                          EdgeInsets
-                              .zero,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                   PopupMenuItem(
-                    value:
-                        'delete',
+                    value: 'delete',
                     child: ListTile(
-                      leading:
-                          Icon(
-                        Icons
-                            .delete_outline,
+                      leading: Icon(
+                        Icons.delete_outline,
                       ),
-                      title:
-                          Text(
+                      title: Text(
                         'Delete',
                       ),
-                      contentPadding:
-                          EdgeInsets
-                              .zero,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                 ];
@@ -892,7 +786,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   ) {
     switch (code) {
       case 'ar':
-        return 'المستندات';
+        return 'Ø§Ù„Ù…Ø³ØªÙ†Ø¯Ø§Øª';
 
       case 'fr':
         return 'Documents';
@@ -907,10 +801,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         return 'Belgeler';
 
       case 'hi':
-        return 'दस्तावेज़';
+        return 'à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œà¤¼';
 
       case 'zh':
-        return '文档';
+        return 'æ–‡æ¡£';
 
       default:
         return 'Medical Documents';
@@ -928,17 +822,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       'gif',
       'image',
     }.contains(
-      document.fileType
-          .trim()
-          .toLowerCase(),
+      document.fileType.trim().toLowerCase(),
     );
   }
 
   IconData _iconFor(
     String fileType,
   ) {
-    switch (
-        fileType.trim().toLowerCase()) {
+    switch (fileType.trim().toLowerCase()) {
       case 'pdf':
         return Icons.picture_as_pdf;
 
@@ -968,17 +859,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   String _extensionOf(
     String fileName,
   ) {
-    final dot =
-        fileName.lastIndexOf('.');
+    final dot = fileName.lastIndexOf('.');
 
-    if (dot < 0 ||
-        dot == fileName.length - 1) {
+    if (dot < 0 || dot == fileName.length - 1) {
       return 'bin';
     }
 
-    return fileName
-        .substring(dot + 1)
-        .toLowerCase();
+    return fileName.substring(dot + 1).toLowerCase();
   }
 
   String _safeFileName(
@@ -995,16 +882,14 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         .trim();
 
     if (cleaned.isEmpty) {
-      cleaned =
-          'document.$extension';
+      cleaned = 'document.$extension';
     }
 
     return cleaned;
   }
 
   String _generateId() {
-    final now =
-        DateTime.now();
+    final now = DateTime.now();
 
     return '${now.microsecondsSinceEpoch}_'
         '${now.millisecondsSinceEpoch}';
@@ -1013,8 +898,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   String _formatDate(
     DateTime date,
   ) {
-    final local =
-        date.toLocal();
+    final local = date.toLocal();
 
     return '${local.day.toString().padLeft(2, '0')}/'
         '${local.month.toString().padLeft(2, '0')}/'
@@ -1034,10 +918,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     ).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor:
-            isError
-                ? Colors.red
-                : null,
+        backgroundColor: isError ? Colors.red : null,
       ),
     );
   }
@@ -1047,13 +928,10 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 // PREVIEW UNAVAILABLE
 // ============================================================
 
-class _PreviewUnavailable
-    extends StatelessWidget {
+class _PreviewUnavailable extends StatelessWidget {
   const _PreviewUnavailable({
-    this.message =
-        'Preview is not available.',
-    this.icon =
-        Icons.visibility_off_outlined,
+    this.message = 'Preview is not available.',
+    this.icon = Icons.visibility_off_outlined,
   });
 
   final String message;
@@ -1065,11 +943,9 @@ class _PreviewUnavailable
   ) {
     return Center(
       child: Padding(
-        padding:
-            const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(32),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -1081,8 +957,7 @@ class _PreviewUnavailable
             ),
             Text(
               message,
-              textAlign:
-                  TextAlign.center,
+              textAlign: TextAlign.center,
             ),
           ],
         ),

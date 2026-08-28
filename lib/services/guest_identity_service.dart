@@ -1,4 +1,4 @@
-class GuestIdentityService {
+﻿class GuestIdentityService {
   GuestIdentityService._();
 
   /// One canonical shared scope for every Guest session.

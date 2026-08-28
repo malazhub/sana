@@ -1,4 +1,4 @@
-import 'package:translator/translator.dart';
+﻿import 'package:translator/translator.dart';
 
 class TranslationService {
   final GoogleTranslator _translator = GoogleTranslator();

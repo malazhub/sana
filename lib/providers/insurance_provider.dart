@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/insurance_card.dart';
@@ -87,8 +87,13 @@ class InsuranceProvider extends ChangeNotifier {
 
     try {
       final cardMap = card.toMap()..['user_id'] = user.id;
-      final response = await _client.from('insurance_cards').insert(cardMap).select().single();
-      final newCard = InsuranceCard.fromMap(Map<String, dynamic>.from(response));
+      final response = await _client
+          .from('insurance_cards')
+          .insert(cardMap)
+          .select()
+          .single();
+      final newCard =
+          InsuranceCard.fromMap(Map<String, dynamic>.from(response));
       _cards.insert(0, newCard);
       notifyListeners();
       return true;
@@ -103,7 +108,11 @@ class InsuranceProvider extends ChangeNotifier {
     if (user == null) return false;
 
     try {
-      await _client.from('insurance_cards').delete().eq('id', id).eq('user_id', user.id);
+      await _client
+          .from('insurance_cards')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
       _cards.removeWhere((c) => c.id == id);
       notifyListeners();
       return true;

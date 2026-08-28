@@ -1,15 +1,18 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+﻿import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class SanaNotificationHelper {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
   static Future<void> init() async {
     if (_initialized) return;
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-    
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
     // Updated to use the named parameter 'settings'
     await _notificationsPlugin.initialize(settings: initializationSettings);
     _initialized = true;
@@ -30,19 +33,22 @@ class SanaNotificationHelper {
       final minute = int.tryParse(parts[1]) ?? 0;
 
       final now = tz.TZDateTime.now(tz.local);
-      var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+      var scheduledDate =
+          tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
       if (scheduledDate.isBefore(now)) {
         scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
         'sana_med_channel',
         'Medication Reminders',
         channelDescription: 'Closed-app alarms for medication',
         importance: Importance.max,
         priority: Priority.high,
       );
-      const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+      const NotificationDetails platformDetails =
+          NotificationDetails(android: androidDetails);
 
       try {
         // Updated to strictly use named parameters and removed deprecated date interpretation parameter
@@ -59,7 +65,8 @@ class SanaNotificationHelper {
     }
   }
 
-  static Future<void> cancelMedicationReminders(int id, int maxTimesCount) async {
+  static Future<void> cancelMedicationReminders(
+      int id, int maxTimesCount) async {
     await init();
     for (int i = 0; i < maxTimesCount; i++) {
       try {

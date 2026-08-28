@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -12,18 +12,15 @@ class AddMedicationScreen extends StatefulWidget {
   const AddMedicationScreen({super.key});
 
   @override
-  State<AddMedicationScreen> createState() =>
-      _AddMedicationScreenState();
+  State<AddMedicationScreen> createState() => _AddMedicationScreenState();
 }
 
-class _AddMedicationScreenState
-    extends State<AddMedicationScreen> {
+class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
   final _dosageController = TextEditingController();
-  final _quantityController =
-      TextEditingController(text: '1');
+  final _quantityController = TextEditingController(text: '1');
 
   DateTime _selectedDate = DateTime.now();
 
@@ -74,16 +71,13 @@ class _AddMedicationScreenState
         withData: true,
       );
 
-      if (result == null ||
-          result.files.isEmpty ||
-          !mounted) {
+      if (result == null || result.files.isEmpty || !mounted) {
         return;
       }
 
       final file = result.files.single;
 
-      if (file.bytes == null ||
-          file.bytes!.isEmpty) {
+      if (file.bytes == null || file.bytes!.isEmpty) {
         _showMessage(
           'The selected image could not be read.',
           isError: true,
@@ -172,9 +166,7 @@ class _AddMedicationScreenState
         : 'Daily';
 
     final medication = Medication(
-      id: DateTime.now()
-          .microsecondsSinceEpoch
-          .toString(),
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
 
       // MedicationProvider replaces this with the
       // authenticated user's ID before saving.
@@ -183,8 +175,7 @@ class _AddMedicationScreenState
       name: _nameController.text.trim(),
       dosage: _dosageController.text.trim(),
       quantity: quantity,
-      reminderTimes:
-          List<String>.from(_selectedTimes),
+      reminderTimes: List<String>.from(_selectedTimes),
       repeatType: repeatValue,
 
       // Do not store the image as a base64/data URL
@@ -200,9 +191,7 @@ class _AddMedicationScreenState
     });
 
     try {
-      await context
-          .read<MedicationProvider>()
-          .addMedication(medication);
+      await context.read<MedicationProvider>().addMedication(medication);
 
       if (!mounted) {
         return;
@@ -239,15 +228,13 @@ class _AddMedicationScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor:
-            isError ? Colors.red : null,
+        backgroundColor: isError ? Colors.red : null,
       ),
     );
   }
 
   String _photoButtonText(String fallback) {
-    if (_photoName == null ||
-        _photoName!.trim().isEmpty) {
+    if (_photoName == null || _photoName!.trim().isEmpty) {
       return fallback;
     }
 
@@ -256,131 +243,98 @@ class _AddMedicationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final language =
-        context.watch<LanguageProvider>();
+    final language = context.watch<LanguageProvider>();
 
-    final code =
-        language.locale.languageCode;
+    final code = language.locale.languageCode;
 
     String title = 'Add Medication';
     String nameLabel = 'Medication Name *';
-    String dosageLabel =
-        'Dosage (e.g. 500mg) *';
+    String dosageLabel = 'Dosage (e.g. 500mg) *';
     String qtyLabel = 'Quantity *';
     String repeatLabel = 'Repeat Pattern';
     String dailyOpt = 'Daily';
     String dateOpt = 'Select Date';
-    String timesLabel =
-        'Select Reminder Times';
-    String photoBtn =
-        'Add Medicine Photo';
-    String saveBtn =
-        'Save Medication';
+    String timesLabel = 'Select Reminder Times';
+    String photoBtn = 'Add Medicine Photo';
+    String saveBtn = 'Save Medication';
 
     if (code == 'ar') {
-      title = 'إضافة دواء';
-      nameLabel = 'اسم الدواء *';
-      dosageLabel =
-          'الجرعة (مثال 500 ملجم) *';
-      qtyLabel = 'الكمية *';
-      repeatLabel = 'نمط التكرار';
-      dailyOpt = 'يومياً';
-      dateOpt = 'تحديد التاريخ';
-      timesLabel = 'اختر أوقات التذكير';
-      photoBtn = 'إضافة صورة الدواء';
-      saveBtn = 'حفظ الدواء';
+      title = 'Ø¥Ø¶Ø§ÙØ© Ø¯ÙˆØ§Ø¡';
+      nameLabel = 'Ø§Ø³Ù… Ø§Ù„Ø¯ÙˆØ§Ø¡ *';
+      dosageLabel = 'Ø§Ù„Ø¬Ø±Ø¹Ø© (Ù…Ø«Ø§Ù„ 500 Ù…Ù„Ø¬Ù…) *';
+      qtyLabel = 'Ø§Ù„ÙƒÙ…ÙŠØ© *';
+      repeatLabel = 'Ù†Ù…Ø· Ø§Ù„ØªÙƒØ±Ø§Ø±';
+      dailyOpt = 'ÙŠÙˆÙ…ÙŠØ§Ù‹';
+      dateOpt = 'ØªØ­Ø¯ÙŠØ¯ Ø§Ù„ØªØ§Ø±ÙŠØ®';
+      timesLabel = 'Ø§Ø®ØªØ± Ø£ÙˆÙ‚Ø§Øª Ø§Ù„ØªØ°ÙƒÙŠØ±';
+      photoBtn = 'Ø¥Ø¶Ø§ÙØ© ØµÙˆØ±Ø© Ø§Ù„Ø¯ÙˆØ§Ø¡';
+      saveBtn = 'Ø­ÙØ¸ Ø§Ù„Ø¯ÙˆØ§Ø¡';
     } else if (code == 'es') {
-      title = 'Añadir Medicamento';
-      nameLabel =
-          'Nombre del Medicamento *';
-      dosageLabel =
-          'Dosis (ej. 500mg) *';
+      title = 'AÃ±adir Medicamento';
+      nameLabel = 'Nombre del Medicamento *';
+      dosageLabel = 'Dosis (ej. 500mg) *';
       qtyLabel = 'Cantidad *';
-      repeatLabel =
-          'Patrón de Repetición';
+      repeatLabel = 'PatrÃ³n de RepeticiÃ³n';
       dailyOpt = 'Diario';
       dateOpt = 'Seleccionar Fecha';
-      timesLabel =
-          'Seleccionar Horarios';
-      photoBtn =
-          'Añadir Foto del Medicamento';
-      saveBtn =
-          'Guardar Medicamento';
+      timesLabel = 'Seleccionar Horarios';
+      photoBtn = 'AÃ±adir Foto del Medicamento';
+      saveBtn = 'Guardar Medicamento';
     } else if (code == 'fr') {
-      title = 'Ajouter un Médicament';
-      nameLabel =
-          'Nom du Médicament *';
-      dosageLabel =
-          'Dosage (ex. 500mg) *';
-      qtyLabel = 'Quantité *';
-      repeatLabel = 'Répétition';
+      title = 'Ajouter un MÃ©dicament';
+      nameLabel = 'Nom du MÃ©dicament *';
+      dosageLabel = 'Dosage (ex. 500mg) *';
+      qtyLabel = 'QuantitÃ© *';
+      repeatLabel = 'RÃ©pÃ©tition';
       dailyOpt = 'Quotidien';
-      dateOpt =
-          'Sélectionner une Date';
-      timesLabel =
-          'Horaires de Rappel';
-      photoBtn =
-          'Ajouter Photo du Médicament';
+      dateOpt = 'SÃ©lectionner une Date';
+      timesLabel = 'Horaires de Rappel';
+      photoBtn = 'Ajouter Photo du MÃ©dicament';
       saveBtn = 'Enregistrer';
     } else if (code == 'de') {
-      title = 'Medikament hinzufügen';
-      nameLabel =
-          'Medikamentenname *';
-      dosageLabel =
-          'Dosierung (z.B. 500mg) *';
+      title = 'Medikament hinzufÃ¼gen';
+      nameLabel = 'Medikamentenname *';
+      dosageLabel = 'Dosierung (z.B. 500mg) *';
       qtyLabel = 'Menge *';
       repeatLabel = 'Wiederholung';
-      dailyOpt = 'Täglich';
-      dateOpt = 'Datum Wählen';
-      timesLabel =
-          'Erinnerungszeiten wählen';
-      photoBtn =
-          'Medikamentenfoto hinzufügen';
+      dailyOpt = 'TÃ¤glich';
+      dateOpt = 'Datum WÃ¤hlen';
+      timesLabel = 'Erinnerungszeiten wÃ¤hlen';
+      photoBtn = 'Medikamentenfoto hinzufÃ¼gen';
       saveBtn = 'Speichern';
     } else if (code == 'tr') {
-      title = 'İlaç Ekle';
-      nameLabel = 'İlaç Adı *';
-      dosageLabel =
-          'Doz (örn. 500mg) *';
+      title = 'Ä°laÃ§ Ekle';
+      nameLabel = 'Ä°laÃ§ AdÄ± *';
+      dosageLabel = 'Doz (Ã¶rn. 500mg) *';
       qtyLabel = 'Miktar *';
-      repeatLabel =
-          'Tekrar Düzeni';
-      dailyOpt = 'Günlük';
-      dateOpt = 'Tarih Seç';
-      timesLabel =
-          'Hatırlatma Zamanlarını Seçin';
-      photoBtn =
-          'İlaç Fotoğrafı Ekle';
-      saveBtn = 'İlacı Kaydet';
+      repeatLabel = 'Tekrar DÃ¼zeni';
+      dailyOpt = 'GÃ¼nlÃ¼k';
+      dateOpt = 'Tarih SeÃ§';
+      timesLabel = 'HatÄ±rlatma ZamanlarÄ±nÄ± SeÃ§in';
+      photoBtn = 'Ä°laÃ§ FotoÄŸrafÄ± Ekle';
+      saveBtn = 'Ä°lacÄ± Kaydet';
     } else if (code == 'hi') {
-      title = 'दवा जोड़ें';
-      nameLabel = 'दवा का नाम *';
-      dosageLabel =
-          'खुराक (जैसे 500mg) *';
-      qtyLabel = 'मात्रा *';
-      repeatLabel =
-          'दोहराव पैटर्न';
-      dailyOpt = 'दैनिक';
-      dateOpt = 'तिथि चुनें';
-      timesLabel =
-          'अलार्म समय चुनें';
-      photoBtn =
-          'दवा की तस्वीर जोड़ें';
-      saveBtn = 'दवा सहेजें';
+      title = 'à¤¦à¤µà¤¾ à¤œà¥‹à¤¡à¤¼à¥‡à¤‚';
+      nameLabel = 'à¤¦à¤µà¤¾ à¤•à¤¾ à¤¨à¤¾à¤® *';
+      dosageLabel = 'à¤–à¥à¤°à¤¾à¤• (à¤œà¥ˆà¤¸à¥‡ 500mg) *';
+      qtyLabel = 'à¤®à¤¾à¤¤à¥à¤°à¤¾ *';
+      repeatLabel = 'à¤¦à¥‹à¤¹à¤°à¤¾à¤µ à¤ªà¥ˆà¤Ÿà¤°à¥à¤¨';
+      dailyOpt = 'à¤¦à¥ˆà¤¨à¤¿à¤•';
+      dateOpt = 'à¤¤à¤¿à¤¥à¤¿ à¤šà¥à¤¨à¥‡à¤‚';
+      timesLabel = 'à¤…à¤²à¤¾à¤°à¥à¤® à¤¸à¤®à¤¯ à¤šà¥à¤¨à¥‡à¤‚';
+      photoBtn = 'à¤¦à¤µà¤¾ à¤•à¥€ à¤¤à¤¸à¥à¤µà¥€à¤° à¤œà¥‹à¤¡à¤¼à¥‡à¤‚';
+      saveBtn = 'à¤¦à¤µà¤¾ à¤¸à¤¹à¥‡à¤œà¥‡à¤‚';
     } else if (code == 'zh') {
-      title = '添加药物';
-      nameLabel = '药物名称 *';
-      dosageLabel =
-          '剂量 (例如 500mg) *';
-      qtyLabel = '数量 *';
-      repeatLabel = '重复模式';
-      dailyOpt = '每天';
-      dateOpt = '选择日期';
-      timesLabel =
-          '选择提醒时间';
-      photoBtn =
-          '添加药物照片';
-      saveBtn = '保存药物';
+      title = 'æ·»åŠ è¯ç‰©';
+      nameLabel = 'è¯ç‰©åç§° *';
+      dosageLabel = 'å‰‚é‡ (ä¾‹å¦‚ 500mg) *';
+      qtyLabel = 'æ•°é‡ *';
+      repeatLabel = 'é‡å¤æ¨¡å¼';
+      dailyOpt = 'æ¯å¤©';
+      dateOpt = 'é€‰æ‹©æ—¥æœŸ';
+      timesLabel = 'é€‰æ‹©æé†’æ—¶é—´';
+      photoBtn = 'æ·»åŠ è¯ç‰©ç…§ç‰‡';
+      saveBtn = 'ä¿å­˜è¯ç‰©';
     }
 
     return Scaffold(
@@ -394,97 +348,77 @@ class _AddMedicationScreenState
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: _nameController,
                 enabled: !_isSaving,
-                textInputAction:
-                    TextInputAction.next,
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: nameLabel,
-                  border:
-                      const OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   prefixIcon: const Icon(
                     Icons.medication,
                   ),
                 ),
                 validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Required';
                   }
 
                   return null;
                 },
               ),
-
               const SizedBox(height: 12),
-
               TextFormField(
                 controller: _dosageController,
                 enabled: !_isSaving,
-                textInputAction:
-                    TextInputAction.next,
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: dosageLabel,
-                  border:
-                      const OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   prefixIcon: const Icon(
                     Icons.straighten,
                   ),
                 ),
                 validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Required';
                   }
 
                   return null;
                 },
               ),
-
               const SizedBox(height: 12),
-
               TextFormField(
-                controller:
-                    _quantityController,
+                controller: _quantityController,
                 enabled: !_isSaving,
-                keyboardType:
-                    TextInputType.number,
+                keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: qtyLabel,
-                  border:
-                      const OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   prefixIcon: const Icon(
                     Icons.numbers,
                   ),
                 ),
                 validator: (value) {
-                  final quantity =
-                      int.tryParse(
+                  final quantity = int.tryParse(
                     value?.trim() ?? '',
                   );
 
-                  if (quantity == null ||
-                      quantity <= 0) {
+                  if (quantity == null || quantity <= 0) {
                     return 'Enter a valid quantity';
                   }
 
                   return null;
                 },
               ),
-
               const SizedBox(height: 16),
-
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _isSaving
-                          ? null
-                          : _pickPhoto,
+                      onPressed: _isSaving ? null : _pickPhoto,
                       icon: const Icon(
                         Icons.camera_alt,
                         color: Colors.teal,
@@ -494,25 +428,19 @@ class _AddMedicationScreenState
                           photoBtn,
                         ),
                         maxLines: 2,
-                        overflow:
-                            TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      style:
-                          OutlinedButton.styleFrom(
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
                           vertical: 12,
                         ),
                       ),
                     ),
                   ),
-
                   if (_photoBytes != null) ...[
                     const SizedBox(width: 8),
                     ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(6),
                       child: Image.memory(
                         _photoBytes!,
                         width: 48,
@@ -523,9 +451,7 @@ class _AddMedicationScreenState
                   ],
                 ],
               ),
-
               const SizedBox(height: 16),
-
               Text(
                 repeatLabel,
                 style: const TextStyle(
@@ -533,9 +459,7 @@ class _AddMedicationScreenState
                   fontSize: 15,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               Row(
                 children: [
                   Expanded(
@@ -543,59 +467,45 @@ class _AddMedicationScreenState
                       label: Center(
                         child: Text(dailyOpt),
                       ),
-                      selected:
-                          _repeatChoice ==
-                              'Daily',
-                      selectedColor:
-                          Colors.teal.shade100,
-                      onSelected:
-                          _isSaving
-                              ? null
-                              : (selected) {
-                                  if (!selected) {
-                                    return;
-                                  }
+                      selected: _repeatChoice == 'Daily',
+                      selectedColor: Colors.teal.shade100,
+                      onSelected: _isSaving
+                          ? null
+                          : (selected) {
+                              if (!selected) {
+                                return;
+                              }
 
-                                  setState(() {
-                                    _repeatChoice =
-                                        'Daily';
-                                  });
-                                },
+                              setState(() {
+                                _repeatChoice = 'Daily';
+                              });
+                            },
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: ChoiceChip(
                       label: Center(
                         child: Text(
-                          _repeatChoice ==
-                                  'Select Date'
+                          _repeatChoice == 'Select Date'
                               ? '${_selectedDate.day}/'
                                   '${_selectedDate.month}/'
                                   '${_selectedDate.year}'
                               : dateOpt,
                         ),
                       ),
-                      selected:
-                          _repeatChoice ==
-                              'Select Date',
-                      selectedColor:
-                          Colors.teal.shade100,
-                      onSelected:
-                          _isSaving
-                              ? null
-                              : (_) {
-                                  _pickDate();
-                                },
+                      selected: _repeatChoice == 'Select Date',
+                      selectedColor: Colors.teal.shade100,
+                      onSelected: _isSaving
+                          ? null
+                          : (_) {
+                              _pickDate();
+                            },
                     ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
-
               Text(
                 timesLabel,
                 style: const TextStyle(
@@ -603,88 +513,64 @@ class _AddMedicationScreenState
                   fontSize: 15,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children:
-                    _hourlyTimes.map(
+                children: _hourlyTimes.map(
                   (time) {
-                    final selected =
-                        _selectedTimes
-                            .contains(time);
+                    final selected = _selectedTimes.contains(time);
 
                     return FilterChip(
                       label: Text(time),
                       selected: selected,
-                      selectedColor:
-                          Colors.teal.shade100,
-                      checkmarkColor:
-                          Colors.teal,
-                      onSelected:
-                          _isSaving
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    if (value) {
-                                      if (!_selectedTimes
-                                          .contains(
-                                              time)) {
-                                        _selectedTimes
-                                            .add(
-                                          time,
-                                        );
-                                      }
-                                    } else {
-                                      _selectedTimes
-                                          .remove(
-                                        time,
-                                      );
-                                    }
-                                  });
-                                },
+                      selectedColor: Colors.teal.shade100,
+                      checkmarkColor: Colors.teal,
+                      onSelected: _isSaving
+                          ? null
+                          : (value) {
+                              setState(() {
+                                if (value) {
+                                  if (!_selectedTimes.contains(time)) {
+                                    _selectedTimes.add(
+                                      time,
+                                    );
+                                  }
+                                } else {
+                                  _selectedTimes.remove(
+                                    time,
+                                  );
+                                }
+                              });
+                            },
                     );
                   },
                 ).toList(),
               ),
-
               const SizedBox(height: 24),
-
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed:
-                      _isSaving
-                          ? null
-                          : _saveMedication,
-                  style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.teal,
-                    foregroundColor:
-                        Colors.white,
+                  onPressed: _isSaving ? null : _saveMedication,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
                   ),
                   child: _isSaving
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child:
-                              CircularProgressIndicator(
+                          child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color:
-                                Colors.white,
+                            color: Colors.white,
                           ),
                         )
                       : Text(
                           saveBtn,
-                          style:
-                              const TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                 ),

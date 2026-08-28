@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -87,11 +87,8 @@ class SupabaseService {
     }
 
     try {
-      final response = await _supabase
-          .from('users')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      final response =
+          await _supabase.from('users').select().eq('id', userId).maybeSingle();
 
       if (response == null) {
         return null;
@@ -148,13 +145,10 @@ class SupabaseService {
     }
 
     try {
-      await _supabase
-          .from('users')
-          .update({
-            'is_active': isActive,
-            'expiry_date': expiryDate?.toIso8601String(),
-          })
-          .eq('id', userId);
+      await _supabase.from('users').update({
+        'is_active': isActive,
+        'expiry_date': expiryDate?.toIso8601String(),
+      }).eq('id', userId);
     } catch (error, stackTrace) {
       debugPrint(
         'Update user activation error: '
@@ -180,11 +174,7 @@ class SupabaseService {
         return false;
       }
 
-      return response['role']
-              ?.toString()
-              .trim()
-              .toLowerCase() ==
-          'admin';
+      return response['role']?.toString().trim().toLowerCase() == 'admin';
     } catch (error, stackTrace) {
       debugPrint(
         'isAdmin error: $error\n$stackTrace',
@@ -252,9 +242,7 @@ class SupabaseService {
     try {
       final cleanData = Map<String, dynamic>.from(data);
 
-      await _supabase
-          .from(table)
-          .insert(cleanData);
+      await _supabase.from(table).insert(cleanData);
     } catch (error, stackTrace) {
       debugPrint(
         'Insert error [$table]: '
@@ -276,10 +264,7 @@ class SupabaseService {
     try {
       final cleanData = Map<String, dynamic>.from(data);
 
-      var query = _supabase
-          .from(table)
-          .update(cleanData)
-          .eq('id', id);
+      var query = _supabase.from(table).update(cleanData).eq('id', id);
 
       // If the record belongs to a user, make the update user-scoped.
       //
@@ -312,17 +297,12 @@ class SupabaseService {
     }
 
     try {
-      var query = _supabase
-          .from(table)
-          .delete()
-          .eq('id', id);
+      var query = _supabase.from(table).delete().eq('id', id);
 
       final userId = currentUserId;
 
       // User-owned tables should only delete the current user's record.
-      if (userId != null &&
-          userId.isNotEmpty &&
-          _isUserOwnedTable(table)) {
+      if (userId != null && userId.isNotEmpty && _isUserOwnedTable(table)) {
         query = query.eq('user_id', userId);
       }
 
@@ -352,9 +332,7 @@ class SupabaseService {
     String table,
   ) async {
     try {
-      final response = await _supabase
-          .from(table)
-          .select();
+      final response = await _supabase.from(table).select();
 
       return List<Map<String, dynamic>>.from(response);
     } catch (error, stackTrace) {
@@ -376,10 +354,7 @@ class SupabaseService {
     }
 
     try {
-      final response = await _supabase
-          .from(table)
-          .select()
-          .eq(column, value);
+      final response = await _supabase.from(table).select().eq(column, value);
 
       return List<Map<String, dynamic>>.from(response);
     } catch (error, stackTrace) {
@@ -485,14 +460,10 @@ class SupabaseService {
       }
 
       try {
-        return await _supabase.storage
-            .from('photos')
-            .download(path);
+        return await _supabase.storage.from('photos').download(path);
       } catch (_) {
         try {
-          return await _supabase.storage
-              .from('documents')
-              .download(path);
+          return await _supabase.storage.from('documents').download(path);
         } catch (error, stackTrace) {
           debugPrint(
             'Storage download error: '
@@ -515,8 +486,7 @@ class SupabaseService {
 
     final objectIndex = segments.indexOf('object');
 
-    if (objectIndex >= 0 &&
-        objectIndex + 2 < segments.length) {
+    if (objectIndex >= 0 && objectIndex + 2 < segments.length) {
       final remaining = segments.sublist(
         objectIndex + 2,
       );
@@ -528,8 +498,7 @@ class SupabaseService {
 
     final publicIndex = segments.indexOf('public');
 
-    if (publicIndex >= 0 &&
-        publicIndex + 2 < segments.length) {
+    if (publicIndex >= 0 && publicIndex + 2 < segments.length) {
       final remaining = segments.sublist(
         publicIndex + 2,
       );
@@ -555,8 +524,7 @@ class SupabaseService {
     try {
       final userName = await _getUserName(userId);
 
-      final formattedDate =
-          '${expiryDate.day.toString().padLeft(2, '0')}/'
+      final formattedDate = '${expiryDate.day.toString().padLeft(2, '0')}/'
           '${expiryDate.month.toString().padLeft(2, '0')}/'
           '${expiryDate.year}';
 
@@ -584,8 +552,7 @@ SANA
         body,
       );
 
-      if (phone != null &&
-          phone.trim().isNotEmpty) {
+      if (phone != null && phone.trim().isNotEmpty) {
         await _sendSms(
           phone.trim(),
           'SANA: Your account is active until $formattedDate.',
@@ -641,8 +608,7 @@ SANA
   // EXPIRY HELPERS
   // ===========================================================================
 
-  static Future<List<Map<String, dynamic>>>
-      fetchUsersExpiringWithin(
+  static Future<List<Map<String, dynamic>>> fetchUsersExpiringWithin(
     int days,
   ) async {
     if (days < 0) {
@@ -690,8 +656,7 @@ SANA
     }
   }
 
-  static Future<List<Map<String, dynamic>>>
-      fetchExpiredActiveUsers() async {
+  static Future<List<Map<String, dynamic>>> fetchExpiredActiveUsers() async {
     try {
       final response = await _supabase
           .from('users')

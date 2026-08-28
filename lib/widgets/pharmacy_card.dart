@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/pharmacy.dart';
 
@@ -52,8 +52,8 @@ class PharmacyCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (phone.isNotEmpty) Text('📞 $phone'),
-            if (address.isNotEmpty) Text('📍 $address'),
+            if (phone.isNotEmpty) Text('ðŸ“ž $phone'),
+            if (address.isNotEmpty) Text('ðŸ“ $address'),
           ],
         ),
         trailing: Row(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/language_provider.dart';
 
@@ -14,19 +14,19 @@ class AboutSanaScreen extends StatelessWidget {
           'en':
               'Your private pocket health data center. Save reports, medicines, doctors and pharmacies, keep your records with you, share what you choose, and receive medication reminders. Your data stays with your account even when you change your phone. This is your own private copy of your health center.',
           'ar':
-              'مركز بياناتك الصحي الخاص في جيبك. احفظ تقاريرك وأدويتك وأطباءك وصيدلياتك، وشارك ما تختاره، واحصل على تذكيرات الأدوية. تبقى بياناتك مع حسابك حتى عند تغيير هاتفك. هذه نسختك الخاصة من مركزك الصحي.',
+              'Ù…Ø±ÙƒØ² Ø¨ÙŠØ§Ù†Ø§ØªÙƒ Ø§Ù„ØµØ­ÙŠ Ø§Ù„Ø®Ø§Øµ ÙÙŠ Ø¬ÙŠØ¨Ùƒ. Ø§Ø­ÙØ¸ ØªÙ‚Ø§Ø±ÙŠØ±Ùƒ ÙˆØ£Ø¯ÙˆÙŠØªÙƒ ÙˆØ£Ø·Ø¨Ø§Ø¡Ùƒ ÙˆØµÙŠØ¯Ù„ÙŠØ§ØªÙƒØŒ ÙˆØ´Ø§Ø±Ùƒ Ù…Ø§ ØªØ®ØªØ§Ø±Ù‡ØŒ ÙˆØ§Ø­ØµÙ„ Ø¹Ù„Ù‰ ØªØ°ÙƒÙŠØ±Ø§Øª Ø§Ù„Ø£Ø¯ÙˆÙŠØ©. ØªØ¨Ù‚Ù‰ Ø¨ÙŠØ§Ù†Ø§ØªÙƒ Ù…Ø¹ Ø­Ø³Ø§Ø¨Ùƒ Ø­ØªÙ‰ Ø¹Ù†Ø¯ ØªØºÙŠÙŠØ± Ù‡Ø§ØªÙÙƒ. Ù‡Ø°Ù‡ Ù†Ø³Ø®ØªÙƒ Ø§Ù„Ø®Ø§ØµØ© Ù…Ù† Ù…Ø±ÙƒØ²Ùƒ Ø§Ù„ØµØ­ÙŠ.',
           'fr':
-              'Votre centre de données de santé privé dans votre poche. Enregistrez vos rapports, médicaments, médecins et pharmacies, partagez ce que vous choisissez et recevez vos rappels de médicaments. Vos données restent liées à votre compte même si vous changez de téléphone.',
+              'Votre centre de donnÃ©es de santÃ© privÃ© dans votre poche. Enregistrez vos rapports, mÃ©dicaments, mÃ©decins et pharmacies, partagez ce que vous choisissez et recevez vos rappels de mÃ©dicaments. Vos donnÃ©es restent liÃ©es Ã  votre compte mÃªme si vous changez de tÃ©lÃ©phone.',
           'es':
-              'Tu centro privado de datos de salud en tu bolsillo. Guarda informes, medicamentos, médicos y farmacias, comparte lo que quieras y recibe recordatorios. Tus datos permanecen en tu cuenta aunque cambies de teléfono.',
+              'Tu centro privado de datos de salud en tu bolsillo. Guarda informes, medicamentos, mÃ©dicos y farmacias, comparte lo que quieras y recibe recordatorios. Tus datos permanecen en tu cuenta aunque cambies de telÃ©fono.',
           'de':
-              'Ihr privates Gesundheitszentrum in der Tasche. Speichern Sie Berichte, Medikamente, Ärzte und Apotheken, teilen Sie ausgewählte Daten und erhalten Sie Medikamentenerinnerungen. Ihre Daten bleiben bei Ihrem Konto, auch wenn Sie Ihr Telefon wechseln.',
+              'Ihr privates Gesundheitszentrum in der Tasche. Speichern Sie Berichte, Medikamente, Ã„rzte und Apotheken, teilen Sie ausgewÃ¤hlte Daten und erhalten Sie Medikamentenerinnerungen. Ihre Daten bleiben bei Ihrem Konto, auch wenn Sie Ihr Telefon wechseln.',
           'tr':
-              'Özel sağlık veri merkeziniz cebinizde. Raporlarınızı, ilaçlarınızı, doktorlarınızı ve eczanelerinizi saklayın, seçtiklerinizi paylaşın ve ilaç hatırlatmaları alın. Telefonunuzu değiştirseniz bile verileriniz hesabınızda kalır.',
+              'Ã–zel saÄŸlÄ±k veri merkeziniz cebinizde. RaporlarÄ±nÄ±zÄ±, ilaÃ§larÄ±nÄ±zÄ±, doktorlarÄ±nÄ±zÄ± ve eczanelerinizi saklayÄ±n, seÃ§tiklerinizi paylaÅŸÄ±n ve ilaÃ§ hatÄ±rlatmalarÄ± alÄ±n. Telefonunuzu deÄŸiÅŸtirseniz bile verileriniz hesabÄ±nÄ±zda kalÄ±r.',
           'hi':
-              'आपका निजी स्वास्थ्य डेटा केंद्र आपकी जेब में। रिपोर्ट, दवाएं, डॉक्टर और फार्मेसी सुरक्षित रखें, जरूरत के अनुसार साझा करें और दवा की याद दिलाने वाली सूचनाएं प्राप्त करें। फोन बदलने पर भी डेटा आपके खाते में रहता है।',
+              'à¤†à¤ªà¤•à¤¾ à¤¨à¤¿à¤œà¥€ à¤¸à¥à¤µà¤¾à¤¸à¥à¤¥à¥à¤¯ à¤¡à¥‡à¤Ÿà¤¾ à¤•à¥‡à¤‚à¤¦à¥à¤° à¤†à¤ªà¤•à¥€ à¤œà¥‡à¤¬ à¤®à¥‡à¤‚à¥¤ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ, à¤¦à¤µà¤¾à¤à¤‚, à¤¡à¥‰à¤•à¥à¤Ÿà¤° à¤”à¤° à¤«à¤¾à¤°à¥à¤®à¥‡à¤¸à¥€ à¤¸à¥à¤°à¤•à¥à¤·à¤¿à¤¤ à¤°à¤–à¥‡à¤‚, à¤œà¤°à¥‚à¤°à¤¤ à¤•à¥‡ à¤…à¤¨à¥à¤¸à¤¾à¤° à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤¦à¤µà¤¾ à¤•à¥€ à¤¯à¤¾à¤¦ à¤¦à¤¿à¤²à¤¾à¤¨à¥‡ à¤µà¤¾à¤²à¥€ à¤¸à¥‚à¤šà¤¨à¤¾à¤à¤‚ à¤ªà¥à¤°à¤¾à¤ªà¥à¤¤ à¤•à¤°à¥‡à¤‚à¥¤ à¤«à¥‹à¤¨ à¤¬à¤¦à¤²à¤¨à¥‡ à¤ªà¤° à¤­à¥€ à¤¡à¥‡à¤Ÿà¤¾ à¤†à¤ªà¤•à¥‡ à¤–à¤¾à¤¤à¥‡ à¤®à¥‡à¤‚ à¤°à¤¹à¤¤à¤¾ à¤¹à¥ˆà¥¤',
           'zh':
-              '您的私人健康数据中心就在口袋里。保存报告、药物、医生和药房信息，按需分享，并接收用药提醒。即使更换手机，您的数据仍保留在账户中。'
+              'æ‚¨çš„ç§äººå¥åº·æ•°æ®ä¸­å¿ƒå°±åœ¨å£è¢‹é‡Œã€‚ä¿å­˜æŠ¥å‘Šã€è¯ç‰©ã€åŒ»ç”Ÿå’Œè¯æˆ¿ä¿¡æ¯ï¼ŒæŒ‰éœ€åˆ†äº«ï¼Œå¹¶æŽ¥æ”¶ç”¨è¯æé†’ã€‚å³ä½¿æ›´æ¢æ‰‹æœºï¼Œæ‚¨çš„æ•°æ®ä»ä¿ç•™åœ¨è´¦æˆ·ä¸­ã€‚'
         }[code] ??
         'Your private pocket health data center.';
 

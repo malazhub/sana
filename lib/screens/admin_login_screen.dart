@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -9,20 +9,15 @@ class AdminLoginScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminLoginScreen> createState() =>
-      _AdminLoginScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _AdminLoginScreenState
-    extends State<AdminLoginScreen> {
-  final GlobalKey<FormState> _formKey =
-      GlobalKey<FormState>();
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _emailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _passwordController =
-      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
 
@@ -44,8 +39,7 @@ class _AdminLoginScreenState
 
     FocusScope.of(context).unfocus();
 
-    final auth =
-        context.read<AuthProvider>();
+    final auth = context.read<AuthProvider>();
 
     auth.clearError();
 
@@ -117,8 +111,7 @@ class _AdminLoginScreenState
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor:
-              Colors.red.shade700,
+          backgroundColor: Colors.red.shade700,
         ),
       );
   }
@@ -129,17 +122,13 @@ class _AdminLoginScreenState
 
   @override
   Widget build(BuildContext context) {
-    final auth =
-        context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF4FAF9),
+      backgroundColor: const Color(0xFFF4FAF9),
       appBar: AppBar(
-        backgroundColor:
-            const Color(0xFF009688),
-        foregroundColor:
-            Colors.white,
+        backgroundColor: const Color(0xFF009688),
+        foregroundColor: Colors.white,
         title: const Text(
           'Administrator Login',
           style: TextStyle(
@@ -151,36 +140,27 @@ class _AdminLoginScreenState
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 460,
               ),
               child: Card(
                 elevation: 0,
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(22),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.all(26),
+                  padding: const EdgeInsets.all(26),
                   child: Form(
                     key: _formKey,
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .stretch,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Icon(
-                          Icons
-                              .admin_panel_settings,
+                          Icons.admin_panel_settings,
                           size: 78,
-                          color:
-                              Color(0xFF009688),
+                          color: Color(0xFF009688),
                         ),
 
                         const SizedBox(
@@ -189,12 +169,10 @@ class _AdminLoginScreenState
 
                         const Text(
                           'Administrator Access',
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 26,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
 
@@ -204,12 +182,9 @@ class _AdminLoginScreenState
 
                         Text(
                           'Sign in with your administrator account.',
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors
-                                .grey
-                                .shade700,
+                            color: Colors.grey.shade700,
                             height: 1.4,
                           ),
                         ),
@@ -223,47 +198,29 @@ class _AdminLoginScreenState
                         // ------------------------------------------------
 
                         TextFormField(
-                          controller:
-                              _emailController,
-                          enabled:
-                              !auth.isLoading,
-                          keyboardType:
-                              TextInputType
-                                  .emailAddress,
-                          textInputAction:
-                              TextInputAction
-                                  .next,
+                          controller: _emailController,
+                          enabled: !auth.isLoading,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           autofillHints: const [
                             AutofillHints.email,
                           ],
-                          decoration:
-                              const InputDecoration(
-                            labelText:
-                                'Email',
-                            hintText:
-                                'Administrator email',
-                            prefixIcon:
-                                Icon(
-                              Icons
-                                  .email_outlined,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'Administrator email',
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
                             ),
-                            border:
-                                OutlineInputBorder(),
+                            border: OutlineInputBorder(),
                           ),
-                          validator:
-                              (value) {
-                            final email =
-                                value
-                                        ?.trim() ??
-                                    '';
+                          validator: (value) {
+                            final email = value?.trim() ?? '';
 
-                            if (email
-                                .isEmpty) {
+                            if (email.isEmpty) {
                               return 'Please enter your email.';
                             }
 
-                            if (!email
-                                .contains('@')) {
+                            if (!email.contains('@')) {
                               return 'Please enter a valid email.';
                             }
 
@@ -280,67 +237,46 @@ class _AdminLoginScreenState
                         // ------------------------------------------------
 
                         TextFormField(
-                          controller:
-                              _passwordController,
-                          enabled:
-                              !auth.isLoading,
-                          obscureText:
-                              _obscurePassword,
-                          textInputAction:
-                              TextInputAction
-                                  .done,
+                          controller: _passwordController,
+                          enabled: !auth.isLoading,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
                           autofillHints: const [
                             AutofillHints.password,
                           ],
-                          onFieldSubmitted:
-                              (_) {
-                            if (!auth
-                                .isLoading) {
+                          onFieldSubmitted: (_) {
+                            if (!auth.isLoading) {
                               _login();
                             }
                           },
-                          decoration:
-                              InputDecoration(
-                            labelText:
-                                'Password',
-                            prefixIcon:
-                                const Icon(
-                              Icons
-                                  .lock_outline,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
                             ),
-                            border:
-                                const OutlineInputBorder(),
-                            suffixIcon:
-                                IconButton(
-                              tooltip:
-                                  _obscurePassword
-                                      ? 'Show password'
-                                      : 'Hide password',
-                              onPressed:
-                                  auth.isLoading
-                                      ? null
-                                      : () {
-                                          setState(
-                                            () {
-                                              _obscurePassword =
-                                                  !_obscurePassword;
-                                            },
-                                          );
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Show password'
+                                  : 'Hide password',
+                              onPressed: auth.isLoading
+                                  ? null
+                                  : () {
+                                      setState(
+                                        () {
+                                          _obscurePassword = !_obscurePassword;
                                         },
+                                      );
+                                    },
                               icon: Icon(
                                 _obscurePassword
-                                    ? Icons
-                                        .visibility_outlined
-                                    : Icons
-                                        .visibility_off_outlined,
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
                               ),
                             ),
                           ),
-                          validator:
-                              (value) {
-                            if ((value ??
-                                    '')
-                                .isEmpty) {
+                          validator: (value) {
+                            if ((value ?? '').isEmpty) {
                               return 'Please enter your password.';
                             }
 
@@ -358,30 +294,20 @@ class _AdminLoginScreenState
 
                         SizedBox(
                           height: 52,
-                          child:
-                              FilledButton
-                                  .icon(
-                            onPressed:
-                                auth.isLoading
-                                    ? null
-                                    : _login,
-                            icon:
-                                auth.isLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child:
-                                            CircularProgressIndicator(
-                                          strokeWidth:
-                                              2,
-                                          color:
-                                              Colors.white,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons
-                                            .login,
-                                      ),
+                          child: FilledButton.icon(
+                            onPressed: auth.isLoading ? null : _login,
+                            icon: auth.isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.login,
+                                  ),
                             label: Text(
                               auth.isLoading
                                   ? 'Signing in...'
@@ -399,16 +325,14 @@ class _AdminLoginScreenState
                         // ------------------------------------------------
 
                         TextButton(
-                          onPressed:
-                              auth.isLoading
-                                  ? null
-                                  : () {
-                                      Navigator.of(
-                                        context,
-                                      ).maybePop();
-                                    },
-                          child:
-                              const Text(
+                          onPressed: auth.isLoading
+                              ? null
+                              : () {
+                                  Navigator.of(
+                                    context,
+                                  ).maybePop();
+                                },
+                          child: const Text(
                             'Cancel',
                           ),
                         ),
@@ -419,13 +343,10 @@ class _AdminLoginScreenState
 
                         Text(
                           'Administrator privileges are determined by the server-side users.role value.',
-                          textAlign:
-                              TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors
-                                .grey
-                                .shade600,
+                            color: Colors.grey.shade600,
                             height: 1.4,
                           ),
                         ),

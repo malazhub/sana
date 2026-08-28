@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class LanguageProvider extends ChangeNotifier {
   static const List<String> supportedLanguages = [
@@ -13,14 +13,14 @@ class LanguageProvider extends ChangeNotifier {
   ];
 
   static const Map<String, String> languageNames = {
-    'en': 'English 🇺🇸',
-    'ar': 'العربية 🇸🇦',
-    'es': 'Español 🇪🇸',
-    'fr': 'Français 🇫🇷',
-    'de': 'Deutsch 🇩🇪',
-    'tr': 'Türkçe 🇹🇷',
-    'hi': 'हिन्दी 🇮🇳',
-    'zh': '中文 🇨🇳',
+    'en': 'English ðŸ‡ºðŸ‡¸',
+    'ar': 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© ðŸ‡¸ðŸ‡¦',
+    'es': 'EspaÃ±ol ðŸ‡ªðŸ‡¸',
+    'fr': 'FranÃ§ais ðŸ‡«ðŸ‡·',
+    'de': 'Deutsch ðŸ‡©ðŸ‡ª',
+    'tr': 'TÃ¼rkÃ§e ðŸ‡¹ðŸ‡·',
+    'hi': 'à¤¹à¤¿à¤¨à¥à¤¦à¥€ ðŸ‡®ðŸ‡³',
+    'zh': 'ä¸­æ–‡ ðŸ‡¨ðŸ‡³',
   };
 
   Locale _locale = const Locale('en');
@@ -33,8 +33,7 @@ class LanguageProvider extends ChangeNotifier {
 
   bool get isInitialized => _isInitialized;
 
-  List<String> get languages =>
-      List.unmodifiable(supportedLanguages);
+  List<String> get languages => List.unmodifiable(supportedLanguages);
 
   Future<void> init() async {
     if (_isInitialized) {
@@ -85,10 +84,8 @@ class LanguageProvider extends ChangeNotifier {
   }
 
   String getLanguageName(String code) {
-    final normalizedCode =
-        code.trim().toLowerCase();
+    final normalizedCode = code.trim().toLowerCase();
 
-    return languageNames[normalizedCode] ??
-        normalizedCode;
+    return languageNames[normalizedCode] ?? normalizedCode;
   }
 }

@@ -1,4 +1,4 @@
-class MedicationLog {
+﻿class MedicationLog {
   final String? id;
   final String medicationId;
   final String medicationName;
@@ -20,19 +20,14 @@ class MedicationLog {
   ) {
     return MedicationLog(
       id: _nullableString(map['id']),
-      medicationId:
-          map['medication_id']?.toString() ??
+      medicationId: map['medication_id']?.toString() ??
           map['medicationId']?.toString() ??
           '',
-      medicationName:
-          map['medication_name']?.toString() ??
+      medicationName: map['medication_name']?.toString() ??
           map['medicationName']?.toString() ??
           'Medication',
-      dosage:
-          map['dosage']?.toString() ?? '',
-      status:
-          map['status']?.toString().trim().toLowerCase() ??
-          'not_taken',
+      dosage: map['dosage']?.toString() ?? '',
+      status: map['status']?.toString().trim().toLowerCase() ?? 'not_taken',
       takenAt: _parseDateTime(
         map['taken_at'] ?? map['takenAt'],
       ),

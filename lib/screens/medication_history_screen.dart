@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/medication_log.dart';
 import '../providers/medication_provider.dart';
@@ -95,7 +95,7 @@ class MedicationHistoryScreen extends StatelessWidget {
                     ),
                     title: Text(log.medicationName),
                     subtitle: Text(
-                      '${log.dosage.isNotEmpty ? '${log.dosage} • ' : ''}'
+                      '${log.dosage.isNotEmpty ? '${log.dosage} â€¢ ' : ''}'
                       '${log.takenAt.hour.toString().padLeft(2, '0')}:'
                       '${log.takenAt.minute.toString().padLeft(2, '0')}',
                     ),

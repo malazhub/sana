@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 class Medication {
   final String id;
@@ -21,9 +21,7 @@ class Medication {
     this.photoUrl,
   });
 
-  factory Medication.fromMap(
-    Map<String, dynamic> map,
-  ) {
+  factory Medication.fromMap(Map<String, dynamic> map) {
     return Medication(
       id: map['id']?.toString().trim() ?? '',
       userId: map['user_id']?.toString().trim() ??
@@ -57,18 +55,7 @@ class Medication {
     };
   }
 
-  Map<String, dynamic> toSupabaseMap() {
-    return {
-      'id': id,
-      'user_id': userId,
-      'name': name,
-      'dosage': dosage,
-      'quantity': quantity,
-      'reminder_times': List<String>.from(reminderTimes),
-      'repeat_type': repeatType,
-      'photo_url': photoUrl,
-    };
-  }
+  Map<String, dynamic> toSupabaseMap() => toMap();
 
   Map<String, dynamic> toJson() => toMap();
 
@@ -110,9 +97,7 @@ class Medication {
       value?.toString().trim() ?? '',
     );
 
-    if (parsed == null || parsed < 0) {
-      return 0;
-    }
+    if (parsed == null || parsed < 0) return 0;
 
     return parsed;
   }
@@ -120,9 +105,7 @@ class Medication {
   static List<String> _parseReminderTimes(
     dynamic raw,
   ) {
-    if (raw == null) {
-      return const [];
-    }
+    if (raw == null) return const [];
 
     if (raw is List) {
       return _cleanReminderTimes(raw);
@@ -131,9 +114,7 @@ class Medication {
     if (raw is String) {
       final value = raw.trim();
 
-      if (value.isEmpty) {
-        return const [];
-      }
+      if (value.isEmpty) return const [];
 
       try {
         final decoded = jsonDecode(value);
@@ -141,9 +122,7 @@ class Medication {
         if (decoded is List) {
           return _cleanReminderTimes(decoded);
         }
-      } catch (_) {
-        // Treat non-JSON text as one reminder time.
-      }
+      } catch (_) {}
 
       return [value];
     }
@@ -155,12 +134,8 @@ class Medication {
     List<dynamic> values,
   ) {
     return values
-        .map(
-          (item) => item.toString().trim(),
-        )
-        .where(
-          (item) => item.isNotEmpty,
-        )
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
         .toList();
   }
 
@@ -171,9 +146,7 @@ class Medication {
   }
 
   static String? _nullableString(dynamic value) {
-    if (value == null) {
-      return null;
-    }
+    if (value == null) return null;
 
     final result = value.toString().trim();
 

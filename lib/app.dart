@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -32,22 +32,16 @@ class SanaApp extends StatelessWidget {
         return MaterialApp(
           title: 'SANA',
           debugShowCheckedModeBanner: false,
-
           theme: _lightTheme,
           darkTheme: _darkTheme,
-          themeMode: settings.isDarkMode
-              ? ThemeMode.dark
-              : ThemeMode.light,
-
+          themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           locale: language.locale,
           supportedLocales: supportedLocales,
-
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-
           localeResolutionCallback: (
             deviceLocale,
             supportedLocales,
@@ -57,15 +51,13 @@ class SanaApp extends StatelessWidget {
             }
 
             for (final locale in supportedLocales) {
-              if (locale.languageCode ==
-                  deviceLocale.languageCode) {
+              if (locale.languageCode == deviceLocale.languageCode) {
                 return locale;
               }
             }
 
             return supportedLocales.first;
           },
-
           initialRoute: AppRoutes.splash,
           routes: AppRoutes.routes,
           onGenerateRoute: AppRoutes.onGenerateRoute,
@@ -82,7 +74,7 @@ class SanaApp extends StatelessWidget {
     ),
     scaffoldBackgroundColor: Colors.white,
   );
-  
+
   static final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(

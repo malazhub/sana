@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/document.dart';
-import '../services/guest_identity_service.dart';
+import '../services/user_identity_service.dart';
 
 class DocumentProvider extends ChangeNotifier {
   static const String _localStorageKey = 'saved_documents_v2';
@@ -17,8 +17,7 @@ class DocumentProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  List<DocumentModel> get documents =>
-      List.unmodifiable(_documents);
+  List<DocumentModel> get documents => List.unmodifiable(_documents);
 
   bool get isLoading => _isLoading;
 
@@ -32,8 +31,7 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-  User? get _currentUser =>
-      _supabase?.auth.currentUser;
+  User? get _currentUser => _supabase?.auth.currentUser;
 
   DocumentProvider() {
     loadDocuments();
@@ -64,13 +62,12 @@ class DocumentProvider extends ChangeNotifier {
       final user = _currentUser;
 
       if (user == null) {
-        final guestId =
-            await GuestIdentityService.getGuestId();
+        final guestId = await GuestIdentityService.getGuestId();
 
         final response = await client
             .from('documents')
             .select()
-            .eq('guest_id', guestId)
+            .eq('user_id', guestId)
             .isFilter('user_id', null)
             .order(
               'upload_date',
@@ -87,7 +84,7 @@ class DocumentProvider extends ChangeNotifier {
             .from('documents')
             .select()
             .eq('user_id', user.id)
-            .isFilter('guest_id', null)
+            .isFilter('user_id', null)
             .order(
               'upload_date',
               ascending: false,
@@ -133,8 +130,7 @@ class DocumentProvider extends ChangeNotifier {
           continue;
         }
 
-        final document =
-            DocumentModel.fromMap(
+        final document = DocumentModel.fromMap(
           Map<String, dynamic>.from(item),
         );
 
@@ -143,14 +139,12 @@ class DocumentProvider extends ChangeNotifier {
         }
 
         if (expectedUserId != null) {
-          if (document.userId !=
-                  expectedUserId ||
+          if (document.userId != expectedUserId ||
               document.guestId.isNotEmpty) {
             continue;
           }
         } else {
-          if (document.guestId !=
-                  expectedGuestId ||
+          if (document.guestId != expectedGuestId ||
               document.userId.isNotEmpty) {
             continue;
           }
@@ -187,8 +181,7 @@ class DocumentProvider extends ChangeNotifier {
     late DocumentModel documentToSave;
 
     if (user == null) {
-      final guestId =
-          await GuestIdentityService.getGuestId();
+      final guestId = await GuestIdentityService.getGuestId();
 
       if (document.userId.isNotEmpty) {
         throw StateError(
@@ -201,8 +194,7 @@ class DocumentProvider extends ChangeNotifier {
         guestId: guestId,
       );
     } else {
-      if (document.userId.isNotEmpty &&
-          document.userId != user.id) {
+      if (document.userId.isNotEmpty && document.userId != user.id) {
         throw StateError(
           'This document belongs to another user.',
         );
@@ -218,15 +210,12 @@ class DocumentProvider extends ChangeNotifier {
       if (_shouldUploadToStorage(
         documentToSave,
       )) {
-        documentToSave =
-            await _uploadDocumentToStorage(
+        documentToSave = await _uploadDocumentToStorage(
           documentToSave,
         );
       }
 
-      await client
-          .from('documents')
-          .upsert(
+      await client.from('documents').upsert(
             documentToSave.toSupabaseMap(),
             onConflict: 'id',
           );
@@ -291,18 +280,15 @@ class DocumentProvider extends ChangeNotifier {
     String guestId = '';
 
     if (user == null) {
-      guestId =
-          await GuestIdentityService.getGuestId();
+      guestId = await GuestIdentityService.getGuestId();
 
-      if (document.guestId != guestId ||
-          document.userId.isNotEmpty) {
+      if (document.guestId != guestId || document.userId.isNotEmpty) {
         throw StateError(
           'You cannot delete another user\'s document.',
         );
       }
     } else {
-      if (document.userId != user.id ||
-          document.guestId.isNotEmpty) {
+      if (document.userId != user.id || document.guestId.isNotEmpty) {
         throw StateError(
           'You cannot delete another user\'s document.',
         );
@@ -312,15 +298,11 @@ class DocumentProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      final storagePath =
-          document.storagePath?.trim();
+      final storagePath = document.storagePath?.trim();
 
-      if (storagePath != null &&
-          storagePath.isNotEmpty) {
+      if (storagePath != null && storagePath.isNotEmpty) {
         try {
-          await client.storage
-              .from(_storageBucket)
-              .remove([
+          await client.storage.from(_storageBucket).remove([
             storagePath,
           ]);
         } catch (error) {
@@ -331,10 +313,7 @@ class DocumentProvider extends ChangeNotifier {
         }
       }
 
-      var query = client
-          .from('documents')
-          .delete()
-          .eq(
+      var query = client.from('documents').delete().eq(
             'id',
             id,
           );
@@ -342,7 +321,7 @@ class DocumentProvider extends ChangeNotifier {
       if (user == null) {
         query = query
             .eq(
-              'guest_id',
+              'user_id',
               guestId,
             )
             .isFilter(
@@ -356,7 +335,7 @@ class DocumentProvider extends ChangeNotifier {
               user.id,
             )
             .isFilter(
-              'guest_id',
+              'user_id',
               null,
             );
       }
@@ -393,22 +372,18 @@ class DocumentProvider extends ChangeNotifier {
     final user = _currentUser;
 
     if (user == null) {
-      final guestId =
-          await GuestIdentityService.getGuestId();
+      final guestId = await GuestIdentityService.getGuestId();
 
-      if (document.guestId != guestId ||
-          document.userId.isNotEmpty) {
+      if (document.guestId != guestId || document.userId.isNotEmpty) {
         return null;
       }
     } else {
-      if (document.userId != user.id ||
-          document.guestId.isNotEmpty) {
+      if (document.userId != user.id || document.guestId.isNotEmpty) {
         return null;
       }
     }
 
-    final path =
-        document.storagePath?.trim();
+    final path = document.storagePath?.trim();
 
     if (path == null || path.isEmpty) {
       return document.fileUrl;
@@ -421,9 +396,7 @@ class DocumentProvider extends ChangeNotifier {
     }
 
     try {
-      return await client.storage
-          .from(_storageBucket)
-          .createSignedUrl(
+      return await client.storage.from(_storageBucket).createSignedUrl(
             path,
             expiresInSeconds,
           );
@@ -444,8 +417,7 @@ class DocumentProvider extends ChangeNotifier {
   Future<void> clearLocalDocuments() async {
     _documents.clear();
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.remove(
       _localStorageKey,
@@ -460,24 +432,20 @@ class DocumentProvider extends ChangeNotifier {
 
   Future<void> _loadLocalDocuments() async {
     try {
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-      final localData =
+      final localData = prefs.getString(
+            _localStorageKey,
+          ) ??
           prefs.getString(
-                _localStorageKey,
-              ) ??
-              prefs.getString(
-                _legacyStorageKey,
-              );
+            _legacyStorageKey,
+          );
 
-      if (localData == null ||
-          localData.trim().isEmpty) {
+      if (localData == null || localData.trim().isEmpty) {
         return;
       }
 
-      final decoded =
-          jsonDecode(localData);
+      final decoded = jsonDecode(localData);
 
       if (decoded is! List) {
         return;
@@ -488,8 +456,7 @@ class DocumentProvider extends ChangeNotifier {
       String? guestId;
 
       if (user == null) {
-        guestId =
-            await GuestIdentityService.getGuestId();
+        guestId = await GuestIdentityService.getGuestId();
       }
 
       for (final item in decoded) {
@@ -498,8 +465,7 @@ class DocumentProvider extends ChangeNotifier {
         }
 
         try {
-          final document =
-              DocumentModel.fromMap(
+          final document = DocumentModel.fromMap(
             Map<String, dynamic>.from(item),
           );
 
@@ -508,21 +474,17 @@ class DocumentProvider extends ChangeNotifier {
           }
 
           if (user != null) {
-            if (document.userId != user.id ||
-                document.guestId.isNotEmpty) {
+            if (document.userId != user.id || document.guestId.isNotEmpty) {
               continue;
             }
           } else {
-            if (document.guestId != guestId ||
-                document.userId.isNotEmpty) {
+            if (document.guestId != guestId || document.userId.isNotEmpty) {
               continue;
             }
           }
 
           final exists = _documents.any(
-            (existing) =>
-                existing.id ==
-                document.id,
+            (existing) => existing.id == document.id,
           );
 
           if (!exists) {
@@ -545,13 +507,11 @@ class DocumentProvider extends ChangeNotifier {
 
   Future<void> _saveToLocal() async {
     try {
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
       final maps = _documents
           .map(
-            (document) =>
-                document.toMap(),
+            (document) => document.toMap(),
           )
           .toList();
 
@@ -576,24 +536,20 @@ class DocumentProvider extends ChangeNotifier {
   ) {
     final bytes = document.bytes;
 
-    if (bytes == null ||
-        bytes.isEmpty) {
+    if (bytes == null || bytes.isEmpty) {
       return false;
     }
 
-    final storagePath =
-        document.storagePath?.trim();
+    final storagePath = document.storagePath?.trim();
 
-    if (storagePath != null &&
-        storagePath.isNotEmpty) {
+    if (storagePath != null && storagePath.isNotEmpty) {
       return false;
     }
 
     return true;
   }
 
-  Future<DocumentModel>
-      _uploadDocumentToStorage(
+  Future<DocumentModel> _uploadDocumentToStorage(
     DocumentModel document,
   ) async {
     final client = _supabase;
@@ -606,20 +562,17 @@ class DocumentProvider extends ChangeNotifier {
 
     final bytes = document.bytes;
 
-    if (bytes == null ||
-        bytes.isEmpty) {
+    if (bytes == null || bytes.isEmpty) {
       return document;
     }
 
-    final extension =
-        _normalizeExtension(
+    final extension = _normalizeExtension(
       document.fileType,
     );
 
-    final owner =
-        document.userId.trim().isNotEmpty
-            ? document.userId.trim()
-            : document.guestId.trim();
+    final owner = document.userId.trim().isNotEmpty
+        ? document.userId.trim()
+        : document.guestId.trim();
 
     if (owner.isEmpty) {
       throw StateError(
@@ -627,17 +580,13 @@ class DocumentProvider extends ChangeNotifier {
       );
     }
 
-    final storagePath =
-        '$owner/${document.id}.$extension';
+    final storagePath = '$owner/${document.id}.$extension';
 
-    await client.storage
-        .from(_storageBucket)
-        .uploadBinary(
+    await client.storage.from(_storageBucket).uploadBinary(
           storagePath,
           bytes,
           fileOptions: FileOptions(
-            contentType:
-                _contentTypeForExtension(
+            contentType: _contentTypeForExtension(
               extension,
             ),
             upsert: true,
@@ -684,8 +633,7 @@ class DocumentProvider extends ChangeNotifier {
   String _normalizeExtension(
     String fileType,
   ) {
-    switch (
-        fileType.trim().toLowerCase()) {
+    switch (fileType.trim().toLowerCase()) {
       case 'jpeg':
       case 'jpg':
         return 'jpg';

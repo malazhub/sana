@@ -1,6 +1,6 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'guest_identity_service.dart';
+import 'user_identity_service.dart';
 
 enum DataScopeMode {
   guest,
@@ -41,7 +41,7 @@ class DataScopeService {
     final currentUser = _db.auth.currentUser;
 
     if (currentUser == null) {
-      return GuestIdentityService.sharedGuestId;
+      return GuestIdentityService.getGuestId();
     }
 
     return currentUser.id;
@@ -61,8 +61,7 @@ class DataScopeService {
     if (currentUser == null) {
       return {
         'mode': DataScopeMode.guest.name,
-        'user_id': null,
-        'guest_id': GuestIdentityService.sharedGuestId,
+        'user_id': GuestIdentityService.sharedGuestId,
       };
     }
 
@@ -70,7 +69,6 @@ class DataScopeService {
       'mode':
           isAdmin ? DataScopeMode.admin.name : DataScopeMode.activeUser.name,
       'user_id': currentUser.id,
-      'guest_id': null,
     };
   }
 

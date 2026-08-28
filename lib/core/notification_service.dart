@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -13,8 +13,7 @@ class NotificationService {
 
   static const String _channelId = 'medication_channel';
   static const String _channelName = 'Medication Alerts';
-  static const String _channelDescription =
-      'Medication reminder notifications';
+  static const String _channelDescription = 'Medication reminder notifications';
 
   // ===========================================================================
   // INITIALIZATION
@@ -35,9 +34,8 @@ class NotificationService {
       settings: settings,
     );
 
-    final androidPlugin =
-        _notifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
 
     await androidPlugin?.requestNotificationsPermission();
   }
@@ -68,8 +66,7 @@ class NotificationService {
       return;
     }
 
-    final notificationDetails =
-        await _buildNotificationDetails(image);
+    final notificationDetails = await _buildNotificationDetails(image);
 
     await _notifications.zonedSchedule(
       id: id,
@@ -77,8 +74,7 @@ class NotificationService {
       body: '$medicineName - Quantity: $quantity',
       scheduledDate: scheduledDate,
       notificationDetails: notificationDetails,
-      androidScheduleMode:
-          AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
 
@@ -93,9 +89,7 @@ class NotificationService {
 
     final imagePath = image.trim();
 
-    if (!kIsWeb &&
-        imagePath.isNotEmpty &&
-        File(imagePath).existsSync()) {
+    if (!kIsWeb && imagePath.isNotEmpty && File(imagePath).existsSync()) {
       styleInformation = BigPictureStyleInformation(
         FilePathAndroidBitmap(imagePath),
         largeIcon: FilePathAndroidBitmap(imagePath),

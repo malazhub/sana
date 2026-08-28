@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pharmacy.dart';
 import '../providers/language_provider.dart';
@@ -65,23 +65,23 @@ class _AddPharmacyScreenState extends State<AddPharmacyScreen> {
     String requiredError = 'Required';
 
     if (code == 'ar') {
-      title = 'إضافة صيدلية';
-      nameLabel = 'اسم الصيدلية *';
-      phoneLabel = 'رقم الهاتف';
-      addressLabel = 'العنوان';
-      saveButton = 'حفظ الصيدلية';
-      requiredError = 'مطلوب';
+      title = 'Ø¥Ø¶Ø§ÙØ© ØµÙŠØ¯Ù„ÙŠØ©';
+      nameLabel = 'Ø§Ø³Ù… Ø§Ù„ØµÙŠØ¯Ù„ÙŠØ© *';
+      phoneLabel = 'Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ';
+      addressLabel = 'Ø§Ù„Ø¹Ù†ÙˆØ§Ù†';
+      saveButton = 'Ø­ÙØ¸ Ø§Ù„ØµÙŠØ¯Ù„ÙŠØ©';
+      requiredError = 'Ù…Ø·Ù„ÙˆØ¨';
     } else if (code == 'es') {
-      title = 'Añadir Farmacia';
+      title = 'AÃ±adir Farmacia';
       nameLabel = 'Nombre de la Farmacia *';
-      phoneLabel = 'Número de Teléfono';
-      addressLabel = 'Dirección';
+      phoneLabel = 'NÃºmero de TelÃ©fono';
+      addressLabel = 'DirecciÃ³n';
       saveButton = 'Guardar Farmacia';
       requiredError = 'Requerido';
     } else if (code == 'fr') {
       title = 'Ajouter une Pharmacie';
       nameLabel = 'Nom de la Pharmacie *';
-      phoneLabel = 'Numéro de Téléphone';
+      phoneLabel = 'NumÃ©ro de TÃ©lÃ©phone';
       addressLabel = 'Adresse';
       saveButton = 'Enregistrer la Pharmacie';
       requiredError = 'Requis';

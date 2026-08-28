@@ -1,10 +1,11 @@
-class InsuranceCard {
+﻿class InsuranceCard {
   final String? id;
   final String providerName;
   final String policyNumber;
   final String? frontImageUrl;
   final String? backImageUrl;
   final String? userId;
+  final String? guestId;
   final String? createdAt;
 
   const InsuranceCard({
@@ -14,6 +15,7 @@ class InsuranceCard {
     this.frontImageUrl,
     this.backImageUrl,
     this.userId,
+    this.guestId,
     this.createdAt,
   });
 
@@ -21,60 +23,72 @@ class InsuranceCard {
     return InsuranceCard(
       id: _nullableString(map['id']),
       providerName: _stringValue(
-        map['providerName'] ??
-            map['provider_name'] ??
+        map['provider_name'] ??
+            map['providerName'] ??
             map['provider'] ??
             map['name'] ??
             map['title'],
         fallback: 'Insurance Provider',
       ),
       policyNumber: _stringValue(
-        map['policyNumber'] ??
-            map['policy_number'] ??
-            map['cardNumber'] ??
+        map['policy_number'] ??
+            map['policyNumber'] ??
             map['card_number'] ??
+            map['cardNumber'] ??
             map['policyNo'],
         fallback: 'N/A',
       ),
       frontImageUrl: _nullableString(
-        map['frontImageUrl'] ?? map['front_image_url'],
+        map['front_image_url'] ?? map['frontImageUrl'],
       ),
       backImageUrl: _nullableString(
-        map['backImageUrl'] ?? map['back_image_url'],
+        map['back_image_url'] ?? map['backImageUrl'],
       ),
       userId: _nullableString(
-        map['userId'] ?? map['user_id'],
+        map['user_id'] ?? map['userId'],
+      ),
+      guestId: _nullableString(
+        map['guest_id'] ?? map['guestId'],
       ),
       createdAt: _nullableString(
-        map['createdAt'] ?? map['created_at'],
+        map['created_at'] ?? map['createdAt'],
       ),
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+  Map<String, dynamic> toSupabaseMap({
+    String? userId,
+    String? guestId,
+  }) {
+    final map = <String, dynamic>{
       'provider_name': providerName,
-      'providerName': providerName,
       'policy_number': policyNumber,
-      'policyNumber': policyNumber,
-      'front_image_url': frontImageUrl ?? '',
-      'frontImageUrl': frontImageUrl ?? '',
-      'back_image_url': backImageUrl ?? '',
-      'backImageUrl': backImageUrl ?? '',
-      'user_id': userId ?? '',
-      'created_at': createdAt ?? DateTime.now().toIso8601String(),
+      'front_image_url': frontImageUrl,
+      'back_image_url': backImageUrl,
+      'user_id': userId,
+      'guest_id': guestId,
     };
+
+    if (id != null && id!.trim().isNotEmpty) {
+      map['id'] = id;
+    }
+
+    if (createdAt != null && createdAt!.trim().isNotEmpty) {
+      map['created_at'] = createdAt;
+    }
+
+    return map;
   }
 
-  Map<String, dynamic> toSupabaseMap() {
+  Map<String, dynamic> toMap() {
     return {
-      'id': id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'id': id,
       'provider_name': providerName,
       'policy_number': policyNumber,
-      'front_image_url': frontImageUrl ?? '',
-      'back_image_url': backImageUrl ?? '',
+      'front_image_url': frontImageUrl,
+      'back_image_url': backImageUrl,
       'user_id': userId,
+      'guest_id': guestId,
       'created_at': createdAt,
     };
   }
@@ -88,6 +102,7 @@ class InsuranceCard {
     String? frontImageUrl,
     String? backImageUrl,
     String? userId,
+    String? guestId,
     String? createdAt,
   }) {
     return InsuranceCard(
@@ -97,6 +112,7 @@ class InsuranceCard {
       frontImageUrl: frontImageUrl ?? this.frontImageUrl,
       backImageUrl: backImageUrl ?? this.backImageUrl,
       userId: userId ?? this.userId,
+      guestId: guestId ?? this.guestId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -115,12 +131,9 @@ class InsuranceCard {
   }
 
   static String? _nullableString(dynamic value) {
-    if (value == null) {
-      return null;
-    }
+    if (value == null) return null;
 
     final result = value.toString().trim();
-
     return result.isEmpty ? null : result;
   }
 }

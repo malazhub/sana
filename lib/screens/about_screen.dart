@@ -13,18 +13,19 @@ class AboutScreen extends StatelessWidget {
           'en':
               'Your private pocket health data center. Save reports, medicines, doctors and pharmacies, share what you choose, and receive medication reminders. Your data stays with your account even when you change your phone.',
           'ar':
-              'مركز بياناتك الصحي الخاص في جيبك. احفظ تقاريرك وأدويتك وأطباءك وصيدلياتك، وشارك ما تختاره، واحصل على تذكيرات الأدوية. تبقى بياناتك مع حسابك حتى عند تغيير الهاتف.',
+              'Ù…Ø±ÙƒØ² Ø¨ÙŠØ§Ù†Ø§ØªÙƒ Ø§Ù„ØµØ­ÙŠ Ø§Ù„Ø®Ø§Øµ ÙÙŠ Ø¬ÙŠØ¨Ùƒ. Ø§Ø­ÙØ¸ ØªÙ‚Ø§Ø±ÙŠØ±Ùƒ ÙˆØ£Ø¯ÙˆÙŠØªÙƒ ÙˆØ£Ø·Ø¨Ø§Ø¡Ùƒ ÙˆØµÙŠØ¯Ù„ÙŠØ§ØªÙƒØŒ ÙˆØ´Ø§Ø±Ùƒ Ù…Ø§ ØªØ®ØªØ§Ø±Ù‡ØŒ ÙˆØ§Ø­ØµÙ„ Ø¹Ù„Ù‰ ØªØ°ÙƒÙŠØ±Ø§Øª Ø§Ù„Ø£Ø¯ÙˆÙŠØ©. ØªØ¨Ù‚Ù‰ Ø¨ÙŠØ§Ù†Ø§ØªÙƒ Ù…Ø¹ Ø­Ø³Ø§Ø¨Ùƒ Ø­ØªÙ‰ Ø¹Ù†Ø¯ ØªØºÙŠÙŠØ± Ø§Ù„Ù‡Ø§ØªÙ.',
           'fr':
-              'Votre centre de données de santé privé dans votre poche. Enregistrez vos rapports, médicaments, médecins et pharmacies, partagez ce que vous choisissez et recevez vos rappels. Vos données restent liées à votre compte même si vous changez de téléphone.',
+              'Votre centre de donnÃ©es de santÃ© privÃ© dans votre poche. Enregistrez vos rapports, mÃ©dicaments, mÃ©decins et pharmacies, partagez ce que vous choisissez et recevez vos rappels. Vos donnÃ©es restent liÃ©es Ã  votre compte mÃªme si vous changez de tÃ©lÃ©phone.',
           'es':
-              'Tu centro privado de datos de salud en tu bolsillo. Guarda informes, medicamentos, médicos y farmacias, comparte lo que quieras y recibe recordatorios. Tus données restent liées à votre compte.',
+              'Tu centro privado de datos de salud en tu bolsillo. Guarda informes, medicamentos, mÃ©dicos y farmacias, comparte lo que quieras y recibe recordatorios. Tus donnÃ©es restent liÃ©es Ã  votre compte.',
           'de':
-              'Ihr privates Gesundheitszentrum in der Tasche. Speichern Sie Berichte, Medikamente, Ärzte und Apotheken, teilen Sie ausgewählte Daten und erhalten Sie Erinnerungen. Ihre Daten bleiben mit Ihrem Konto verbunden.',
+              'Ihr privates Gesundheitszentrum in der Tasche. Speichern Sie Berichte, Medikamente, Ã„rzte und Apotheken, teilen Sie ausgewÃ¤hlte Daten und erhalten Sie Erinnerungen. Ihre Daten bleiben mit Ihrem Konto verbunden.',
           'tr':
-              'Özel sağlık veri merkeziniz cebinizde. Raporları, ilaçları, doktorları ve eczaneleri kaydedin, seçtiklerinizi paylaşın ve hatırlatıcılar alın.',
+              'Ã–zel saÄŸlÄ±k veri merkeziniz cebinizde. RaporlarÄ±, ilaÃ§larÄ±, doktorlarÄ± ve eczaneleri kaydedin, seÃ§tiklerinizi paylaÅŸÄ±n ve hatÄ±rlatÄ±cÄ±lar alÄ±n.',
           'hi':
-              'आपका निजी स्वास्थ्य डेटा केंद्र आपकी जेब में। रिपोर्ट, दवाएं, डॉक्टर और फार्मेसी सुरक्षित रखें, साझा करें और दवा की याद दिलाने वाली सूचनाएं alın।',
-          'zh': '您的私人健康数据中心就在口袋里。保存报告、药物、医生和药房信息，按需分享并接收用药提醒。'
+              'à¤†à¤ªà¤•à¤¾ à¤¨à¤¿à¤œà¥€ à¤¸à¥à¤µà¤¾à¤¸à¥à¤¥à¥à¤¯ à¤¡à¥‡à¤Ÿà¤¾ à¤•à¥‡à¤‚à¤¦à¥à¤° à¤†à¤ªà¤•à¥€ à¤œà¥‡à¤¬ à¤®à¥‡à¤‚à¥¤ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ, à¤¦à¤µà¤¾à¤à¤‚, à¤¡à¥‰à¤•à¥à¤Ÿà¤° à¤”à¤° à¤«à¤¾à¤°à¥à¤®à¥‡à¤¸à¥€ à¤¸à¥à¤°à¤•à¥à¤·à¤¿à¤¤ à¤°à¤–à¥‡à¤‚, à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤¦à¤µà¤¾ à¤•à¥€ à¤¯à¤¾à¤¦ à¤¦à¤¿à¤²à¤¾à¤¨à¥‡ à¤µà¤¾à¤²à¥€ à¤¸à¥‚à¤šà¤¨à¤¾à¤à¤‚ alÄ±nà¥¤',
+          'zh':
+              'æ‚¨çš„ç§äººå¥åº·æ•°æ®ä¸­å¿ƒå°±åœ¨å£è¢‹é‡Œã€‚ä¿å­˜æŠ¥å‘Šã€è¯ç‰©ã€åŒ»ç”Ÿå’Œè¯æˆ¿ä¿¡æ¯ï¼ŒæŒ‰éœ€åˆ†äº«å¹¶æŽ¥æ”¶ç”¨è¯æé†’ã€‚'
         }[c] ??
         '';
     return Scaffold(

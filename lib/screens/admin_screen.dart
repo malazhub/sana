@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -12,8 +12,7 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   String _search = '';
 
@@ -55,10 +54,8 @@ class _AdminScreenState extends State<AdminScreen> {
       ];
 
       return values.any(
-        (value) => value
-            ?.toString()
-            .toLowerCase()
-            .contains(query),
+        (value) =>
+            value != null && value.toString().toLowerCase().contains(query),
       );
     }).toList();
   }
@@ -93,10 +90,8 @@ class _AdminScreenState extends State<AdminScreen> {
         children: [
           _buildStats(provider.users),
           _buildSearch(),
-
           if (provider.errorMessage != null)
             _buildError(provider.errorMessage!),
-
           Expanded(
             child: provider.isLoading && provider.users.isEmpty
                 ? const Center(
@@ -118,14 +113,11 @@ class _AdminScreenState extends State<AdminScreen> {
   ) {
     final provider = context.read<AdminProvider>();
 
-    final active =
-        users.where(provider.isActive).length;
+    final active = users.where(provider.isActive).length;
 
-    final expired =
-        users.where(provider.isExpired).length;
+    final expired = users.where(provider.isExpired).length;
 
-    final pending =
-        users.length - active - expired;
+    final pending = users.length - active - expired;
 
     return Container(
       width: double.infinity,
@@ -150,8 +142,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   children: items,
                 )
               : Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: items,
                 );
         },
@@ -257,8 +248,7 @@ class _AdminScreenState extends State<AdminScreen> {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor:
-                WidgetStatePropertyAll(
+            headingRowColor: WidgetStatePropertyAll(
               Colors.teal.shade50,
             ),
             columnSpacing: 24,
@@ -289,37 +279,27 @@ class _AdminScreenState extends State<AdminScreen> {
     final active = provider.isActive(user);
     final expired = provider.isExpired(user);
 
-    final userId =
-        user['user_id']?.toString() ?? '';
+    final userId = user['user_id']?.toString() ?? '';
 
-    final name =
-        user['user_name']?.toString() ?? 'No Name';
+    final name = user['user_name']?.toString() ?? 'No Name';
 
-    final email =
-        user['user_email']?.toString() ?? 'No Email';
+    final email = user['user_email']?.toString() ?? 'No Email';
 
-    final phone =
-        user['user_phone']?.toString() ?? 'No Phone';
+    final phone = user['user_phone']?.toString() ?? 'No Phone';
 
-    final created =
-        _parseDate(user['created_at']);
+    final created = _parseDate(user['created_at']);
 
-    final expiry =
-        _parseDate(
-          user['expires_at'] ??
-              user['expiry_date'],
-        );
+    final expiry = _parseDate(
+      user['expires_at'] ?? user['expiry_date'],
+    );
 
-    final status =
-        provider.statusText(user);
+    final status = provider.statusText(user);
 
     return DataRow(
       cells: [
         DataCell(
           Text(
-            userId.length > 8
-                ? userId.substring(0, 8)
-                : userId,
+            userId.length > 8 ? userId.substring(0, 8) : userId,
             style: const TextStyle(
               fontFamily: 'monospace',
             ),
@@ -330,22 +310,15 @@ class _AdminScreenState extends State<AdminScreen> {
         DataCell(Text(phone)),
         DataCell(
           Text(
-            created == null
-                ? '-'
-                : DateFormat('yyyy-MM-dd').format(created),
+            created == null ? '-' : DateFormat('yyyy-MM-dd').format(created),
           ),
         ),
         DataCell(
           Text(
-            expiry == null
-                ? '-'
-                : DateFormat('yyyy-MM-dd').format(expiry),
+            expiry == null ? '-' : DateFormat('yyyy-MM-dd').format(expiry),
             style: TextStyle(
-              color: expired
-                  ? Colors.red
-                  : Colors.black,
-              fontWeight:
-                  expired ? FontWeight.bold : null,
+              color: expired ? Colors.red : Colors.black,
+              fontWeight: expired ? FontWeight.bold : null,
             ),
           ),
         ),
@@ -359,19 +332,14 @@ class _AdminScreenState extends State<AdminScreen> {
         DataCell(
           active
               ? OutlinedButton(
-                  onPressed: provider.isLoading
-                      ? null
-                      : () => _deactivate(user),
+                  onPressed:
+                      provider.isLoading ? null : () => _deactivate(user),
                   child: const Text('DEACTIVATE'),
                 )
               : FilledButton(
-                  onPressed: provider.isLoading
-                      ? null
-                      : () => _activate(user),
+                  onPressed: provider.isLoading ? null : () => _activate(user),
                   child: Text(
-                    expired
-                        ? 'REACTIVATE'
-                        : 'ACTIVATE',
+                    expired ? 'REACTIVATE' : 'ACTIVATE',
                   ),
                 ),
         ),
@@ -421,28 +389,22 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _activate(
     Map<String, dynamic> user,
   ) async {
-    final userId =
-        user['user_id']?.toString() ?? '';
+    final userId = user['user_id']?.toString() ?? '';
 
     if (userId.isEmpty) {
       return;
     }
 
-    final transactionController =
-        TextEditingController();
+    final transactionController = TextEditingController();
 
-    final amountController =
-        TextEditingController();
+    final amountController = TextEditingController();
 
-    final currencyController =
-        TextEditingController(text: 'USD');
+    final currencyController = TextEditingController(text: 'USD');
 
-    final notesController =
-        TextEditingController();
+    final notesController = TextEditingController();
 
     try {
-      final result =
-          await showDialog<bool>(
+      final result = await showDialog<bool>(
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
@@ -452,18 +414,14 @@ class _AdminScreenState extends State<AdminScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    user['user_name']
-                            ?.toString() ??
-                        user['user_email']
-                            ?.toString() ??
+                    user['user_name']?.toString() ??
+                        user['user_email']?.toString() ??
                         'User',
                   ),
                   const SizedBox(height: 16),
                   TextField(
-                    controller:
-                        transactionController,
-                    decoration:
-                        const InputDecoration(
+                    controller: transactionController,
+                    decoration: const InputDecoration(
                       labelText: 'Transaction ID',
                       border: OutlineInputBorder(),
                     ),
@@ -471,23 +429,18 @@ class _AdminScreenState extends State<AdminScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: amountController,
-                    keyboardType:
-                        const TextInputType
-                            .numberWithOptions(
+                    keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration:
-                        const InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Amount',
                       border: OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller:
-                        currencyController,
-                    decoration:
-                        const InputDecoration(
+                    controller: currencyController,
+                    decoration: const InputDecoration(
                       labelText: 'Currency',
                       border: OutlineInputBorder(),
                     ),
@@ -496,8 +449,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   TextField(
                     controller: notesController,
                     maxLines: 2,
-                    decoration:
-                        const InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Notes',
                       border: OutlineInputBorder(),
                     ),
@@ -508,15 +460,13 @@ class _AdminScreenState extends State<AdminScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(dialogContext)
-                      .pop(false);
+                  Navigator.of(dialogContext).pop(false);
                 },
                 child: const Text('CANCEL'),
               ),
               FilledButton(
                 onPressed: () {
-                  Navigator.of(dialogContext)
-                      .pop(true);
+                  Navigator.of(dialogContext).pop(true);
                 },
                 child: const Text('ACTIVATE'),
               ),
@@ -529,8 +479,7 @@ class _AdminScreenState extends State<AdminScreen> {
         return;
       }
 
-      final amount =
-          double.tryParse(
+      final amount = double.tryParse(
         amountController.text.trim(),
       );
 
@@ -541,11 +490,9 @@ class _AdminScreenState extends State<AdminScreen> {
         return;
       }
 
-      final transactionId =
-          transactionController.text.trim();
+      final transactionId = transactionController.text.trim();
 
-      final currency =
-          currencyController.text.trim();
+      final currency = currencyController.text.trim();
 
       if (transactionId.isEmpty) {
         _showMessage(
@@ -561,16 +508,14 @@ class _AdminScreenState extends State<AdminScreen> {
         return;
       }
 
-      final success =
-          await context.read<AdminProvider>()
-              .activateUser(
-                userId,
-                transactionId: transactionId,
-                amount: amount,
-                currency: currency,
-                paidAt: DateTime.now().toUtc(),
-                notes: notesController.text.trim(),
-              );
+      final success = await context.read<AdminProvider>().activateUser(
+            userId,
+            transactionId: transactionId,
+            amount: amount,
+            currency: currency,
+            paidAt: DateTime.now().toUtc(),
+            notes: notesController.text.trim(),
+          );
 
       if (!mounted) {
         return;
@@ -578,9 +523,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
       if (!success) {
         _showMessage(
-          context
-                  .read<AdminProvider>()
-                  .errorMessage ??
+          context.read<AdminProvider>().errorMessage ??
               'Unable to activate user.',
         );
       }
@@ -595,15 +538,13 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _deactivate(
     Map<String, dynamic> user,
   ) async {
-    final userId =
-        user['user_id']?.toString() ?? '';
+    final userId = user['user_id']?.toString() ?? '';
 
     if (userId.isEmpty) {
       return;
     }
 
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -614,8 +555,7 @@ class _AdminScreenState extends State<AdminScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext)
-                    .pop(false);
+                Navigator.of(dialogContext).pop(false);
               },
               child: const Text('CANCEL'),
             ),
@@ -624,8 +564,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 backgroundColor: Colors.red,
               ),
               onPressed: () {
-                Navigator.of(dialogContext)
-                    .pop(true);
+                Navigator.of(dialogContext).pop(true);
               },
               child: const Text('DEACTIVATE'),
             ),
@@ -638,10 +577,7 @@ class _AdminScreenState extends State<AdminScreen> {
       return;
     }
 
-    final success =
-        await context
-            .read<AdminProvider>()
-            .deactivateUser(userId);
+    final success = await context.read<AdminProvider>().deactivateUser(userId);
 
     if (!mounted) {
       return;
@@ -649,9 +585,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
     if (!success) {
       _showMessage(
-        context
-                .read<AdminProvider>()
-                .errorMessage ??
+        context.read<AdminProvider>().errorMessage ??
             'Unable to deactivate user.',
       );
     }
@@ -674,8 +608,7 @@ class _AdminScreenState extends State<AdminScreen> {
       return value.toLocal();
     }
 
-    final parsed =
-        DateTime.tryParse(value.toString());
+    final parsed = DateTime.tryParse(value.toString());
 
     return parsed?.toLocal();
   }

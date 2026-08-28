@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -59,9 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!success) {
       _showError(
         auth.errorMessage ??
-            (_isLoginMode
-                ? 'Unable to sign in.'
-                : 'Unable to create account.'),
+            (_isLoginMode ? 'Unable to sign in.' : 'Unable to create account.'),
       );
       return;
     }
@@ -117,8 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       _showMessage(
         title: 'Password Reset',
-        message:
-            'If the email exists, a password reset message has been sent.',
+        message: 'If the email exists, a password reset message has been sent.',
         icon: Icons.mark_email_read_outlined,
       );
     } else {
@@ -228,9 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _buildHeader(),
-
                         const SizedBox(height: 32),
-
                         if (!_isLoginMode) ...[
                           TextFormField(
                             controller: _nameController,
@@ -268,7 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 16),
                         ],
-
                         TextFormField(
                           controller: _emailController,
                           enabled: !auth.isLoading,
@@ -286,17 +280,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               return 'Please enter your email.';
                             }
 
-                            if (!email.contains('@') ||
-                                !email.contains('.')) {
+                            if (!email.contains('@') || !email.contains('.')) {
                               return 'Please enter a valid email.';
                             }
 
                             return null;
                           },
                         ),
-
                         const SizedBox(height: 16),
-
                         TextFormField(
                           controller: _passwordController,
                           enabled: !auth.isLoading,
@@ -319,8 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ? null
                                   : () {
                                       setState(() {
-                                        _obscurePassword =
-                                            !_obscurePassword;
+                                        _obscurePassword = !_obscurePassword;
                                       });
                                     },
                               icon: Icon(
@@ -344,14 +334,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-
                         if (auth.errorMessage != null) ...[
                           const SizedBox(height: 16),
                           _buildError(auth.errorMessage!),
                         ],
-
                         const SizedBox(height: 24),
-
                         SizedBox(
                           height: 52,
                           child: FilledButton(
@@ -369,18 +356,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                 : Text(
-                                    _isLoginMode
-                                        ? 'LOGIN'
-                                        : 'CREATE ACCOUNT',
+                                    _isLoginMode ? 'LOGIN' : 'CREATE ACCOUNT',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         TextButton(
                           onPressed: auth.isLoading ? null : _toggleMode,
                           child: Text(
@@ -389,11 +372,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : 'Already have an account? Sign in',
                           ),
                         ),
-
                         if (_isLoginMode)
                           TextButton(
-                            onPressed:
-                                auth.isLoading ? null : _resetPassword,
+                            onPressed: auth.isLoading ? null : _resetPassword,
                             child: const Text('Forgot password?'),
                           ),
                       ],

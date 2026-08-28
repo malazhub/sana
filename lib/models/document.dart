@@ -24,65 +24,44 @@ class DocumentModel {
     this.bytes,
   });
 
-  // ============================================================
-  // FROM MAP
-  // ============================================================
-
-  factory DocumentModel.fromMap(
-    Map<String, dynamic> map,
-  ) {
+  factory DocumentModel.fromMap(Map<String, dynamic> map) {
     return DocumentModel(
       id: map['id']?.toString() ?? '',
-      userId:
-          map['user_id']?.toString() ??
-          map['userId']?.toString() ??
-          '',
-      guestId:
-          map['guest_id']?.toString() ??
-          map['guestId']?.toString() ??
-          '',
+      userId: _stringValue(
+        map['user_id'] ?? map['userId'],
+      ),
+      guestId: _stringValue(
+        map['guest_id'] ?? map['guestId'],
+      ),
       name: map['name']?.toString() ?? '',
       fileType:
-          map['file_type']?.toString() ??
-          map['fileType']?.toString() ??
-          'file',
+          map['file_type']?.toString() ?? map['fileType']?.toString() ?? 'file',
       fileUrl: _nullableString(
-        map['file_url'] ??
-            map['fileUrl'] ??
-            map['path'],
+        map['file_url'] ?? map['fileUrl'] ?? map['path'],
       ),
       storagePath: _nullableString(
-        map['storage_path'] ??
-            map['storagePath'],
+        map['storage_path'] ?? map['storagePath'],
       ),
       date: _parseDate(
-        map['date'] ??
-            map['upload_date'],
+        map['date'] ?? map['upload_date'],
       ),
       bytes: _parseBytes(
-        map['bytes_data'] ??
-            map['bytes'],
+        map['bytes_data'] ?? map['bytes'],
       ),
     );
   }
 
-  // ============================================================
-  // LOCAL MAP
-  // ============================================================
-
   Map<String, dynamic> toMap() {
     String bytesData = '';
 
-    if (bytes != null &&
-        bytes!.isNotEmpty &&
-        bytes!.length <= 300000) {
+    if (bytes != null && bytes!.isNotEmpty && bytes!.length <= 300000) {
       bytesData = base64Encode(bytes!);
     }
 
     return {
       'id': id,
-      'user_id': userId,
-      'guest_id': guestId,
+      'user_id': userId.isEmpty ? null : userId,
+      'guest_id': guestId.isEmpty ? null : guestId,
       'name': name,
       'file_type': fileType,
       'file_url': fileUrl ?? '',
@@ -91,10 +70,6 @@ class DocumentModel {
       'date': date.toIso8601String(),
     };
   }
-
-  // ============================================================
-  // SUPABASE MAP
-  // ============================================================
 
   Map<String, dynamic> toSupabaseMap() {
     final map = <String, dynamic>{
@@ -105,31 +80,18 @@ class DocumentModel {
       'upload_date': date.toIso8601String(),
     };
 
-    /*
-     * Guest records belong to the shared guest database.
-     *
-     * Registered records belong only to their authenticated
-     * account.
-     *
-     * Never send both ownership fields for the same record.
-     */
     if (userId.trim().isNotEmpty) {
-      map['user_id'] = userId;
+      map['user_id'] = userId.trim();
       map['guest_id'] = null;
     } else {
       map['user_id'] = null;
-      map['guest_id'] =
-          guestId.trim().isEmpty
-              ? 'guest'
-              : guestId.trim();
+      map['guest_id'] = guestId.trim().isEmpty ? null : guestId.trim();
     }
 
     return map;
   }
 
-  // ============================================================
-  // COPY
-  // ============================================================
+  Map<String, dynamic> toJson() => toMap();
 
   DocumentModel copyWith({
     String? id,
@@ -155,18 +117,15 @@ class DocumentModel {
     );
   }
 
-  Map<String, dynamic> toJson() => toMap();
+  static String _stringValue(dynamic value) {
+    if (value == null) return '';
 
-  // ============================================================
-  // PARSING HELPERS
-  // ============================================================
+    final result = value.toString().trim();
+    return result;
+  }
 
-  static Uint8List? _parseBytes(
-    dynamic rawBytes,
-  ) {
-    if (rawBytes == null) {
-      return null;
-    }
+  static Uint8List? _parseBytes(dynamic rawBytes) {
+    if (rawBytes == null) return null;
 
     try {
       if (rawBytes is Uint8List) {
@@ -176,60 +135,38 @@ class DocumentModel {
       if (rawBytes is List) {
         final values = rawBytes
             .whereType<int>()
-            .where(
-              (value) =>
-                  value >= 0 &&
-                  value <= 255,
-            )
+            .where((value) => value >= 0 && value <= 255)
             .toList();
 
-        if (values.isEmpty) {
-          return null;
-        }
+        if (values.isEmpty) return null;
 
         return Uint8List.fromList(values);
       }
 
-      final value =
-          rawBytes.toString().trim();
+      final value = rawBytes.toString().trim();
 
-      if (value.isEmpty) {
-        return null;
-      }
+      if (value.isEmpty) return null;
 
       if (value.startsWith('data:')) {
-        final data =
-            Uri.tryParse(value)?.data;
+        final data = Uri.tryParse(value)?.data;
 
         if (data != null) {
-          final result =
-              data.contentAsBytes();
-
-          return result.isEmpty
-              ? null
-              : result;
+          final result = data.contentAsBytes();
+          return result.isEmpty ? null : result;
         }
 
         return null;
       }
 
-      final result =
-          base64Decode(value);
-
-      return result.isEmpty
-          ? null
-          : result;
+      final result = base64Decode(value);
+      return result.isEmpty ? null : result;
     } catch (_) {
       return null;
     }
   }
 
-  static DateTime _parseDate(
-    dynamic value,
-  ) {
-    if (value is DateTime) {
-      return value;
-    }
+  static DateTime _parseDate(dynamic value) {
+    if (value is DateTime) return value;
 
     final parsed = DateTime.tryParse(
       value?.toString() ?? '',
@@ -238,18 +175,10 @@ class DocumentModel {
     return parsed ?? DateTime.now();
   }
 
-  static String? _nullableString(
-    dynamic value,
-  ) {
-    if (value == null) {
-      return null;
-    }
+  static String? _nullableString(dynamic value) {
+    if (value == null) return null;
 
-    final result =
-        value.toString().trim();
-
-    return result.isEmpty
-        ? null
-        : result;
+    final result = value.toString().trim();
+    return result.isEmpty ? null : result;
   }
 }

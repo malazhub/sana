@@ -1,4 +1,4 @@
-class MedicalDocument {
+﻿class MedicalDocument {
   final String? id;
   final String? userId;
   final String? guestId;
@@ -27,7 +27,7 @@ class MedicalDocument {
     return {
       'id': id,
       'user_id': userId,
-      'guest_id': guestId,
+      'user_id': guestId,
       'name': name,
       'storage_path': storagePath,
       'file_url': fileUrl,
@@ -42,7 +42,7 @@ class MedicalDocument {
     return MedicalDocument(
       id: map['id']?.toString(),
       userId: map['user_id'],
-      guestId: map['guest_id'],
+      guestId: map['user_id'],
       name: map['name'] ?? '',
       storagePath: map['storage_path'] ?? '',
       fileUrl: map['file_url'] ?? '',

@@ -192,9 +192,12 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
         insuranceCards: [cardMap],
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sharing card: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Error sharing card: $e'),
+              backgroundColor: Colors.red),
+        );
     }
   }
 
@@ -294,21 +297,21 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
     String closeBtn = 'Close Inspection';
 
     if (code == 'ar') {
-      policyLbl = 'رقم البوليصة / البطاقة:';
-      viewLbl = 'معاينة البطاقة بالتكبير:';
-      frontLbl = 'الوجه الأمامي';
-      backLbl = 'الوجه الخلفي';
-      shareBtn = 'مشاركة البطاقة';
-      closeBtn = 'إغلاق المعاينة';
+      policyLbl = 'Ø±Ù‚Ù… Ø§Ù„Ø¨ÙˆÙ„ÙŠØµØ© / Ø§Ù„Ø¨Ø·Ø§Ù‚Ø©:';
+      viewLbl = 'Ù…Ø¹Ø§ÙŠÙ†Ø© Ø§Ù„Ø¨Ø·Ø§Ù‚Ø© Ø¨Ø§Ù„ØªÙƒØ¨ÙŠØ±:';
+      frontLbl = 'Ø§Ù„ÙˆØ¬Ù‡ Ø§Ù„Ø£Ù…Ø§Ù…ÙŠ';
+      backLbl = 'Ø§Ù„ÙˆØ¬Ù‡ Ø§Ù„Ø®Ù„ÙÙŠ';
+      shareBtn = 'Ù…Ø´Ø§Ø±ÙƒØ© Ø§Ù„Ø¨Ø·Ø§Ù‚Ø©';
+      closeBtn = 'Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ù…Ø¹Ø§ÙŠÙ†Ø©';
     } else if (code == 'es') {
-      policyLbl = 'Número de Póliza / Tarjeta:';
-      viewLbl = 'Vista de Inspección:';
+      policyLbl = 'NÃºmero de PÃ³liza / Tarjeta:';
+      viewLbl = 'Vista de InspecciÃ³n:';
       frontLbl = 'FRENTE';
       backLbl = 'REVERSO';
       shareBtn = 'Compartir Tarjeta';
       closeBtn = 'Cerrar';
     } else if (code == 'fr') {
-      policyLbl = 'Numéro de Police / Carte :';
+      policyLbl = 'NumÃ©ro de Police / Carte :';
       viewLbl = 'Vue Agrandie :';
       frontLbl = 'RECTO';
       backLbl = 'VERSO';
@@ -318,30 +321,30 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
       policyLbl = 'Police / Kartennummer:';
       viewLbl = 'Kartenansicht:';
       frontLbl = 'VORDERSEITE';
-      backLbl = 'RÜCKSEITE';
+      backLbl = 'RÃœCKSEITE';
       shareBtn = 'Karte Teilen';
-      closeBtn = 'Schließen';
+      closeBtn = 'SchlieÃŸen';
     } else if (code == 'tr') {
-      policyLbl = 'Poliçe / Kart Numarası:';
-      viewLbl = 'Kart İnceleme Görünümü:';
-      frontLbl = 'ÖN YÜZ';
-      backLbl = 'ARKA YÜZ';
-      shareBtn = 'Kartı Paylaş';
+      policyLbl = 'PoliÃ§e / Kart NumarasÄ±:';
+      viewLbl = 'Kart Ä°nceleme GÃ¶rÃ¼nÃ¼mÃ¼:';
+      frontLbl = 'Ã–N YÃœZ';
+      backLbl = 'ARKA YÃœZ';
+      shareBtn = 'KartÄ± PaylaÅŸ';
       closeBtn = 'Kapat';
     } else if (code == 'hi') {
-      policyLbl = 'पॉलिसी / कार्ड नंबर:';
-      viewLbl = 'कार्ड दृश्य:';
-      frontLbl = 'सामने का भाग';
-      backLbl = 'पीछे का भाग';
-      shareBtn = 'कार्ड साझा करें';
-      closeBtn = 'बंद करें';
+      policyLbl = 'à¤ªà¥‰à¤²à¤¿à¤¸à¥€ / à¤•à¤¾à¤°à¥à¤¡ à¤¨à¤‚à¤¬à¤°:';
+      viewLbl = 'à¤•à¤¾à¤°à¥à¤¡ à¤¦à¥ƒà¤¶à¥à¤¯:';
+      frontLbl = 'à¤¸à¤¾à¤®à¤¨à¥‡ à¤•à¤¾ à¤­à¤¾à¤—';
+      backLbl = 'à¤ªà¥€à¤›à¥‡ à¤•à¤¾ à¤­à¤¾à¤—';
+      shareBtn = 'à¤•à¤¾à¤°à¥à¤¡ à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚';
+      closeBtn = 'à¤¬à¤‚à¤¦ à¤•à¤°à¥‡à¤‚';
     } else if (code == 'zh') {
-      policyLbl = '保单 / 卡号:';
-      viewLbl = '放大卡片视图:';
-      frontLbl = '正面';
-      backLbl = '背面';
-      shareBtn = '分享卡片';
-      closeBtn = '关闭';
+      policyLbl = 'ä¿å• / å¡å·:';
+      viewLbl = 'æ”¾å¤§å¡ç‰‡è§†å›¾:';
+      frontLbl = 'æ­£é¢';
+      backLbl = 'èƒŒé¢';
+      shareBtn = 'åˆ†äº«å¡ç‰‡';
+      closeBtn = 'å…³é—­';
     }
 
     showDialog(
@@ -449,68 +452,69 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
     String emptyText = 'No insurance cards added yet.';
 
     if (code == 'ar') {
-      title = 'بطاقات التأمين';
-      addTitle = 'إضافة بطاقة تأمين جديدة';
-      nameLabel = 'اسم شركة التأمين *';
-      policyLabel = 'رقم البوليصة / البطاقة';
-      frontBtn = 'الصورة الأمامية';
-      backBtn = 'الصورة الخلفية';
-      saveBtn = 'حفظ البطاقة';
-      emptyText = 'لم يتم إضافة بطاقات تأمين بعد.';
+      title = 'Ø¨Ø·Ø§Ù‚Ø§Øª Ø§Ù„ØªØ£Ù…ÙŠÙ†';
+      addTitle = 'Ø¥Ø¶Ø§ÙØ© Ø¨Ø·Ø§Ù‚Ø© ØªØ£Ù…ÙŠÙ† Ø¬Ø¯ÙŠØ¯Ø©';
+      nameLabel = 'Ø§Ø³Ù… Ø´Ø±ÙƒØ© Ø§Ù„ØªØ£Ù…ÙŠÙ† *';
+      policyLabel = 'Ø±Ù‚Ù… Ø§Ù„Ø¨ÙˆÙ„ÙŠØµØ© / Ø§Ù„Ø¨Ø·Ø§Ù‚Ø©';
+      frontBtn = 'Ø§Ù„ØµÙˆØ±Ø© Ø§Ù„Ø£Ù…Ø§Ù…ÙŠØ©';
+      backBtn = 'Ø§Ù„ØµÙˆØ±Ø© Ø§Ù„Ø®Ù„ÙÙŠØ©';
+      saveBtn = 'Ø­ÙØ¸ Ø§Ù„Ø¨Ø·Ø§Ù‚Ø©';
+      emptyText = 'Ù„Ù… ÙŠØªÙ… Ø¥Ø¶Ø§ÙØ© Ø¨Ø·Ø§Ù‚Ø§Øª ØªØ£Ù…ÙŠÙ† Ø¨Ø¹Ø¯.';
     } else if (code == 'es') {
       title = 'Tarjetas de Seguro';
-      addTitle = 'Añadir Nueva Tarjeta de Seguro';
+      addTitle = 'AÃ±adir Nueva Tarjeta de Seguro';
       nameLabel = 'Nombre de la Aseguradora *';
-      policyLabel = 'Número de Póliza / Tarjeta';
+      policyLabel = 'NÃºmero de PÃ³liza / Tarjeta';
       frontBtn = 'Imagen Frontal';
       backBtn = 'Imagen Trasera';
       saveBtn = 'Guardar Tarjeta';
-      emptyText = 'Aún no se han añadido tarjetas de seguro.';
+      emptyText = 'AÃºn no se han aÃ±adido tarjetas de seguro.';
     } else if (code == 'fr') {
       title = 'Cartes d\'Assurance';
       addTitle = 'Ajouter une Carte d\'Assurance';
       nameLabel = 'Nom de l\'Assureur *';
-      policyLabel = 'Numéro de Police / Carte';
+      policyLabel = 'NumÃ©ro de Police / Carte';
       frontBtn = 'Image Recto';
       backBtn = 'Image Verso';
       saveBtn = 'Enregistrer la Carte';
-      emptyText = 'Aucune carte d\'assurance ajoutée.';
+      emptyText = 'Aucune carte d\'assurance ajoutÃ©e.';
     } else if (code == 'de') {
       title = 'Versicherungskarten';
-      addTitle = 'Versicherungskarte hinzufügen';
+      addTitle = 'Versicherungskarte hinzufÃ¼gen';
       nameLabel = 'Name der Versicherung *';
       policyLabel = 'Policen- / Kartennummer';
       frontBtn = 'Vorderseite';
-      backBtn = 'Rückseite';
+      backBtn = 'RÃ¼ckseite';
       saveBtn = 'Karte Speichern';
-      emptyText = 'Noch keine Versicherungskarten hinzugefügt.';
+      emptyText = 'Noch keine Versicherungskarten hinzugefÃ¼gt.';
     } else if (code == 'tr') {
-      title = 'Sigorta Kartları';
-      addTitle = 'Yeni Sigorta Kartı Ekle';
-      nameLabel = 'Sigorta Şirketi Adı *';
-      policyLabel = 'Poliçe / Kart Numarası';
-      frontBtn = 'Ön Yüz Resmi';
-      backBtn = 'Arka Yüz Resmi';
-      saveBtn = 'Kartı Kaydet';
-      emptyText = 'Henüz sigorta kartı eklenmedi.';
+      title = 'Sigorta KartlarÄ±';
+      addTitle = 'Yeni Sigorta KartÄ± Ekle';
+      nameLabel = 'Sigorta Åžirketi AdÄ± *';
+      policyLabel = 'PoliÃ§e / Kart NumarasÄ±';
+      frontBtn = 'Ã–n YÃ¼z Resmi';
+      backBtn = 'Arka YÃ¼z Resmi';
+      saveBtn = 'KartÄ± Kaydet';
+      emptyText = 'HenÃ¼z sigorta kartÄ± eklenmedi.';
     } else if (code == 'hi') {
-      title = 'बीमा कार्ड';
-      addTitle = 'नया बीमा कार्ड जोड़ें';
-      nameLabel = 'बीमा प्रदाता नाम *';
-      policyLabel = 'पॉलिसी / कार्ड नंबर';
-      frontBtn = 'सामने की तस्वीर';
-      backBtn = 'पीछे की तस्वीर';
-      saveBtn = 'कार्ड सहेजें';
-      emptyText = 'अभी कोई बीमा कार्ड नहीं जोड़ा गया।';
+      title = 'à¤¬à¥€à¤®à¤¾ à¤•à¤¾à¤°à¥à¤¡';
+      addTitle = 'à¤¨à¤¯à¤¾ à¤¬à¥€à¤®à¤¾ à¤•à¤¾à¤°à¥à¤¡ à¤œà¥‹à¤¡à¤¼à¥‡à¤‚';
+      nameLabel = 'à¤¬à¥€à¤®à¤¾ à¤ªà¥à¤°à¤¦à¤¾à¤¤à¤¾ à¤¨à¤¾à¤® *';
+      policyLabel = 'à¤ªà¥‰à¤²à¤¿à¤¸à¥€ / à¤•à¤¾à¤°à¥à¤¡ à¤¨à¤‚à¤¬à¤°';
+      frontBtn = 'à¤¸à¤¾à¤®à¤¨à¥‡ à¤•à¥€ à¤¤à¤¸à¥à¤µà¥€à¤°';
+      backBtn = 'à¤ªà¥€à¤›à¥‡ à¤•à¥€ à¤¤à¤¸à¥à¤µà¥€à¤°';
+      saveBtn = 'à¤•à¤¾à¤°à¥à¤¡ à¤¸à¤¹à¥‡à¤œà¥‡à¤‚';
+      emptyText =
+          'à¤…à¤­à¥€ à¤•à¥‹à¤ˆ à¤¬à¥€à¤®à¤¾ à¤•à¤¾à¤°à¥à¤¡ à¤¨à¤¹à¥€à¤‚ à¤œà¥‹à¤¡à¤¼à¤¾ à¤—à¤¯à¤¾à¥¤';
     } else if (code == 'zh') {
-      title = '保险卡';
-      addTitle = '添加新保险卡';
-      nameLabel = '保险公司名称 *';
-      policyLabel = '保单 / 卡号';
-      frontBtn = '正面照片';
-      backBtn = '背面照片';
-      saveBtn = '保存卡片';
-      emptyText = '尚未添加保险卡。';
+      title = 'ä¿é™©å¡';
+      addTitle = 'æ·»åŠ æ–°ä¿é™©å¡';
+      nameLabel = 'ä¿é™©å…¬å¸åç§° *';
+      policyLabel = 'ä¿å• / å¡å·';
+      frontBtn = 'æ­£é¢ç…§ç‰‡';
+      backBtn = 'èƒŒé¢ç…§ç‰‡';
+      saveBtn = 'ä¿å­˜å¡ç‰‡';
+      emptyText = 'å°šæœªæ·»åŠ ä¿é™©å¡ã€‚';
     }
 
     return Scaffold(
@@ -697,7 +701,8 @@ class _InsuranceScreenState extends State<InsuranceScreen> {
                                   IconButton(
                                     tooltip: 'Share Card',
                                     icon: const Icon(Icons.share,
-                                        color: Colors.orange, size: 28), // FIXED: Orange color
+                                        color: Colors.orange,
+                                        size: 28), // FIXED: Orange color
                                     onPressed: () => _shareInsuranceCard(card),
                                   ),
                                   IconButton(

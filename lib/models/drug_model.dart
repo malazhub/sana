@@ -1,4 +1,4 @@
-class DrugModel {
+﻿class DrugModel {
   final String id;
 
   final String name;

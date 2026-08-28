@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -15,8 +15,7 @@ class SubscriptionScreen extends StatelessWidget {
     final expiry = auth.expiryDate;
     final daysRemaining = auth.daysRemaining;
 
-    final bool expired =
-        auth.subscriptionExpired;
+    final bool expired = auth.subscriptionExpired;
 
     return Scaffold(
       appBar: AppBar(
@@ -56,10 +55,8 @@ class SubscriptionScreen extends StatelessWidget {
                     ),
                     child: Icon(
                       expired
-                          ? Icons
-                              .event_busy_outlined
-                          : Icons
-                              .hourglass_empty_outlined,
+                          ? Icons.event_busy_outlined
+                          : Icons.hourglass_empty_outlined,
                       size: 48,
                       color: Colors.teal,
                     ),
@@ -72,9 +69,7 @@ class SubscriptionScreen extends StatelessWidget {
                   // --------------------------------------------------
 
                   Text(
-                    expired
-                        ? 'Subscription Expired'
-                        : 'Subscription Required',
+                    expired ? 'Subscription Expired' : 'Subscription Required',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 28,
@@ -131,23 +126,19 @@ class SubscriptionScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.teal.shade50,
-                      borderRadius:
-                          BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color:
-                            Colors.teal.shade100,
+                        color: Colors.teal.shade100,
                       ),
                     ),
                     child: const Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'How activation works',
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         SizedBox(height: 10),
@@ -183,16 +174,13 @@ class SubscriptionScreen extends StatelessWidget {
                       onPressed: auth.isLoading
                           ? null
                           : () async {
-                              await context
-                                  .read<AuthProvider>()
-                                  .refresh();
+                              await context.read<AuthProvider>().refresh();
                             },
                       icon: auth.isLoading
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(
+                              child: CircularProgressIndicator(
                                 strokeWidth: 2,
                               ),
                             )
@@ -220,9 +208,7 @@ class SubscriptionScreen extends StatelessWidget {
                       onPressed: auth.isLoading
                           ? null
                           : () async {
-                              await context
-                                  .read<AuthProvider>()
-                                  .signOut();
+                              await context.read<AuthProvider>().signOut();
                             },
                       icon: const Icon(
                         Icons.logout,
@@ -251,38 +237,24 @@ class SubscriptionScreen extends StatelessWidget {
     BuildContext context,
     AuthProvider auth,
   ) {
-    final name =
-        auth.profile?['name']
-                ?.toString()
-                .trim() ??
-            '';
+    final name = auth.profile?['name']?.toString().trim() ?? '';
 
-    final email =
-        auth.profile?['email']
-                ?.toString()
-                .trim() ??
-            auth.email;
+    final email = auth.profile?['email']?.toString().trim() ?? auth.email;
 
-    final phone =
-        auth.profile?['phone']
-                ?.toString()
-                .trim() ??
-            '';
+    final phone = auth.profile?['phone']?.toString().trim() ?? '';
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Colors.grey.shade200,
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Account',
@@ -292,22 +264,17 @@ class SubscriptionScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-
           if (name.isNotEmpty)
             _buildInfoRow(
               Icons.person_outline,
               'Name',
               name,
             ),
-
           _buildInfoRow(
             Icons.email_outlined,
             'Email',
-            email.isEmpty
-                ? 'Not available'
-                : email,
+            email.isEmpty ? 'Not available' : email,
           ),
-
           if (phone.isNotEmpty)
             _buildInfoRow(
               Icons.phone_outlined,
@@ -329,10 +296,7 @@ class SubscriptionScreen extends StatelessWidget {
     required DateTime? expiry,
     required int? daysRemaining,
   }) {
-    final Color color =
-        expired
-            ? Colors.red
-            : Colors.orange;
+    final Color color = expired ? Colors.red : Colors.orange;
 
     String status;
 
@@ -349,8 +313,7 @@ class SubscriptionScreen extends StatelessWidget {
         color: color.withValues(
           alpha: 0.06,
         ),
-        borderRadius:
-            BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: color.withValues(
             alpha: 0.25,
@@ -358,16 +321,12 @@ class SubscriptionScreen extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(
-                expired
-                    ? Icons.cancel_outlined
-                    : Icons
-                        .hourglass_top_outlined,
+                expired ? Icons.cancel_outlined : Icons.hourglass_top_outlined,
                 color: color,
               ),
               const SizedBox(width: 10),
@@ -375,25 +334,20 @@ class SubscriptionScreen extends StatelessWidget {
                 status,
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight:
-                      FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                   color: color,
                 ),
               ),
             ],
           ),
-
           if (expiry != null) ...[
             const SizedBox(height: 14),
-
             _buildInfoRow(
               Icons.event_outlined,
               'Expiry date',
               _formatDate(expiry),
             ),
-
-            if (!expired &&
-                daysRemaining != null)
+            if (!expired && daysRemaining != null)
               _buildInfoRow(
                 Icons.schedule_outlined,
                 'Days remaining',
@@ -424,11 +378,9 @@ class SubscriptionScreen extends StatelessWidget {
     String value,
   ) {
     return Padding(
-      padding:
-          const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
@@ -441,8 +393,7 @@ class SubscriptionScreen extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color:
-                    Colors.grey.shade600,
+                color: Colors.grey.shade600,
               ),
             ),
           ),
@@ -450,8 +401,7 @@ class SubscriptionScreen extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(
-                fontWeight:
-                    FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -467,23 +417,19 @@ class SubscriptionScreen extends StatelessWidget {
   String _formatDate(
     DateTime date,
   ) {
-    final local =
-        date.toLocal();
+    final local = date.toLocal();
 
-    final day =
-        local.day.toString().padLeft(
-              2,
-              '0',
-            );
+    final day = local.day.toString().padLeft(
+          2,
+          '0',
+        );
 
-    final month =
-        local.month.toString().padLeft(
-              2,
-              '0',
-            );
+    final month = local.month.toString().padLeft(
+          2,
+          '0',
+        );
 
-    final year =
-        local.year.toString();
+    final year = local.year.toString();
 
     return '$day/$month/$year';
   }

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/pharmacy.dart';
@@ -87,7 +87,8 @@ class PharmacyProvider extends ChangeNotifier {
 
     try {
       final pharmMap = pharmacy.toMap()..['user_id'] = user.id;
-      final response = await _client.from('pharmacies').insert(pharmMap).select().single();
+      final response =
+          await _client.from('pharmacies').insert(pharmMap).select().single();
       final newPharmacy = Pharmacy.fromMap(Map<String, dynamic>.from(response));
       _pharmacies.insert(0, newPharmacy);
       notifyListeners();
@@ -103,7 +104,11 @@ class PharmacyProvider extends ChangeNotifier {
     if (user == null) return false;
 
     try {
-      await _client.from('pharmacies').delete().eq('id', id).eq('user_id', user.id);
+      await _client
+          .from('pharmacies')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
       _pharmacies.removeWhere((p) => p.id == id);
       notifyListeners();
       return true;

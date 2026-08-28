@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,11 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/subscription_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  StreamSubscription<AuthState>?
-      _authSubscription;
+  StreamSubscription<AuthState>? _authSubscription;
 
   User? _currentUser;
 
@@ -29,43 +27,30 @@ class AuthProvider extends ChangeNotifier {
 
   Map<String, dynamic>? get profile => _profile;
 
-  Map<String, dynamic>? get subscription =>
-      _subscription;
+  Map<String, dynamic>? get subscription => _subscription;
 
   bool get isLoading => _isLoading;
 
-  bool get isInitialized =>
-      _isInitialized;
+  bool get isInitialized => _isInitialized;
 
-  String? get errorMessage =>
-      _errorMessage;
+  String? get errorMessage => _errorMessage;
 
-  bool get isAuthenticated =>
-      _currentUser != null;
+  bool get isAuthenticated => _currentUser != null;
 
-  bool get isGuest =>
-      !isAuthenticated || !isActive;
+  bool get isGuest => !isAuthenticated || !isActive;
 
-  bool get isLoggedIn =>
-      isAuthenticated;
+  bool get isLoggedIn => isAuthenticated;
 
-  String get userId =>
-      _currentUser?.id ?? '';
+  String get userId => _currentUser?.id ?? '';
 
-  String get email =>
-      _currentUser?.email ?? '';
+  String get email => _currentUser?.email ?? '';
 
-  String get name =>
-      _profile?['name']?.toString() ?? '';
+  String get name => _profile?['name']?.toString() ?? '';
 
-  String get phone =>
-      _profile?['phone']?.toString() ?? '';
+  String get phone => _profile?['phone']?.toString() ?? '';
 
   String get role {
-    final value = _profile?['role']
-        ?.toString()
-        .trim()
-        .toLowerCase();
+    final value = _profile?['role']?.toString().trim().toLowerCase();
 
     if (value == null || value.isEmpty) {
       return 'user';
@@ -74,8 +59,7 @@ class AuthProvider extends ChangeNotifier {
     return value;
   }
 
-  bool get isAdmin =>
-      isAuthenticated && role == 'admin';
+  bool get isAdmin => isAuthenticated && role == 'admin';
 
   bool get isActive {
     if (!isAuthenticated) {
@@ -98,8 +82,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     }
 
-    final profileActive =
-        _profile?['is_active'] == true;
+    final profileActive = _profile?['is_active'] == true;
 
     if (!profileActive) {
       return false;
@@ -126,8 +109,7 @@ class AuthProvider extends ChangeNotifier {
 
   DateTime? get expiryDate {
     return _parseDate(
-      _subscription?['expires_at'] ??
-          _profile?['expiry_date'],
+      _subscription?['expires_at'] ?? _profile?['expiry_date'],
     );
   }
 
@@ -136,11 +118,7 @@ class AuthProvider extends ChangeNotifier {
       return 'admin';
     }
 
-    final status =
-        _subscription?['status']
-            ?.toString()
-            .trim()
-            .toLowerCase();
+    final status = _subscription?['status']?.toString().trim().toLowerCase();
 
     final expiry = expiryDate;
 
@@ -165,9 +143,7 @@ class AuthProvider extends ChangeNotifier {
       return 'expired';
     }
 
-    return status == null || status.isEmpty
-        ? 'pending'
-        : status;
+    return status == null || status.isEmpty ? 'pending' : status;
   }
 
   int? get daysRemaining {
@@ -181,16 +157,13 @@ class AuthProvider extends ChangeNotifier {
       return null;
     }
 
-    final now =
-        DateTime.now().toUtc();
+    final now = DateTime.now().toUtc();
 
     if (!expiry.isAfter(now)) {
       return 0;
     }
 
-    return expiry
-        .difference(now)
-        .inDays;
+    return expiry.difference(now).inDays;
   }
 
   Future<void> initialize() async {
@@ -202,12 +175,9 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      _currentUser =
-          _supabase.auth.currentUser;
+      _currentUser = _supabase.auth.currentUser;
 
-      _authSubscription ??=
-          _supabase.auth.onAuthStateChange
-              .listen(
+      _authSubscription ??= _supabase.auth.onAuthStateChange.listen(
         (AuthState state) {
           unawaited(
             _handleAuthStateChange(state),
@@ -236,8 +206,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to initialize authentication.',
+          fallback: 'Unable to initialize authentication.',
         ),
       );
     } finally {
@@ -250,8 +219,7 @@ class AuthProvider extends ChangeNotifier {
     AuthState state,
   ) async {
     try {
-      _currentUser =
-          state.session?.user;
+      _currentUser = state.session?.user;
 
       if (_currentUser == null) {
         _clearUserState();
@@ -271,8 +239,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to refresh account state.',
+          fallback: 'Unable to refresh account state.',
         ),
       );
 
@@ -286,8 +253,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> loadProfile() async {
-    final user =
-        _supabase.auth.currentUser;
+    final user = _supabase.auth.currentUser;
 
     if (user == null) {
       _clearUserState();
@@ -295,21 +261,20 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      final response =
-          await _supabase
-              .from('users')
-              .select(
-                'id,'
-                'name,'
-                'email,'
-                'phone,'
-                'created_at,'
-                'is_active,'
-                'expiry_date,'
-                'role',
-              )
-              .eq('id', user.id)
-              .maybeSingle();
+      final response = await _supabase
+          .from('users')
+          .select(
+            'id,'
+            'name,'
+            'email,'
+            'phone,'
+            'created_at,'
+            'is_active,'
+            'expiry_date,'
+            'role',
+          )
+          .eq('id', user.id)
+          .maybeSingle();
 
       _currentUser = user;
 
@@ -318,8 +283,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      _profile =
-          Map<String, dynamic>.from(
+      _profile = Map<String, dynamic>.from(
         response,
       );
 
@@ -333,8 +297,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to load user profile.',
+          fallback: 'Unable to load user profile.',
         ),
       );
 
@@ -354,17 +317,14 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      final result =
-          await SubscriptionService
-              .getCurrentSubscription();
+      final result = await SubscriptionService.getCurrentSubscription();
 
       if (result == null) {
         _subscription = null;
         return false;
       }
 
-      _subscription =
-          Map<String, dynamic>.from(
+      _subscription = Map<String, dynamic>.from(
         result,
       );
 
@@ -380,8 +340,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to load subscription.',
+          fallback: 'Unable to load subscription.',
         ),
       );
 
@@ -393,8 +352,7 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    final cleanEmail =
-        email.trim();
+    final cleanEmail = email.trim();
 
     if (cleanEmail.isEmpty) {
       _setError('Email is required.');
@@ -412,15 +370,12 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      final response =
-          await _supabase.auth
-              .signInWithPassword(
+      final response = await _supabase.auth.signInWithPassword(
         email: cleanEmail,
         password: password,
       );
 
-      _currentUser =
-          response.user;
+      _currentUser = response.user;
 
       if (_currentUser == null) {
         _setError('Unable to sign in.');
@@ -432,9 +387,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on AuthException catch (error) {
       _setError(
-        error.message.isNotEmpty
-            ? error.message
-            : 'Unable to sign in.',
+        error.message.isNotEmpty ? error.message : 'Unable to sign in.',
       );
 
       return false;
@@ -464,14 +417,11 @@ class AuthProvider extends ChangeNotifier {
     String name = '',
     String phone = '',
   }) async {
-    final cleanEmail =
-        email.trim();
+    final cleanEmail = email.trim();
 
-    final cleanName =
-        name.trim();
+    final cleanName = name.trim();
 
-    final cleanPhone =
-        phone.trim();
+    final cleanPhone = phone.trim();
 
     if (cleanEmail.isEmpty) {
       _setError('Email is required.');
@@ -491,8 +441,7 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      final response =
-          await _supabase.auth.signUp(
+      final response = await _supabase.auth.signUp(
         email: cleanEmail,
         password: password,
         data: {
@@ -501,11 +450,9 @@ class AuthProvider extends ChangeNotifier {
         },
       );
 
-      _currentUser =
-          response.user;
+      _currentUser = response.user;
 
-      if (_currentUser != null &&
-          response.session != null) {
+      if (_currentUser != null && response.session != null) {
         await _ensureUserProfile(
           user: _currentUser!,
           name: cleanName,
@@ -518,9 +465,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on AuthException catch (error) {
       _setError(
-        error.message.isNotEmpty
-            ? error.message
-            : 'Unable to create account.',
+        error.message.isNotEmpty ? error.message : 'Unable to create account.',
       );
 
       return false;
@@ -533,8 +478,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to create account.',
+          fallback: 'Unable to create account.',
         ),
       );
 
@@ -550,12 +494,11 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String phone,
   }) async {
-    final existing =
-        await _supabase
-            .from('users')
-            .select('id')
-            .eq('id', user.id)
-            .maybeSingle();
+    final existing = await _supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
 
     if (existing != null) {
       return;
@@ -566,10 +509,7 @@ class AuthProvider extends ChangeNotifier {
       'name': name,
       'email': user.email ?? '',
       'phone': phone,
-      'created_at':
-          DateTime.now()
-              .toUtc()
-              .toIso8601String(),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
       'is_active': false,
       'expiry_date': null,
       'role': 'user',
@@ -585,9 +525,7 @@ class AuthProvider extends ChangeNotifier {
       _clearUserState();
     } on AuthException catch (error) {
       _setError(
-        error.message.isNotEmpty
-            ? error.message
-            : 'Unable to sign out.',
+        error.message.isNotEmpty ? error.message : 'Unable to sign out.',
       );
     } catch (error, stackTrace) {
       debugPrint(
@@ -608,8 +546,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> refresh() async {
-    final user =
-        _supabase.auth.currentUser;
+    final user = _supabase.auth.currentUser;
 
     if (user == null) {
       _clearUserState();
@@ -635,8 +572,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to refresh account status.',
+          fallback: 'Unable to refresh account status.',
         ),
       );
 
@@ -652,8 +588,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
-    final loaded =
-        await loadProfile();
+    final loaded = await loadProfile();
 
     notifyListeners();
 
@@ -663,8 +598,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> resetPassword(
     String email,
   ) async {
-    final cleanEmail =
-        email.trim();
+    final cleanEmail = email.trim();
 
     if (cleanEmail.isEmpty) {
       _setError('Email is required.');
@@ -676,8 +610,7 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
 
     try {
-      await _supabase.auth
-          .resetPasswordForEmail(
+      await _supabase.auth.resetPasswordForEmail(
         cleanEmail,
       );
 
@@ -699,8 +632,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(
         _cleanErrorMessage(
           error,
-          fallback:
-              'Unable to send password reset email.',
+          fallback: 'Unable to send password reset email.',
         ),
       );
 
@@ -739,8 +671,7 @@ class AuthProvider extends ChangeNotifier {
     Object error, {
     required String fallback,
   }) {
-    final message =
-        error.toString().trim();
+    final message = error.toString().trim();
 
     if (message.isEmpty) {
       return fallback;
@@ -766,15 +697,13 @@ class AuthProvider extends ChangeNotifier {
       return value.toUtc();
     }
 
-    final text =
-        value.toString().trim();
+    final text = value.toString().trim();
 
     if (text.isEmpty) {
       return null;
     }
 
-    return DateTime.tryParse(text)
-        ?.toUtc();
+    return DateTime.tryParse(text)?.toUtc();
   }
 
   void reset() {

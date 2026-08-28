@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/doctor.dart';
@@ -87,7 +87,8 @@ class DoctorProvider extends ChangeNotifier {
 
     try {
       final docMap = doctor.toMap()..['user_id'] = user.id;
-      final response = await _client.from('doctors').insert(docMap).select().single();
+      final response =
+          await _client.from('doctors').insert(docMap).select().single();
       final newDoctor = Doctor.fromMap(Map<String, dynamic>.from(response));
       _doctors.insert(0, newDoctor);
       notifyListeners();
@@ -103,7 +104,11 @@ class DoctorProvider extends ChangeNotifier {
     if (user == null) return false;
 
     try {
-      await _client.from('doctors').delete().eq('id', id).eq('user_id', user.id);
+      await _client
+          .from('doctors')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
       _doctors.removeWhere((d) => d.id == id);
       notifyListeners();
       return true;

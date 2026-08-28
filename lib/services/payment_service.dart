@@ -1,4 +1,4 @@
-import 'package:url_launcher/url_launcher_string.dart';
+﻿import 'package:url_launcher/url_launcher_string.dart';
 
 class PaymentService {
   /// Opens the provided payment URL in the browser.

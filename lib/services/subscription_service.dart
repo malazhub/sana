@@ -1,10 +1,9 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SubscriptionService {
   SubscriptionService._();
 
-  static final SupabaseClient _supabase =
-      Supabase.instance.client;
+  static final SupabaseClient _supabase = Supabase.instance.client;
 
   // ============================================================
   // ADMIN
@@ -32,17 +31,13 @@ class SubscriptionService {
     DateTime? paidAt,
     String? notes,
   }) async {
-    final cleanUserId =
-        userId.trim();
+    final cleanUserId = userId.trim();
 
-    final cleanTransactionId =
-        transactionId.trim();
+    final cleanTransactionId = transactionId.trim();
 
-    final cleanCurrency =
-        currency.trim().toUpperCase();
+    final cleanCurrency = currency.trim().toUpperCase();
 
-    final cleanNotes =
-        notes?.trim();
+    final cleanNotes = notes?.trim();
 
     // ----------------------------------------------------------
     // VALIDATION
@@ -76,36 +71,22 @@ class SubscriptionService {
       await _supabase.rpc(
         'admin_confirm_payment',
         params: {
-          'target_user_id':
-              cleanUserId,
-          'p_transaction_id':
-              cleanTransactionId,
-          'p_amount':
-              amount,
-          'p_currency':
-              cleanCurrency,
-          'p_paid_at':
-              paidAt
-                  ?.toUtc()
-                  .toIso8601String(),
-          'p_notes':
-              cleanNotes?.isEmpty == true
-                  ? null
-                  : cleanNotes,
+          'target_user_id': cleanUserId,
+          'p_transaction_id': cleanTransactionId,
+          'p_amount': amount,
+          'p_currency': cleanCurrency,
+          'p_paid_at': paidAt?.toUtc().toIso8601String(),
+          'p_notes': cleanNotes?.isEmpty == true ? null : cleanNotes,
         },
       );
     } on PostgrestException catch (error) {
-      final message =
-          error.message.trim();
+      final message = error.message.trim();
 
       throw Exception(
-        message.isNotEmpty
-            ? message
-            : 'Unable to confirm payment.',
+        message.isNotEmpty ? message : 'Unable to confirm payment.',
       );
     } catch (error) {
-      final message =
-          error.toString().trim();
+      final message = error.toString().trim();
 
       if (message.isEmpty) {
         throw Exception(
@@ -131,35 +112,32 @@ class SubscriptionService {
   // CURRENT USER SUBSCRIPTION
   // ============================================================
 
-  static Future<Map<String, dynamic>?>
-      getCurrentSubscription() async {
-    final user =
-        _supabase.auth.currentUser;
+  static Future<Map<String, dynamic>?> getCurrentSubscription() async {
+    final user = _supabase.auth.currentUser;
 
     if (user == null) {
       return null;
     }
 
     try {
-      final response =
-          await _supabase
-              .from('user_subscriptions')
-              .select(
-                'id, '
-                'user_id, '
-                'user_email, '
-                'user_phone, '
-                'status, '
-                'activated_at, '
-                'expires_at, '
-                'reminder_20day_sent, '
-                'created_at',
-              )
-              .eq(
-                'user_id',
-                user.id,
-              )
-              .maybeSingle();
+      final response = await _supabase
+          .from('user_subscriptions')
+          .select(
+            'id, '
+            'user_id, '
+            'user_email, '
+            'user_phone, '
+            'status, '
+            'activated_at, '
+            'expires_at, '
+            'reminder_20day_sent, '
+            'created_at',
+          )
+          .eq(
+            'user_id',
+            user.id,
+          )
+          .maybeSingle();
 
       if (response == null) {
         return null;
@@ -177,28 +155,21 @@ class SubscriptionService {
   // CHECK ACTIVE SUBSCRIPTION
   // ============================================================
 
-  static Future<bool>
-      hasActiveSubscription() async {
-    final subscription =
-        await getCurrentSubscription();
+  static Future<bool> hasActiveSubscription() async {
+    final subscription = await getCurrentSubscription();
 
     if (subscription == null) {
       return false;
     }
 
     final status =
-        subscription['status']
-                ?.toString()
-                .trim()
-                .toLowerCase() ??
-            '';
+        subscription['status']?.toString().trim().toLowerCase() ?? '';
 
     if (status != 'active') {
       return false;
     }
 
-    final expiresAt =
-        _parseDate(
+    final expiresAt = _parseDate(
       subscription['expires_at'],
     );
 
@@ -215,10 +186,8 @@ class SubscriptionService {
   // GET EXPIRY DATE
   // ============================================================
 
-  static Future<DateTime?>
-      getCurrentSubscriptionExpiry() async {
-    final subscription =
-        await getCurrentSubscription();
+  static Future<DateTime?> getCurrentSubscriptionExpiry() async {
+    final subscription = await getCurrentSubscription();
 
     if (subscription == null) {
       return null;
@@ -233,35 +202,28 @@ class SubscriptionService {
   // GET REMAINING DAYS
   // ============================================================
 
-  static Future<int>
-      getRemainingDays() async {
-    final expiresAt =
-        await getCurrentSubscriptionExpiry();
+  static Future<int> getRemainingDays() async {
+    final expiresAt = await getCurrentSubscriptionExpiry();
 
     if (expiresAt == null) {
       return 0;
     }
 
-    final now =
-        DateTime.now().toUtc();
+    final now = DateTime.now().toUtc();
 
     if (!expiresAt.isAfter(now)) {
       return 0;
     }
 
-    return expiresAt
-        .difference(now)
-        .inDays;
+    return expiresAt.difference(now).inDays;
   }
 
   // ============================================================
   // CHECK EXPIRED
   // ============================================================
 
-  static Future<bool>
-      hasExpiredSubscription() async {
-    final expiresAt =
-        await getCurrentSubscriptionExpiry();
+  static Future<bool> hasExpiredSubscription() async {
+    final expiresAt = await getCurrentSubscriptionExpiry();
 
     if (expiresAt == null) {
       return false;
@@ -276,28 +238,21 @@ class SubscriptionService {
   // CHECK EXPIRING WITHIN 20 DAYS
   // ============================================================
 
-  static Future<bool>
-      expiresWithin20Days() async {
-    final subscription =
-        await getCurrentSubscription();
+  static Future<bool> expiresWithin20Days() async {
+    final subscription = await getCurrentSubscription();
 
     if (subscription == null) {
       return false;
     }
 
     final status =
-        subscription['status']
-                ?.toString()
-                .trim()
-                .toLowerCase() ??
-            '';
+        subscription['status']?.toString().trim().toLowerCase() ?? '';
 
     if (status != 'active') {
       return false;
     }
 
-    final expiresAt =
-        _parseDate(
+    final expiresAt = _parseDate(
       subscription['expires_at'],
     );
 
@@ -305,15 +260,13 @@ class SubscriptionService {
       return false;
     }
 
-    final now =
-        DateTime.now().toUtc();
+    final now = DateTime.now().toUtc();
 
     if (!expiresAt.isAfter(now)) {
       return false;
     }
 
-    final remaining =
-        expiresAt.difference(now);
+    final remaining = expiresAt.difference(now);
 
     return remaining <=
         const Duration(
@@ -325,23 +278,16 @@ class SubscriptionService {
   // GET SUBSCRIPTION STATUS
   // ============================================================
 
-  static Future<String?>
-      getCurrentStatus() async {
-    final subscription =
-        await getCurrentSubscription();
+  static Future<String?> getCurrentStatus() async {
+    final subscription = await getCurrentSubscription();
 
     if (subscription == null) {
       return null;
     }
 
-    final status =
-        subscription['status']
-            ?.toString()
-            .trim()
-            .toLowerCase();
+    final status = subscription['status']?.toString().trim().toLowerCase();
 
-    if (status == null ||
-        status.isEmpty) {
+    if (status == null || status.isEmpty) {
       return null;
     }
 
@@ -359,15 +305,13 @@ class SubscriptionService {
       return null;
     }
 
-    final text =
-        value.toString().trim();
+    final text = value.toString().trim();
 
     if (text.isEmpty) {
       return null;
     }
 
-    final parsed =
-        DateTime.tryParse(text);
+    final parsed = DateTime.tryParse(text);
 
     if (parsed == null) {
       return null;

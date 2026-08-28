@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../screens/add_doctor_screen.dart';
 import '../../screens/add_medication_screen.dart';
@@ -62,18 +62,11 @@ class AppRoutes {
     final uri = Uri.tryParse(name);
 
     if (uri != null) {
-      final path = uri.fragment.isNotEmpty
-          ? uri.fragment
-          : uri.path;
+      final path = uri.fragment.isNotEmpty ? uri.fragment : uri.path;
 
-      final parts = path
-          .split('/')
-          .where((part) => part.isNotEmpty)
-          .toList();
+      final parts = path.split('/').where((part) => part.isNotEmpty).toList();
 
-      if (parts.length == 2 &&
-          parts[0] == 'share' &&
-          parts[1].isNotEmpty) {
+      if (parts.length == 2 && parts[0] == 'share' && parts[1].isNotEmpty) {
         return MaterialPageRoute(
           builder: (_) => ShareScreen(
             token: parts[1],

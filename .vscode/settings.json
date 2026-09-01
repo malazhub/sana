@@ -1,5 +1,1 @@
-{
-    "dart.flutterSdkPath": "C:/flutter",
-    "dart.sdkPath": "C:/flutter/bin/cache/dart-sdk",
-    "editor.formatOnSave": true
-}
+{"dart.flutterSdkPath":"C:/flutter","dart.sdkPath":"C:/flutter/bin/cache/dart-sdk","editor.formatOnSave":true,"deno.enable":true,"deno.enablePaths":["supabase/functions"],"deno.unstable":true}

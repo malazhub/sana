@@ -1,10 +1,12 @@
 // ============================================
-// SANA - COMPLETE WORKING CODE v20.10 (FIXED ONLY)
-// FIXED: Tap payment, guest_id removed, Namespace, reminder_date
+// SANA - COMPLETE WORKING CODE v20.10 (FIXED)
+// FIXED: Tap payment, guest_id, Namespace, reminder_date
 // YOUR ORIGINAL CODE PRESERVED
 // ============================================
+
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -14,9 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-//import 'package:http/http.dart' as http;
-import 'package:http/http.dart' as package_http;
-import 'package:uuid/uuid.dart';
+
 // ============================================
 // CONFIGURATION
 // ============================================
@@ -24,6 +24,8 @@ import 'package:uuid/uuid.dart';
 const String _supabaseUrl = 'https://emvadnooxyspfsfnzlmb.supabase.co';
 const String _supabaseKey = 'sb_publishable_3f7AQFQw-Kx0_Qvir4nFXQ_XZmUMpzm';
 const String _sanaShareUrl = 'https://malazhub.github.io/sana/';
+const String _tapSecretKey = 'REPLACE_WITH_YOUR_TAP_SECRET_KEY';
+const String _tapChargeUrl = 'https://api.tap.company/v2/charges';
 
 // ============================================
 // 8 LANGUAGES - FULL TRANSLATIONS
@@ -1038,37 +1040,20 @@ class LanguageButtons extends StatelessWidget {
 // GUEST IDENTITY
 // ============================================
 
-// ============================================
-// GUEST IDENTITY - WITH CACHING
-// ============================================
-
 class GuestIdentityService {
   static const String _key = 'sana_guest_user_id';
-  static String? _cachedGuestId;
 
   static Future<String> getGuestId() async {
-    // Return cached value if available
-    if (_cachedGuestId != null && _cachedGuestId!.isNotEmpty) {
-      return _cachedGuestId!;
-    }
-
     final prefs = await SharedPreferences.getInstance();
     final existing = prefs.getString(_key)?.trim();
 
     if (existing != null && existing.isNotEmpty) {
-      _cachedGuestId = existing;
       return existing;
     }
 
     final id = 'guest_${DateTime.now().microsecondsSinceEpoch}';
     await prefs.setString(_key, id);
-    _cachedGuestId = id;
     return id;
-  }
-
-  // Optional: Clear cache when user logs out
-  static void clearCache() {
-    _cachedGuestId = null;
   }
 }
 
@@ -1088,13 +1073,6 @@ void main() async {
       'x-sana-guest-id': guestId,
     },
   );
-
-  // Required for private Storage access.
-  final client = Supabase.instance.client;
-
-  if (client.auth.currentUser == null) {
-    await client.auth.signInAnonymously();
-  }
 
   runApp(const SanaApp());
 }
@@ -1245,92 +1223,84 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // FIXED: "Get Your Own Copy" opens Tap payment link
-
-  // FIXED: "Get Your Own Copy" opens Tap payment link safely
-
+  // FIXED: "Get Your Own Copy" - Tap payment with API call
   Future<void> _getOwnCopy() async {
+    final language = languageNotifier.value;
+
     try {
-      final response = await Supabase.instance.client.functions.invoke(
-        'create-tap-charge',
-        body: {
-          'first_name': 'Customer',
-          'email': 'customer@example.com',
-        },
+      final client = HttpClient();
+
+      final request = await client.postUrl(
+        Uri.parse(_tapChargeUrl),
       );
 
-      dynamic rawData = response.data;
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer $_tapSecretKey',
+      );
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'application/json',
+      );
 
-      if (rawData is String) {
-        rawData = jsonDecode(rawData);
-      }
+      final body = jsonEncode({
+        'amount': 10,
+        'currency': 'KWD',
+        'customer': {
+          'first_name': 'Test',
+          'email': 'test@example.com',
+        },
+        'source': {
+          'id': 'src_all',
+        },
+        'redirect': {
+          'url': _sanaShareUrl,
+        },
+      });
 
-      if (rawData is! Map) {
+      request.add(utf8.encode(body));
+
+      final response = await request.close();
+      final responseBody = await response.transform(utf8.decoder).join();
+
+      client.close();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception(
-          'Invalid response from create-tap-charge',
-        );
-      }
-
-      final data = Map<String, dynamic>.from(rawData);
-
-      if (data['error'] != null) {
-        throw Exception(
-          data['error'].toString(),
-        );
-      }
-
-      final transaction = data['transaction'];
-
-      if (transaction is! Map) {
-        throw Exception(
-          'Tap payment transaction information is missing.',
-        );
-      }
-
-      final checkoutUrl = transaction['url'];
-
-      if (checkoutUrl is! String || checkoutUrl.trim().isEmpty) {
-        throw Exception(
-          'Tap checkout URL is missing.',
-        );
-      }
-
-      final uri = Uri.tryParse(checkoutUrl);
-
-      if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
-        throw Exception(
-          'Invalid Tap checkout URL.',
+          'Tap payment failed (${response.statusCode}): $responseBody',
         );
       }
 
-      // Open the Tap checkout page.
-      // Keep your existing URL-launching method here if
-      // your project already has one.
+      final decoded = jsonDecode(responseBody);
 
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw Exception(
-          'Could not open Tap payment page.',
-        );
+      final transactionUrl = decoded['transaction']?['url']?.toString();
+
+      if (transactionUrl == null || transactionUrl.isEmpty) {
+        throw Exception('Tap transaction URL was not returned');
+      }
+
+      final uri = Uri.tryParse(transactionUrl);
+
+      if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https')) {
+        throw Exception('Invalid Tap transaction URL');
+      }
+
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched) {
+        throw Exception('Could not open Tap payment page');
       }
     } catch (e) {
-      debugPrint(
-        'create-tap-charge error: $e',
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to open payment page: $e',
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${tr(language, 'operation_failed')}: $e'),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -1891,7 +1861,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 }
 
 // ============================================
-// RECORD SANITIZER - REMOVED guest_id
+// RECORD SANITIZER
 // ============================================
 
 class RecordSanitizer {
@@ -1900,7 +1870,8 @@ class RecordSanitizer {
     'dosage',
     'quantity',
     'reminder_time',
-    // 'reminder_date' - REMOVED - does not exist in medications table
+    'reminder_date',
+    'description',
     'specialty',
     'phone',
     'address',
@@ -1980,12 +1951,7 @@ class _SafeBase64ImageState extends State<SafeBase64Image> {
       final sanitized = widget.base64String.contains(',')
           ? widget.base64String.split(',').last
           : widget.base64String;
-      final value = sanitized.trim();
-      final encoded = value.contains(',') ? value.split(',').last : value;
-
-      final decoded = base64Decode(
-        encoded.replaceAll(RegExp(r'\s+'), ''),
-      );
+      final decoded = base64Decode(sanitized.replaceAll(RegExp(r'\s+'), ''));
       setState(() {
         _bytes = decoded;
         _hasError = false;
@@ -2091,156 +2057,6 @@ class ImagePickerHelper {
 }
 
 // ============================================
-// SUPABASE STORAGE HELPER
-// ============================================
-
-class StorageHelper {
-  static final SupabaseClient _client = Supabase.instance.client;
-
-  static const String _bucket = 'medication_photos';
-
-  static const Uuid _uuid = Uuid();
-
-  static final Map<String, _CachedSignedUrl> _urlCache = {};
-
-  static Future<String> uploadMedicationPhoto({
-    required String base64Image,
-  }) async {
-    final user = _client.auth.currentUser;
-
-    if (user == null) {
-      throw Exception('No authenticated Supabase user');
-    }
-
-    var clean = base64Image.trim();
-
-    if (clean.isEmpty) {
-      throw const FormatException('Empty image data');
-    }
-
-    String mimeType = 'image/jpeg';
-
-    // Detect MIME type when Base64 contains a data URI.
-    if (clean.startsWith('data:')) {
-      final commaIndex = clean.indexOf(',');
-
-      if (commaIndex == -1) {
-        throw const FormatException('Invalid image data');
-      }
-
-      final header = clean.substring(0, commaIndex);
-
-      if (header.contains('image/png')) {
-        mimeType = 'image/png';
-      } else if (header.contains('image/webp')) {
-        mimeType = 'image/webp';
-      } else if (header.contains('image/gif')) {
-        mimeType = 'image/gif';
-      }
-
-      clean = clean.substring(commaIndex + 1);
-    } else if (clean.contains(',')) {
-      clean = clean.split(',').last;
-    }
-
-    clean = clean.replaceAll(RegExp(r'\s+'), '');
-
-    final bytes = base64Decode(clean);
-
-    final extension = switch (mimeType) {
-      'image/png' => 'png',
-      'image/webp' => 'webp',
-      'image/gif' => 'gif',
-      _ => 'jpg',
-    };
-
-    final fileId = _uuid.v4();
-
-    // IMPORTANT:
-    // Storage ownership is based on auth.uid().
-    final filePath = 'medications/${user.id}/$fileId.$extension';
-
-    await _client.storage.from(_bucket).uploadBinary(
-          filePath,
-          bytes,
-          fileOptions: FileOptions(
-            contentType: mimeType,
-            cacheControl: '31536000',
-            upsert: false,
-          ),
-        );
-
-    return filePath;
-  }
-
-  static Future<String?> getSignedUrl(String? path) async {
-    if (path == null || path.trim().isEmpty) {
-      return null;
-    }
-
-    final cleanPath = path.trim();
-
-    final cached = _urlCache[cleanPath];
-
-    if (cached != null && !cached.isExpired) {
-      return cached.url;
-    }
-
-    try {
-      final url = await _client.storage.from(_bucket).createSignedUrl(
-            cleanPath,
-            3600,
-          );
-
-      _urlCache[cleanPath] = _CachedSignedUrl(
-        url: url,
-        // Expire our cache slightly before the actual signed URL.
-        expiresAt: DateTime.now().add(
-          const Duration(minutes: 55),
-        ),
-      );
-
-      return url;
-    } catch (e) {
-      debugPrint('Signed URL error: $e');
-      return null;
-    }
-  }
-
-  static Future<void> deleteMedicationPhoto(String? path) async {
-    if (path == null || path.trim().isEmpty) {
-      return;
-    }
-
-    final cleanPath = path.trim();
-
-    try {
-      await _client.storage.from(_bucket).remove([cleanPath]);
-
-      _urlCache.remove(cleanPath);
-    } catch (e) {
-      debugPrint('Storage delete error: $e');
-    }
-  }
-
-  static void clearCache() {
-    _urlCache.clear();
-  }
-}
-
-class _CachedSignedUrl {
-  final String url;
-  final DateTime expiresAt;
-
-  const _CachedSignedUrl({
-    required this.url,
-    required this.expiresAt,
-  });
-
-  bool get isExpired => DateTime.now().isAfter(expiresAt);
-}
-
-// ============================================
 // DISPLAY IMAGE
 // ============================================
 
@@ -2266,10 +2082,7 @@ class DisplayImage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (base64String != null && base64String!.isNotEmpty) {
       try {
-        final value = base64String!.trim();
-        final encoded = value.contains(',') ? value.split(',').last : value;
-
-        final decoded = base64Decode(encoded);
+        final decoded = base64Decode(base64String!);
         return Image.memory(
           decoded,
           height: height,
@@ -2311,118 +2124,6 @@ class DisplayImage extends StatelessWidget {
 }
 
 // ============================================
-// SIGNED IMAGE WIDGET
-// ============================================
-
-class SignedImage extends StatefulWidget {
-  final String? path;
-  final double height;
-  final double width;
-  final BoxFit fit;
-
-  const SignedImage({
-    super.key,
-    this.path,
-    this.height = 50,
-    this.width = 50,
-    this.fit = BoxFit.cover,
-  });
-
-  @override
-  State<SignedImage> createState() => _SignedImageState();
-}
-
-class _SignedImageState extends State<SignedImage> {
-  String? _url;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  @override
-  void didUpdateWidget(
-    covariant SignedImage oldWidget,
-  ) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.path != widget.path) {
-      _url = null;
-      _loading = true;
-      _load();
-    }
-  }
-
-  Future<void> _load() async {
-    final path = widget.path?.trim();
-
-    if (path == null || path.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-      return;
-    }
-
-    final url = await StorageHelper.getSignedUrl(path);
-
-    if (!mounted) return;
-
-    setState(() {
-      _url = url;
-      _loading = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return SizedBox(
-        height: widget.height,
-        width: widget.width,
-        child: const Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-          ),
-        ),
-      );
-    }
-
-    if (_url == null) {
-      return Icon(
-        Icons.medication,
-        size: widget.height,
-        color: Colors.teal,
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        _url!,
-        height: widget.height,
-        width: widget.width,
-        fit: widget.fit,
-        errorBuilder: (_, __, ___) {
-          return Icon(
-            Icons.medication,
-            size: widget.height,
-            color: Colors.teal,
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ============================================
-// ADD FORM DIALOG
-// ============================================
-
-// ============================================
 // ADD FORM DIALOG
 // ============================================
 
@@ -2452,21 +2153,13 @@ class _AddFormDialogState extends State<AddFormDialog> {
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, dynamic> _selectedValues = {};
   final List<TimeOfDay> _selectedMedicationTimes = [];
-
   String _medicationScheduleType = 'daily';
   DateTime? _medicationCalendarDate;
-
-  // Medicine photo stored as Base64.
-  String? _medicinePhotoBase64;
-  String? _frontPhotoBase64;
-  String? _backPhotoBase64;
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-
     for (final field in widget.fields) {
       _controllers[field] = TextEditingController();
     }
@@ -2527,19 +2220,16 @@ class _AddFormDialogState extends State<AddFormDialog> {
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.period == DayPeriod.am ? 'AM' : 'PM';
-
     return '$hour:$minute $period';
   }
 
   List<TimeOfDay> _timeChoices() {
     return List<TimeOfDay>.generate(
-      24,
-      (i) => TimeOfDay(hour: i, minute: 0),
-    );
+        24, (i) => TimeOfDay(hour: i == 24 ? 0 : i, minute: 0));
   }
 
   Future<DateTime?> _selectDate(BuildContext context) async {
-    return showDatePicker(
+    return await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
@@ -2547,548 +2237,256 @@ class _AddFormDialogState extends State<AddFormDialog> {
     );
   }
 
-  Future<void> _pickMedicinePhoto() async {
-    final base64 = await ImagePickerHelper.pickImageAsBase64();
-
-    if (base64 != null && mounted) {
-      setState(() {
-        _medicinePhotoBase64 = base64;
-      });
-    }
-  }
-
-  Widget _buildMedicinePhotoSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Medicine photo',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (_medicinePhotoBase64 != null)
-            Center(
-              child: DisplayImage(
-                base64String: _medicinePhotoBase64,
-                height: 140,
-                width: 140,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
-            Text(
-              'No medicine photo selected',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-              ),
-            ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _pickMedicinePhoto,
-              icon: const Icon(Icons.photo_camera),
-              label: Text(
-                _medicinePhotoBase64 == null
-                    ? 'Upload medicine photo'
-                    : 'Change medicine photo',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReminderTimes() {
-    return FormField<List<TimeOfDay>>(
-      initialValue: List<TimeOfDay>.from(_selectedMedicationTimes),
-      validator: (value) {
-        if (widget.requiredFields.contains('reminder_time') &&
-            _selectedMedicationTimes.isEmpty) {
-          return tr(widget.language, 'required_field');
-        }
-
-        return null;
-      },
-      builder: (fieldState) {
-        return InputDecorator(
-          decoration: InputDecoration(
-            labelText: tr(widget.language, 'reminder_time'),
-            border: const OutlineInputBorder(),
-            errorText: fieldState.errorText,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select reminder times',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 8),
-
-              // Limited height prevents AlertDialog from receiving
-              // infinite/unbounded height on Flutter Web.
-              SizedBox(
-                height: 190,
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _timeChoices().map((time) {
-                      final selected = _selectedMedicationTimes.any(
-                        (t) => t.hour == time.hour && t.minute == time.minute,
-                      );
-
-                      return FilterChip(
-                        label: Text(_formatTimeOfDay(time)),
-                        selected: selected,
-                        onSelected: (on) {
-                          setState(() {
-                            if (on) {
-                              if (!_selectedMedicationTimes.any(
-                                (t) =>
-                                    t.hour == time.hour &&
-                                    t.minute == time.minute,
-                              )) {
-                                _selectedMedicationTimes.add(time);
-                              }
-
-                              _selectedMedicationTimes.sort(
-                                (a, b) => (a.hour * 60 + a.minute)
-                                    .compareTo(b.hour * 60 + b.minute),
-                              );
-                            } else {
-                              _selectedMedicationTimes.removeWhere(
-                                (t) =>
-                                    t.hour == time.hour &&
-                                    t.minute == time.minute,
-                              );
-                            }
-
-                            fieldState.didChange(
-                              List<TimeOfDay>.from(
-                                _selectedMedicationTimes,
-                              ),
-                            );
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-
-              if (_selectedMedicationTimes.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Selected: ${_selectedMedicationTimes.map(_formatTimeOfDay).join(', ')}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMedicationSchedule() {
-    return FormField<DateTime>(
-      initialValue: _medicationCalendarDate,
-      validator: (value) {
-        if (!widget.requiredFields.contains('reminder_date')) {
-          return null;
-        }
-
-        if (_medicationScheduleType == 'calendar' &&
-            _medicationCalendarDate == null) {
-          return tr(widget.language, 'required_field');
-        }
-
-        return null;
-      },
-      builder: (fieldState) {
-        return InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'Medication schedule',
-            border: const OutlineInputBorder(),
-            errorText: fieldState.errorText,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Choose when this medication reminder should repeat:',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment<String>(
-                      value: 'daily',
-                      icon: Icon(Icons.today),
-                      label: Text('Daily'),
-                    ),
-                    ButtonSegment<String>(
-                      value: 'calendar',
-                      icon: Icon(Icons.calendar_month),
-                      label: Text('Calendar'),
-                    ),
-                  ],
-                  selected: {_medicationScheduleType},
-                  onSelectionChanged: (values) {
-                    setState(() {
-                      _medicationScheduleType = values.first;
-
-                      if (_medicationScheduleType == 'daily') {
-                        _medicationCalendarDate = null;
-                        fieldState.didChange(null);
-                      }
-                    });
-                  },
-                ),
-              ),
-              if (_medicationScheduleType == 'daily') ...[
-                const SizedBox(height: 10),
-                const Text(
-                  'The reminder will repeat every day.',
-                  style: TextStyle(fontSize: 13),
-                ),
-              ],
-              if (_medicationScheduleType == 'calendar') ...[
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final date = await _selectDate(context);
-
-                      if (date != null && mounted) {
-                        setState(() {
-                          _medicationCalendarDate = date;
-                        });
-
-                        fieldState.didChange(date);
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(
-                      _medicationCalendarDate == null
-                          ? 'Select calendar date'
-                          : 'Date: ${_medicationCalendarDate!.year}-'
-                              '${_medicationCalendarDate!.month.toString().padLeft(2, '0')}-'
-                              '${_medicationCalendarDate!.day.toString().padLeft(2, '0')}',
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMedicationDropdown() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<String>(
-        decoration: InputDecoration(
-          labelText: tr(widget.language, 'select_medication'),
-          border: const OutlineInputBorder(),
-        ),
-        hint: Text(tr(widget.language, 'select_medication')),
-        isExpanded: true,
-        items: widget.medicationsList.map((med) {
-          final nameStr = med['name']?.toString() ?? '';
-          final idStr = med['id']?.toString() ?? '';
-
-          return DropdownMenuItem<String>(
-            value: idStr,
-            child: Text(
-              nameStr,
-              overflow: TextOverflow.ellipsis,
-            ),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() {
-            final selectedMed = widget.medicationsList.firstWhere(
-              (med) => med['id']?.toString() == value,
-              orElse: () => {},
-            );
-
-            _selectedValues['medication_id'] = value;
-
-            _selectedValues['medication_name'] =
-                selectedMed['name']?.toString() ?? '';
-
-            _controllers['medication_name']?.text =
-                selectedMed['name']?.toString() ?? '';
-
-            _controllers['name']?.text = selectedMed['name']?.toString() ?? '';
-          });
-        },
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return tr(widget.language, 'required_field');
-          }
-
-          return null;
-        },
-      ),
-    );
-  }
-
-  Widget _buildTextField(String field) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextFormField(
-        controller: _controllers[field],
-        decoration: InputDecoration(
-          labelText: tr(widget.language, _fieldLabel(field)),
-          border: const OutlineInputBorder(),
-        ),
-        validator: (value) {
-          if (widget.requiredFields.contains(field)) {
-            if (value == null || value.trim().isEmpty) {
-              return tr(widget.language, 'required_field');
-            }
-          }
-
-          return null;
-        },
-      ),
-    );
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final payload = <String, dynamic>{};
-
-    for (final entry in _controllers.entries) {
-      final value = entry.value.text.trim();
-
-      if (value.isNotEmpty) {
-        payload[entry.key] = value;
-      }
-    }
-
-    // Medication reminder times.
-    if (_selectedMedicationTimes.isNotEmpty) {
-      payload['reminder_time'] = jsonEncode(
-        _selectedMedicationTimes.map(_formatTimeOfDay).toList(),
-      );
-    }
-
-    // Medication schedule.
-    if (widget.type == 'medications') {
-      payload['reminder_schedule_type'] = _medicationScheduleType;
-
-      if (_medicationScheduleType == 'daily') {
-        payload['reminder_date'] = 'daily';
-      } else {
-        payload['reminder_date'] = _medicationCalendarDate == null
-            ? null
-            : _medicationCalendarDate!.toIso8601String().split('T')[0];
-      }
-
-      // Medicine photo is saved as Base64.
-      if (_medicinePhotoBase64 != null && _medicinePhotoBase64!.isNotEmpty) {
-        payload['photo_base64'] = _medicinePhotoBase64;
-      }
-    } else {
-      if (_medicationScheduleType == 'daily') {
-        payload['reminder_date'] = 'daily';
-      } else if (_medicationCalendarDate != null) {
-        payload['reminder_date'] =
-            _medicationCalendarDate!.toIso8601String().split('T')[0];
-      }
-    }
-
-    if (_selectedValues['medication_id'] != null) {
-      payload['medication_id'] = _selectedValues['medication_id'];
-    }
-
-    if (_selectedValues['medication_name'] != null) {
-      payload['medication_name'] = _selectedValues['medication_name'];
-
-      payload['name'] = _selectedValues['medication_name'];
-    }
-
-    if (widget.type == 'documents') {
-      if (_medicinePhotoBase64 != null && _medicinePhotoBase64!.isNotEmpty) {
-        payload['photo'] = _medicinePhotoBase64;
-      }
-    }
-
-    await widget.onSave(payload);
-
-    if (context.mounted) {
-      Navigator.pop(context, payload);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isMedication = widget.type == 'medications';
-
     return AlertDialog(
       title: Text(
-        '${tr(widget.language, 'add')} '
-        '${tr(widget.language, widget.type)}',
-      ),
-
-      // The dialog gets a finite maximum height.
-      // The inside content can then scroll safely.
-      content: SizedBox(
-        width: 650,
-        height: MediaQuery.of(context).size.height * 0.75,
+          '${tr(widget.language, 'add')} ${tr(widget.language, widget.type)}'),
+      content: SingleChildScrollView(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(right: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Medicine photo appears only when adding medication.
-                if (isMedication) _buildMedicinePhotoSection(),
-
-                // Medication selection is only needed for reminders.
-                if (widget.type == 'reminders') _buildMedicationDropdown(),
-
-                ...widget.fields.map((field) {
-                  if (field == 'reminder_time') {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildReminderTimes(),
-                    );
-                  }
-
-                  if (field == 'reminder_date') {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildMedicationSchedule(),
-                    );
-                  }
-
-                  if (field == 'medication_name') {
-                    // Already handled above for reminders.
-                    if (widget.type == 'reminders') {
-                      return const SizedBox.shrink();
-                    }
-
-                    return _buildMedicationDropdown();
-                  }
-
-                  // PHOTO UPLOAD BLOCK - For Documents and Insurance Cards
-                  if (field == 'photo' ||
-                      field == 'front_photo' ||
-                      field == 'back_photo') {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            field == 'photo'
-                                ? 'Upload Photo'
-                                : tr(widget.language, field),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: widget.fields.map((field) {
+              if (field == 'reminder_time') {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: FormField<List<TimeOfDay>>(
+                    validator: (val) {
+                      if (widget.requiredFields.contains(field) &&
+                          _selectedMedicationTimes.isEmpty) {
+                        return tr(widget.language, 'required_field');
+                      }
+                      return null;
+                    },
+                    builder: (fieldState) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: tr(widget.language, 'reminder_time'),
+                            border: const OutlineInputBorder(),
+                            errorText: fieldState.errorText,
                           ),
-                          const SizedBox(height: 6),
-                          ElevatedButton.icon(
-                            onPressed: () async {
-                              final base64 =
-                                  await ImagePickerHelper.pickImageAsBase64();
-                              if (base64 != null) {
-                                setState(() {
-                                  if (field == 'front_photo') {
-                                    _frontPhotoBase64 = base64;
-                                  } else if (field == 'back_photo') {
-                                    _backPhotoBase64 = base64;
-                                  } else {
-                                    _medicinePhotoBase64 = base64;
-                                  }
-                                });
-                              }
-                            },
-                            icon: const Icon(Icons.camera_alt),
-                            label: const Text('Upload Photo'),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _timeChoices().map((time) {
+                              final selected = _selectedMedicationTimes.any(
+                                (t) =>
+                                    t.hour == time.hour &&
+                                    t.minute == time.minute,
+                              );
+                              return FilterChip(
+                                label: Text(_formatTimeOfDay(time)),
+                                selected: selected,
+                                onSelected: (on) {
+                                  setState(() {
+                                    if (on) {
+                                      _selectedMedicationTimes.add(time);
+                                      _selectedMedicationTimes.sort((a, b) =>
+                                          (a.hour * 60 + a.minute).compareTo(
+                                              b.hour * 60 + b.minute));
+                                    } else {
+                                      _selectedMedicationTimes.removeWhere(
+                                        (t) =>
+                                            t.hour == time.hour &&
+                                            t.minute == time.minute,
+                                      );
+                                    }
+                                    fieldState.didChange(List<TimeOfDay>.from(
+                                        _selectedMedicationTimes));
+                                  });
+                                },
+                              );
+                            }).toList(),
                           ),
-                          // Show image preview after upload
-                          if (_medicinePhotoBase64 != null &&
-                              field == 'photo') ...[
-                            const SizedBox(height: 8),
-                            DisplayImage(
-                              base64String: _medicinePhotoBase64,
-                              height: 80,
-                              width: 80,
+                        ),
+                        if (_selectedMedicationTimes.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              _selectedMedicationTimes
+                                  .map(_formatTimeOfDay)
+                                  .join(', '),
                             ),
-                          ],
-                          if (_frontPhotoBase64 != null &&
-                              field == 'front_photo') ...[
-                            const SizedBox(height: 8),
-                            DisplayImage(
-                              base64String: _frontPhotoBase64,
-                              height: 80,
-                              width: 80,
-                            ),
-                          ],
-                          if (_backPhotoBase64 != null &&
-                              field == 'back_photo') ...[
-                            const SizedBox(height: 8),
-                            DisplayImage(
-                              base64String: _backPhotoBase64,
-                              height: 80,
-                              width: 80,
-                            ),
-                          ],
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              if (field == 'reminder_date') {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(tr(widget.language, 'schedule_type'),
+                          style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 6),
+                      SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment(
+                              value: 'daily',
+                              label: Text(tr(widget.language, 'daily'))),
+                          ButtonSegment(
+                              value: 'calendar',
+                              label: Text(tr(widget.language, 'calendar'))),
                         ],
+                        selected: {_medicationScheduleType},
+                        onSelectionChanged: (values) {
+                          setState(() {
+                            _medicationScheduleType = values.first;
+                            if (_medicationScheduleType == 'daily') {
+                              _medicationCalendarDate = null;
+                            }
+                          });
+                        },
                       ),
-                    );
-                  }
-
-                  return _buildTextField(field);
-                }),
-              ],
-            ),
+                      if (_medicationScheduleType == 'calendar')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: FormField<DateTime>(
+                            validator: (val) {
+                              if (widget.requiredFields.contains(field) &&
+                                  _medicationCalendarDate == null) {
+                                return tr(widget.language, 'required_field');
+                              }
+                              return null;
+                            },
+                            builder: (fieldState) => ListTile(
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: fieldState.hasError
+                                      ? Theme.of(context).colorScheme.error
+                                      : Colors.grey.shade400,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              title: Text(tr(widget.language, 'reminder_date')),
+                              subtitle: Text(
+                                _medicationCalendarDate == null
+                                    ? tr(widget.language, 'select_date')
+                                    : _medicationCalendarDate!
+                                        .toIso8601String()
+                                        .split('T')[0],
+                              ),
+                              trailing: const Icon(Icons.calendar_today),
+                              onTap: () async {
+                                final date = await _selectDate(context);
+                                if (date != null) {
+                                  setState(
+                                      () => _medicationCalendarDate = date);
+                                  fieldState.didChange(date);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }
+              if (field == 'medication_name') {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: tr(widget.language, 'select_medication'),
+                      border: const OutlineInputBorder(),
+                    ),
+                    hint: Text(tr(widget.language, 'select_medication')),
+                    items: widget.medicationsList.map((med) {
+                      final nameStr = med['name']?.toString() ?? '';
+                      final idStr = med['id']?.toString() ?? '';
+                      return DropdownMenuItem<String>(
+                        value: idStr,
+                        child: Text(nameStr),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        final selectedMed = widget.medicationsList.firstWhere(
+                          (med) => med['id']?.toString() == value,
+                          orElse: () => {},
+                        );
+                        _selectedValues['medication_id'] = value;
+                        _selectedValues['medication_name'] =
+                            selectedMed['name']?.toString() ?? '';
+                        _controllers['medication_name']?.text =
+                            selectedMed['name']?.toString() ?? '';
+                        _controllers['name']?.text =
+                            selectedMed['name']?.toString() ?? '';
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return tr(widget.language, 'required_field');
+                      }
+                      return null;
+                    },
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TextFormField(
+                  controller: _controllers[field],
+                  decoration: InputDecoration(
+                    labelText: tr(widget.language, _fieldLabel(field)),
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (widget.requiredFields.contains(field)) {
+                      if (value == null || value.trim().isEmpty) {
+                        return tr(widget.language, 'required_field');
+                      }
+                    }
+                    return null;
+                  },
+                ),
+              );
+            }).toList(),
           ),
         ),
       ),
-
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
-          child: Text(
-            tr(widget.language, 'close'),
-          ),
+          child: Text(tr(widget.language, 'close')),
         ),
         FilledButton(
-          onPressed: _save,
-          child: Text(
-            tr(widget.language, 'add'),
-          ),
+          onPressed: () async {
+            if (!_formKey.currentState!.validate()) return;
+
+            final payload = <String, dynamic>{};
+            for (final entry in _controllers.entries) {
+              if (entry.value.text.trim().isNotEmpty) {
+                payload[entry.key] = entry.value.text.trim();
+              }
+            }
+            if (_selectedMedicationTimes.isNotEmpty) {
+              payload['reminder_time'] = jsonEncode(
+                _selectedMedicationTimes.map(_formatTimeOfDay).toList(),
+              );
+            }
+            payload['reminder_date'] = _medicationScheduleType == 'daily'
+                ? 'daily'
+                : (_medicationCalendarDate?.toIso8601String().split('T')[0] ??
+                    '');
+            if (_selectedValues['medication_id'] != null) {
+              payload['medication_id'] = _selectedValues['medication_id'];
+            }
+            if (_selectedValues['medication_name'] != null) {
+              payload['medication_name'] = _selectedValues['medication_name'];
+              payload['name'] = _selectedValues['medication_name'];
+            }
+
+            await widget.onSave(payload);
+            if (context.mounted) Navigator.pop(context, payload);
+          },
+          child: Text(tr(widget.language, 'add')),
         ),
       ],
     );
@@ -3096,7 +2494,7 @@ class _AddFormDialogState extends State<AddFormDialog> {
 }
 
 // ============================================
-// RECORD LIST SCREEN - PRESERVED ORIGINAL
+// RECORD LIST SCREEN - FIXED save methods
 // ============================================
 
 class RecordListScreen extends StatefulWidget {
@@ -3187,20 +2585,8 @@ class _RecordListScreenState extends State<RecordListScreen> {
 
   Future<void> _load() async {
     if (!mounted) return;
-
-    // ADD THESE 5 LINES FOR DEBUG
-    //print('========== LOAD ==========');
-    //print('Type: ${widget.type}');
-    //print('Table: $_table');
-    //print('Owner ID: ${widget.ownerId}');
-    //print('Guest Mode: ${widget.guestMode}');
-
     try {
-      String tableName = _table;
-      if (widget.type == 'reminders') {
-        tableName = 'medications';
-      }
-      final query = _client.from(tableName).select();
+      final query = _client.from(_table).select();
       final dynamic response = widget.guestMode
           ? await query.eq('guest_id', widget.ownerId)
           : await query.eq('user_id', widget.ownerId);
@@ -3210,9 +2596,11 @@ class _RecordListScreenState extends State<RecordListScreen> {
         var records =
             list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
 
-        // ADD THIS 1 LINE FOR DEBUG
-        print('Records found: ${records.length}');
-
+        if (widget.type == 'reminders') {
+          records = records
+              .where((r) => (r['reminder_time'] ?? '').toString().isNotEmpty)
+              .toList();
+        }
         setState(() {
           _rows = records;
           _loading = false;
@@ -3283,7 +2671,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
       case 'documents':
         return ['title'];
       case 'insurance_cards':
-        return ['provider_name', 'front_photo', 'back_photo'];
+        return ['provider_name'];
       default:
         return ['name'];
     }
@@ -3296,9 +2684,9 @@ class _RecordListScreenState extends State<RecordListScreen> {
           'name',
           'dosage',
           'quantity',
-          'photo',
           'reminder_time',
           'reminder_date',
+          'description'
         ];
       case 'doctors':
         return ['name', 'specialty', 'phone', 'address'];
@@ -3306,24 +2694,22 @@ class _RecordListScreenState extends State<RecordListScreen> {
         return ['name', 'phone', 'address'];
       case 'reminders':
         return [
-          'name',
+          'medication_name',
           'dosage',
           'reminder_time',
           'reminder_date',
-          //'description'
+          'description'
         ];
       case 'documents':
         return ['title', 'category', 'photo', 'file_url'];
       case 'insurance_cards':
-        return ['provider_name', 'front_photo', 'back_photo', 'policy_number'];
+        return ['provider_name', 'front_photo', 'back_photo'];
       default:
         return ['name'];
     }
   }
 
   Future<void> _add() async {
-    // ADD THIS FIRST LINE
-    //print('>>> _add() CALLED for ${widget.type} <<<');
     final language = languageNotifier.value;
     final fields = _getFields();
     final requiredFields = _getRequiredFields();
@@ -3337,86 +2723,75 @@ class _RecordListScreenState extends State<RecordListScreen> {
         medicationsList: _medicationsList,
         fields: fields,
         requiredFields: requiredFields,
-
-        // IMPORTANT:
-        // When AddFormDialog successfully creates the payload,
-        // close the dialog and return that payload to _add().
-        onSave: (payload) async {
-          Navigator.pop(dialogContext, payload);
-        },
+        onSave: (_) async {},
       ),
     );
-
-    if (!mounted) return;
 
     if (result != null) {
       await _saveRecord(result);
     }
   }
 
-  // FIXED: Removed guest_id, removed reminder_date for medications
+  // FIXED: Updated _saveRecord with proper column mapping
   Future<void> _saveRecord(Map<String, dynamic> result) async {
     final language = languageNotifier.value;
+    final cleanPayload = RecordSanitizer.sanitize(result);
 
-    //print('========== _saveRecord CALLED ==========');
-    //print('Table: $_table');
-    //print('Result: $result');
-
-    final cleanPayload = <String, dynamic>{
-      'user_id': widget.guestMode ? null : widget.ownerId,
-      'guest_id': widget.guestMode ? widget.ownerId : null,
-    };
-
-    // Helper to extract photos across forms
-    String? extractPhoto() {
-      if (result['photo_base64'] != null &&
-          result['photo_base64'].toString().trim().isNotEmpty) {
-        return result['photo_base64'].toString().trim();
-      }
-      if (result['photo'] != null &&
-          result['photo'].toString().trim().isNotEmpty) {
-        return result['photo'].toString().trim();
-      }
-      return null;
+    if (widget.guestMode) {
+      cleanPayload['user_id'] = null;
+      cleanPayload['guest_id'] = widget.ownerId;
+    } else {
+      cleanPayload['user_id'] = widget.ownerId;
+      cleanPayload['guest_id'] = null;
     }
 
-    final photo = extractPhoto();
+    if (_table == 'medications') {
+      cleanPayload.remove('reminder_date');
+      cleanPayload['quantity'] =
+          int.tryParse(cleanPayload['quantity']?.toString() ?? '') ?? 1;
+      cleanPayload['description'] ??= '';
+      cleanPayload['file_type'] ??= 'image';
+    } else if (_table == 'pharmacies') {
+      cleanPayload['phone'] ??= '';
+    } else if (_table == 'documents') {
+      // documents table uses file_url/file_type.
+      // Do not send the non-existent "photo" or "photo_base64" columns.
+      final photo = result['photo']?.toString();
 
-    if (_table == 'documents') {
-      cleanPayload['title'] = result['title'] ?? result['name'] ?? 'Document';
+      cleanPayload.remove('photo');
+      cleanPayload.remove('photo_base64');
 
-      if (result['category'] != null) {
-        cleanPayload['category'] = result['category'];
+      if (photo != null && photo.isNotEmpty) {
+        cleanPayload['file_url'] = 'data:image/jpeg;base64,$photo';
       }
 
-      // Fix: Save photo properly
-      if (photo != null && photo.toString().isNotEmpty) {
-        cleanPayload['photo'] = photo.toString();
-      }
-
-      // Save URL if present
-      final url = result['file_url'] ?? result['url'];
-      if (url != null && url.toString().isNotEmpty) {
-        cleanPayload['file_url'] = url.toString();
-      }
+      cleanPayload['file_url'] ??= '';
+      cleanPayload['file_type'] ??= 'image';
     } else if (_table == 'insurance_cards') {
-      cleanPayload['id'] = 'ic_${DateTime.now().millisecondsSinceEpoch}';
+      // insurance_cards table uses provider_name/front_image_url/back_image_url.
+      // Do not send the non-existent "name", "patient_id",
+      // "front_photo" or "back_photo" columns.
+      final providerName = cleanPayload['provider_name']?.toString().trim() ??
+          result['provider_name']?.toString().trim() ??
+          '';
 
-      cleanPayload['provider_name'] =
-          result['provider_name'] ?? result['name'] ?? 'Insurance Card';
+      final frontPhoto = result['front_photo']?.toString();
+      final backPhoto = result['back_photo']?.toString();
 
-      cleanPayload['policy_number'] = result['policy_number'] ?? '';
+      cleanPayload.clear();
 
-      // FIX: Save front image as base64
-      final front = result['front_photo'] ?? result['front_image_url'] ?? photo;
-      if (front != null && front.toString().isNotEmpty) {
-        cleanPayload['front_image_url'] = front.toString(); // Should be base64
+      cleanPayload['provider_name'] = providerName;
+
+      if (frontPhoto != null && frontPhoto.isNotEmpty) {
+        cleanPayload['front_image_url'] = 'data:image/jpeg;base64,$frontPhoto';
+      } else {
+        cleanPayload['front_image_url'] = '';
       }
 
-      // FIX: Save back image as base64
-      final back = result['back_photo'] ?? result['back_image_url'];
-      if (back != null && back.toString().isNotEmpty) {
-        cleanPayload['back_image_url'] = back.toString(); // Should be base64
+      if (backPhoto != null && backPhoto.isNotEmpty) {
+        cleanPayload['back_image_url'] = 'data:image/jpeg;base64,$backPhoto';
+      } else {
+        cleanPayload['back_image_url'] = '';
       }
 
       if (widget.guestMode) {
@@ -3426,94 +2801,16 @@ class _RecordListScreenState extends State<RecordListScreen> {
         cleanPayload['user_id'] = widget.ownerId;
         cleanPayload['guest_id'] = null;
       }
-    } else if (_table == 'pharmacies') {
-      cleanPayload['name'] = result['name'] ?? '';
-      cleanPayload['phone'] = result['phone'] ?? '';
-      cleanPayload['address'] = result['address'] ?? '';
-    } else if (_table == 'doctors') {
-      cleanPayload['name'] = result['name'] ?? '';
-      cleanPayload['specialty'] = result['specialty'] ?? '';
-      cleanPayload['phone'] = result['phone'] ?? '';
-      cleanPayload['address'] = result['address'] ?? '';
-    } else if (_table == 'medications') {
-      cleanPayload['name'] = result['name']?.toString().trim() ?? '';
-
-      if (result['dosage'] != null &&
-          result['dosage'].toString().trim().isNotEmpty) {
-        cleanPayload['dosage'] = result['dosage'].toString().trim();
-      }
-
-      if (result['quantity'] != null &&
-          result['quantity'].toString().trim().isNotEmpty) {
-        cleanPayload['quantity'] = result['quantity'].toString().trim();
-      }
-
-      if (result['reminder_schedule_type'] != null &&
-          result['reminder_schedule_type'].toString().trim().isNotEmpty) {
-        cleanPayload['reminder_schedule_type'] =
-            result['reminder_schedule_type'].toString().trim();
-      }
-
-      if (result['reminder_time'] != null) {
-        cleanPayload['reminder_time'] = result['reminder_time'];
-      }
-
-      if (result['reminder_date'] != null &&
-          result['reminder_date'].toString().trim().isNotEmpty) {
-        cleanPayload['reminder_date'] =
-            result['reminder_date'].toString().trim();
-      }
-
-      // ------------------------------------------
-      // Upload photo to private Storage.
-      // Only the Storage path is saved in DB.
-      // ------------------------------------------
-      if (photo != null && photo.toString().trim().isNotEmpty) {
-        try {
-          final storagePath = await StorageHelper.uploadMedicationPhoto(
-            base64Image: photo.toString(),
-          );
-
-          cleanPayload['photo_url'] = storagePath;
-        } catch (e) {
-          debugPrint(
-            'Medication photo upload failed: $e',
-          );
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Photo upload failed. Medication was not saved.',
-                ),
-              ),
-            );
-          }
-
-          return;
-        }
-      }
     }
 
     try {
-      print('Inserting into $_table: $cleanPayload');
       await _client.from(_table).insert(cleanPayload);
       await _load();
-
-      if (widget.type == 'reminders') {
-        await _loadMedications();
-      }
+      if (widget.type == 'reminders') await _loadMedications();
     } catch (e) {
-      print('========== ERROR in _saveRecord ==========');
-      print(e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${tr(language, 'operation_failed')}: $e',
-            ),
-          ),
-        );
+            SnackBar(content: Text('${tr(language, 'operation_failed')}: $e')));
       }
     }
   }
@@ -3548,11 +2845,8 @@ class _RecordListScreenState extends State<RecordListScreen> {
     }
   }
 
-  // FIXED: Insurance card submit - uses base64 only
-
+  // FIXED: Insurance card submit with proper column mapping
   Future<void> _submitInsuranceCard() async {
-    // ADD THIS FIRST LINE
-    print('>>> _submitInsuranceCard() CALLED! <<<');
     final language = languageNotifier.value;
     if (!_formKey.currentState!.validate()) return;
 
@@ -3564,15 +2858,11 @@ class _RecordListScreenState extends State<RecordListScreen> {
     }
 
     try {
-      final payload = {
-        'name': _insuranceCompanyController.text.trim(),
+      final cleanPayload = <String, dynamic>{
         'provider_name': _insuranceCompanyController.text.trim(),
-        'patient_id': _patientIdController.text.trim(),
-        'front_image_url': _frontCardBase64,
-        'back_image_url': _backCardBase64,
+        'front_image_url': 'data:image/jpeg;base64,$_frontCardBase64',
+        'back_image_url': 'data:image/jpeg;base64,$_backCardBase64',
       };
-
-      final cleanPayload = RecordSanitizer.sanitize(payload);
 
       if (widget.guestMode) {
         cleanPayload['user_id'] = null;
@@ -3604,7 +2894,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
     }
   }
 
-  // FIXED: Document submit - uses base64 only
+  // FIXED: Document submit with proper column mapping
   Future<void> _submitDocument() async {
     final language = languageNotifier.value;
     if (!_formKey.currentState!.validate()) return;
@@ -3617,15 +2907,12 @@ class _RecordListScreenState extends State<RecordListScreen> {
     }
 
     try {
-      final payload = {
+      final cleanPayload = <String, dynamic>{
         'title': _titleController.text.trim(),
         'category': _categoryController.text.trim(),
-        'photo': _documentPhotoBase64,
-        'file_url': _fileUrlController.text.trim(),
+        'file_url': 'data:image/jpeg;base64,$_documentPhotoBase64',
         'file_type': 'image',
       };
-
-      final cleanPayload = RecordSanitizer.sanitize(payload);
 
       if (widget.guestMode) {
         cleanPayload['user_id'] = null;
@@ -3660,9 +2947,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
   Future<void> _delete(Map<String, dynamic> row) async {
     final id = row['id'];
     if (id == null) return;
-
     final language = languageNotifier.value;
-
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -3670,135 +2955,33 @@ class _RecordListScreenState extends State<RecordListScreen> {
         content: Text(tr(language, 'delete_confirm_msg')),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(tr(language, 'cancel')),
-          ),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(tr(language, 'cancel'))),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(tr(language, 'delete')),
-          ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(tr(language, 'delete'))),
         ],
       ),
     );
-
     if (confirmed != true) return;
-
     try {
-      final photoPath = row['photo_url']?.toString();
-
-      // 1. Delete database record first.
       final query = _client.from(_table).delete().eq('id', id);
-
       if (widget.guestMode) {
         await query.eq('guest_id', widget.ownerId);
       } else {
         await query.eq('user_id', widget.ownerId);
       }
-
-      // 2. Delete the corresponding Storage image.
-      if (photoPath != null && photoPath.trim().isNotEmpty) {
-        await StorageHelper.deleteMedicationPhoto(photoPath);
-      }
-
       await _load();
-
-      if (widget.type == 'reminders') {
-        await _loadMedications();
-      }
+      if (widget.type == 'reminders') await _loadMedications();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-          ),
-        );
-      }
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
   Future<void> _shareRecord(Map<String, dynamic> row) async {
-    final text = row.entries
-        .where((e) => e.key != 'photo_base64' && e.key != 'photo')
-        .map((e) => '${e.key}: ${e.value}')
-        .join('\n');
-
-    String? base64Photo;
-
-    final photoField = row['photo'];
-    final photoBase64Field = row['photo_base64'];
-
-    if (photoField != null && photoField.toString().isNotEmpty) {
-      base64Photo = photoField.toString().trim();
-    } else if (photoBase64Field != null &&
-        photoBase64Field.toString().isNotEmpty) {
-      base64Photo = photoBase64Field.toString().trim();
-    }
-
-    // 1. Try sharing the photo from private Storage.
-    final photoPath = row['photo_url']?.toString();
-
-    if (photoPath != null && photoPath.isNotEmpty) {
-      final signedUrl = await StorageHelper.getSignedUrl(photoPath);
-
-      if (signedUrl != null) {
-        try {
-          final response = await package_http.get(
-            Uri.parse(signedUrl),
-          );
-
-          if (response.statusCode == 200) {
-            final file = XFile.fromData(
-              response.bodyBytes,
-              name: 'medicine_photo.jpg',
-              mimeType: 'image/jpeg',
-            );
-
-            await SharePlus.instance.share(
-              ShareParams(
-                text: text,
-                files: [file],
-              ),
-            );
-
-            return;
-          }
-        } catch (e) {
-          debugPrint('Medication photo share failed: $e');
-        }
-      }
-    }
-
-    // 2. Fallback: share the old Base64 photo if available.
-    if (base64Photo != null && base64Photo.isNotEmpty) {
-      try {
-        final sanitized = base64Photo.contains(',')
-            ? base64Photo.split(',').last
-            : base64Photo;
-
-        final decoded = base64Decode(
-          sanitized.replaceAll(RegExp(r'\s+'), ''),
-        );
-
-        final file = XFile.fromData(
-          Uint8List.fromList(decoded),
-          name: 'medicine_photo.jpg',
-          mimeType: 'image/jpeg',
-        );
-
-        await SharePlus.instance.share(
-          ShareParams(
-            text: text,
-            files: [file],
-          ),
-        );
-
-        return;
-      } catch (e) {
-        debugPrint('Base64 medication photo share failed: $e');
-      }
-    }
-
-    // 3. Final fallback: text-only sharing.
+    final text = row.entries.map((e) => '${e.key}: ${e.value}').join('\n');
     await SharePlus.instance.share(
       ShareParams(
         text: text,
@@ -3807,96 +2990,47 @@ class _RecordListScreenState extends State<RecordListScreen> {
   }
 
   Future<void> _preview(Map<String, dynamic> row) async {
+    final photo = row['photo_url'] ?? row['photo'] ?? row['front_image_url'];
+    final base64Photo = row['photo_base64'];
+    final url = row['file_url'];
     final language = languageNotifier.value;
-
-    final title = (row['name'] ??
-            row['title'] ??
-            row['provider_name'] ??
-            tr(language, 'record'))
-        .toString();
-
-    String? photoBase64;
-
-    final photoField = row['photo'];
-    final photoBase64Field = row['photo_base64'];
-
-    if (photoField != null && photoField.toString().isNotEmpty) {
-      photoBase64 = photoField.toString().trim();
-    } else if (photoBase64Field != null &&
-        photoBase64Field.toString().isNotEmpty) {
-      photoBase64 = photoBase64Field.toString().trim();
-    }
-
-    final photoPath = row['photo_url']?.toString();
-    final frontImageUrl = row['front_image_url']?.toString();
-    final fileUrl = row['file_url']?.toString();
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(title),
+        title: Text((row['name'] ??
+                row['title'] ??
+                row['provider_name'] ??
+                tr(language, 'record'))
+            .toString()),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Existing Base64 photo support.
-              if (photoBase64 != null && photoBase64.isNotEmpty)
-                DisplayImage(
-                  base64String: photoBase64,
-                  height: 250,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-
-              // New private Storage photo support.
-              if (photoPath != null && photoPath.isNotEmpty)
-                SignedImage(
-                  path: photoPath,
-                  height: 250,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-
-              // Existing front image support.
-              if (frontImageUrl != null && frontImageUrl.isNotEmpty)
-                SafeNetworkImage(
-                  imageUrl: frontImageUrl,
-                  height: 200,
-                ),
-
-              // Existing file URL support.
-              if (fileUrl != null && fileUrl.isNotEmpty)
+              if (base64Photo != null &&
+                  base64Photo.toString().trim().isNotEmpty)
+                SafeBase64Image(
+                    base64String: base64Photo.toString(), height: 160),
+              if (photo != null && photo.toString().isNotEmpty)
+                SafeNetworkImage(imageUrl: photo.toString(), height: 160),
+              if (url != null && url.toString().isNotEmpty)
                 ListTile(
-                  title: Text(fileUrl),
+                  title: Text(url.toString()),
                   trailing: const Icon(Icons.open_in_new),
                   onTap: () async {
-                    final uri = Uri.tryParse(fileUrl);
-
-                    if (uri != null && await canLaunchUrl(uri)) {
-                      await launchUrl(uri);
-                    }
+                    final uri = Uri.parse(url.toString());
+                    if (await canLaunchUrl(uri)) await launchUrl(uri);
                   },
                 ),
-
               const Divider(),
-
-              ...row.entries
-                  .where(
-                    (e) => e.key != 'photo_base64' && e.key != 'photo',
-                  )
-                  .map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '${e.key}: ${e.value}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  ),
+              ...row.entries.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text('${e.key}: ${e.value}',
+                      style: const TextStyle(fontSize: 14)),
+                ),
+              ),
             ],
           ),
         ),
@@ -3904,7 +3038,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: Text(tr(language, 'close')),
-          ),
+          )
         ],
       ),
     );
@@ -3922,169 +3056,423 @@ class _RecordListScreenState extends State<RecordListScreen> {
     if (widget.type == 'insurance_cards')
       return '${row['provider_name'] ?? ''}';
     if (widget.type == 'reminders')
-      return '${row['dosage'] ?? ''} ${row['reminder_time'] ?? ''} ${row['reminder_date'] ?? ''}';
+      return '${row['reminder_time'] ?? ''} ${row['reminder_date'] ?? ''}';
     return '';
   }
 
   @override
+  Widget build(BuildContext context) {
+    final language = languageNotifier.value;
 
-Widget build(BuildContext context) {
-  final language = languageNotifier.value;
-
-  return ValueListenableBuilder<String>(
-    valueListenable: languageNotifier,
-    builder: (context, language, _) => Directionality(
-      textDirection: language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(tr(language, widget.type)),
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _rows.isEmpty
-                      ? Center(child: Text(tr(language, 'no_records')))
-                      : ListView.builder(
-                          key: ValueKey('list_${widget.type}'),
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _rows.length,
-                          itemBuilder: (context, index) {
-                            final row = _rows[index];
-                            final title = (row['name'] ??
-                                    row['title'] ??
-                                    row['provider_name'] ??
-                                    tr(language, 'record'))
-                                .toString();
-                            return Card(
-                              key: ValueKey('card_${row['id']}_$index'),
-                              margin: const EdgeInsets.only(bottom: 10),
-                              elevation: 2,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.center,
-                                  children: [
-                                    // ========================================
-                                    // MEDICATION PHOTO - ADDED ONLY
-                                    // ========================================
-                                    if (widget.type == 'medications')
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 12),
-                                        child: SignedImage(
-                                          path: row['photo_url']?.toString(),
-                                          height: 50,
-                                          width: 50,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            title,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            _subtitle(row),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey.shade700),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          key: ValueKey('view_${row['id']}'),
-                                          onPressed: () => _preview(row),
-                                          icon: const Icon(
-                                              Icons.remove_red_eye_outlined,
-                                              size: 20,
-                                              color: Colors.teal),
-                                          tooltip: tr(language, 'view'),
-                                        ),
-                                        IconButton(
-                                          key: ValueKey('share_${row['id']}'),
-                                          onPressed: () =>
-                                              _shareRecord(row),
-                                          icon: const Icon(Icons.share,
-                                              size: 20, color: Colors.teal),
-                                          tooltip: tr(language, 'share'),
-                                        ),
-                                        IconButton(
-                                          key:
-                                              ValueKey('delete_${row['id']}'),
-                                          onPressed: () => _delete(row),
-                                          icon: const Icon(
-                                              Icons.delete_outline,
-                                              size: 20,
-                                              color: Colors.redAccent),
-                                          tooltip: tr(language, 'delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+    // Insurance Cards form
+    if (widget.type == 'insurance_cards') {
+      return ValueListenableBuilder<String>(
+        valueListenable: languageNotifier,
+        builder: (context, language, _) => Directionality(
+          textDirection:
+              language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(tr(language, 'insurance_cards')),
             ),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: FilledButton.icon(
-                  key: const ValueKey('add_button'),
-                  onPressed: _add,
-                  icon: const Icon(Icons.add, size: 24),
-                  label: Text(
-                    tr(language, 'add'),
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _insuranceCompanyController,
+                            decoration: InputDecoration(
+                              labelText: tr(language, 'insurance_company_name'),
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return tr(
+                                    language, 'please_enter_insurance_company');
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _patientIdController,
+                            decoration: InputDecoration(
+                              labelText: tr(language, 'patient_id'),
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return tr(language, 'please_enter_patient_id');
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            tr(language, 'insurance_cards'),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Card(
+                            color: Colors.blue.shade50,
+                            elevation: 2,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                children: [
+                                  Text(tr(language, 'insurance_card_front'),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blueAccent)),
+                                  const SizedBox(height: 8),
+                                  _frontCardBase64 != null
+                                      ? DisplayImage(
+                                          base64String: _frontCardBase64,
+                                          height: 60,
+                                          width: 60,
+                                        )
+                                      : Text(tr(language, 'no_image_selected'),
+                                          style: const TextStyle(fontSize: 12)),
+                                  TextButton.icon(
+                                    onPressed: _pickFrontCard,
+                                    icon: const Icon(Icons.upload, size: 16),
+                                    label:
+                                        Text(tr(language, 'upload_front_card')),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Card(
+                            color: Colors.amber.shade50,
+                            elevation: 2,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                children: [
+                                  Text(tr(language, 'insurance_card_back'),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orangeAccent)),
+                                  const SizedBox(height: 8),
+                                  _backCardBase64 != null
+                                      ? DisplayImage(
+                                          base64String: _backCardBase64,
+                                          height: 60,
+                                          width: 60,
+                                        )
+                                      : Text(tr(language, 'no_image_selected'),
+                                          style: const TextStyle(fontSize: 12)),
+                                  TextButton.icon(
+                                    onPressed: _pickBackCard,
+                                    icon: const Icon(Icons.upload, size: 16),
+                                    label:
+                                        Text(tr(language, 'upload_back_card')),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: _submitInsuranceCard,
+                        child: Text(tr(language, 'add_data'),
+                            style: const TextStyle(fontSize: 16)),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ],
+          ),
+        ),
+      );
+    }
+
+    // Documents form
+    if (widget.type == 'documents') {
+      return ValueListenableBuilder<String>(
+        valueListenable: languageNotifier,
+        builder: (context, language, _) => Directionality(
+          textDirection:
+              language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(tr(language, 'documents')),
+            ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _titleController,
+                            decoration: InputDecoration(
+                              labelText: tr(language, 'title'),
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return tr(language, 'required_field');
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _categoryController,
+                            decoration: InputDecoration(
+                              labelText: tr(language, 'category'),
+                              border: const OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade400),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tr(language, 'photo'),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                _documentPhotoBase64 != null
+                                    ? Column(
+                                        children: [
+                                          DisplayImage(
+                                            base64String: _documentPhotoBase64,
+                                            height: 100,
+                                            width: 100,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            tr(language, 'photo_uploaded'),
+                                            style: TextStyle(
+                                                color: Colors.green.shade700,
+                                                fontSize: 12),
+                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        tr(language, 'no_image_selected'),
+                                        style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12),
+                                      ),
+                                const SizedBox(height: 8),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.teal.shade50,
+                                    foregroundColor: Colors.teal,
+                                  ),
+                                  onPressed: _pickDocumentPhoto,
+                                  icon:
+                                      const Icon(Icons.photo_camera, size: 18),
+                                  label: Text(tr(language, 'upload_photo')),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _fileUrlController,
+                            decoration: InputDecoration(
+                              labelText: tr(language, 'file_url'),
+                              border: const OutlineInputBorder(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: _submitDocument,
+                        child: Text(tr(language, 'add_data'),
+                            style: const TextStyle(fontSize: 16)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Regular list view with 3 actions + persistent Add button
+    return ValueListenableBuilder<String>(
+      valueListenable: languageNotifier,
+      builder: (context, language, _) => Directionality(
+        textDirection: language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(tr(language, widget.type)),
+          ),
+          body: Column(
+            children: [
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _rows.isEmpty
+                        ? Center(child: Text(tr(language, 'no_records')))
+                        : ListView.builder(
+                            key: ValueKey('list_${widget.type}'),
+                            padding: const EdgeInsets.all(12),
+                            itemCount: _rows.length,
+                            itemBuilder: (context, index) {
+                              final row = _rows[index];
+                              final title = (row['name'] ??
+                                      row['title'] ??
+                                      row['provider_name'] ??
+                                      tr(language, 'record'))
+                                  .toString();
+                              return Card(
+                                key: ValueKey('card_${row['id']}_$index'),
+                                margin: const EdgeInsets.only(bottom: 10),
+                                elevation: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              title,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _subtitle(row),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey.shade700),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            key: ValueKey('view_${row['id']}'),
+                                            onPressed: () => _preview(row),
+                                            icon: const Icon(
+                                                Icons.remove_red_eye_outlined,
+                                                size: 20,
+                                                color: Colors.teal),
+                                            tooltip: tr(language, 'view'),
+                                          ),
+                                          IconButton(
+                                            key: ValueKey('share_${row['id']}'),
+                                            onPressed: () => _shareRecord(row),
+                                            icon: const Icon(Icons.share,
+                                                size: 20, color: Colors.teal),
+                                            tooltip: tr(language, 'share'),
+                                          ),
+                                          IconButton(
+                                            key:
+                                                ValueKey('delete_${row['id']}'),
+                                            onPressed: () => _delete(row),
+                                            icon: const Icon(
+                                                Icons.delete_outline,
+                                                size: 20,
+                                                color: Colors.redAccent),
+                                            tooltip: tr(language, 'delete'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: FilledButton.icon(
+                    key: const ValueKey('add_button'),
+                    onPressed: _add,
+                    icon: const Icon(Icons.add, size: 24),
+                    label: Text(
+                      tr(language, 'add'),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
-
 
 // ============================================
 // SHARE SCREEN
@@ -4230,8 +3618,8 @@ class _ShareScreenState extends State<ShareScreen> {
   }
 
   Future<void> _previewRecord(String type, Map<String, dynamic> row) async {
-    final base64Photo = row['photo_base64']?.toString();
-    final photo = row['photo_url'] ?? row['front_image_url'];
+    final photo = row['photo_url'] ?? row['photo'] ?? row['front_image_url'];
+    final base64Photo = row['photo_base64'];
     final url = row['file_url'];
     final language = languageNotifier.value;
 
@@ -4250,12 +3638,8 @@ class _ShareScreenState extends State<ShareScreen> {
             children: [
               if (base64Photo != null &&
                   base64Photo.toString().trim().isNotEmpty)
-                DisplayImage(
-                  base64String: base64Photo.toString(),
-                  height: 160,
-                  width: 160,
-                  fit: BoxFit.contain,
-                ),
+                SafeBase64Image(
+                    base64String: base64Photo.toString(), height: 160),
               if (photo != null && photo.toString().isNotEmpty)
                 SafeNetworkImage(imageUrl: photo.toString(), height: 160),
               if (url != null && url.toString().isNotEmpty)

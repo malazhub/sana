@@ -74,7 +74,7 @@ dependencies:
   connectivity_plus: ^7.0.0
 
   # Internet images
-  http: ^1.5.0
+  http: ^1.6.0
 
   # AI Translation
   translator: ^1.0.3

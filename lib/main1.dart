@@ -16,6 +16,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:http/http.dart' as http;
 import 'package:http/http.dart' as package_http;
+import 'package:uuid/uuid.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
 
 // ============================================
 // CONFIGURATION
@@ -108,6 +111,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'Category',
     'title': 'Title',
     'policy': 'Policy',
+    'policy_number': 'Policy Number',
     'provider': 'Provider',
     'expiry': 'Expiry',
     'specialist': 'Specialist',
@@ -157,6 +161,21 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'Check out SANA - Your Health Management App!',
     'opening_payment': 'Opening payment page...',
     'payment_error': 'Payment error',
+    'medicine_photo': 'Medicine photo',
+    'no_medicine_photo': 'No medicine photo selected',
+    'upload_medicine_photo': 'Upload medicine photo',
+    'change_medicine_photo': 'Change medicine photo',
+    'select_reminder_times': 'Select reminder times',
+    'selected': 'Selected',
+    'medication_schedule': 'Medication schedule',
+    'choose_schedule_repeat': 'Choose when this reminder should repeat:',
+    'repeat_daily_msg': 'The reminder will repeat every day.',
+    'select_calendar_date': 'Select calendar date',
+    'date': 'Date',
+    'share_documents': 'Share Documents',
+    'manual_title': 'SANA Medical Pocket Book',
+    'manual_content':
+        '1. Manage your health records securely in one place.\n2. Add and track daily prescriptions and dosages in Medications.\n3. Keep your doctor contact info and specialty notes handy.\n4. Save your preferred pharmacies with phone and location.\n5. Set multi-time dosage reminders with alerts.\n6. Store medical documents and lab reports with photos.\n7. Keep front and back photos of your insurance cards.\n8. Select and share records with your doctors anytime.',
   },
   'ar': {
     'add': 'إضافة',
@@ -223,6 +242,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'الفئة',
     'title': 'العنوان',
     'policy': 'رقم الوثيقة',
+    'policy_number': 'رقم الوثيقة',
     'provider': 'مقدم الخدمة',
     'expiry': 'تاريخ الانتهاء',
     'specialist': 'الأخصائي',
@@ -272,6 +292,21 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - تطبيقك لإدارة صحتك!',
     'opening_payment': 'جاري فتح صفحة الدفع...',
     'payment_error': 'خطأ في الدفع',
+    'medicine_photo': 'صورة الدواء',
+    'no_medicine_photo': 'لم يتم اختيار صورة للدواء',
+    'upload_medicine_photo': 'رفع صورة الدواء',
+    'change_medicine_photo': 'تغيير صورة الدواء',
+    'select_reminder_times': 'اختر أوقات التذكير',
+    'selected': 'تم اختيار',
+    'medication_schedule': 'جدول الدواء',
+    'choose_schedule_repeat': 'اختر متى يتكرر هذا التذكير:',
+    'repeat_daily_msg': 'سيتكرر التذكير كل يوم.',
+    'select_calendar_date': 'اختر تاريخ التقويم',
+    'date': 'التاريخ',
+    'share_documents': 'مشاركة المستندات',
+    'manual_title': 'دليل سانا الطبي للجيب',
+    'manual_content':
+        '1. إدارة سجلاتك الطبية بأمان في مكان واحد.\n2. إضافة وتتبع الأدوية اليومية والجرعات.\n3. الاحتفاظ بأرقام الأطباء وتخصصاتهم.\n4. حفظ الصيدليات المفضلة مع العناوين والهواتف.\n5. تعيين تذكيرات بمواعيد تناول الدواء.\n6. حفظ المستندات والتقارير الطبية مع الصور.\n7. حفظ صور بطاقات التأمين من الأمام والخلف.\n8. تحديد ومشاركة السجلات مع الأطباء بسهولة.',
   },
   'es': {
     'add': 'Añadir',
@@ -338,6 +373,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'Categoría',
     'title': 'Título',
     'policy': 'Póliza',
+    'policy_number': 'Número de póliza',
     'provider': 'Proveedor',
     'expiry': 'Vencimiento',
     'specialist': 'Especialista',
@@ -389,6 +425,21 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - ¡tu aplicación para gestionar tu salud!',
     'opening_payment': 'Abriendo página de pago...',
     'payment_error': 'Error de pago',
+    'medicine_photo': 'Foto del medicamento',
+    'no_medicine_photo': 'No se ha seleccionado foto',
+    'upload_medicine_photo': 'Subir foto del medicamento',
+    'change_medicine_photo': 'Cambiar foto del medicamento',
+    'select_reminder_times': 'Seleccionar horas de recordatorio',
+    'selected': 'Seleccionado',
+    'medication_schedule': 'Horario de medicación',
+    'choose_schedule_repeat': 'Elija cuándo repetir el recordatorio:',
+    'repeat_daily_msg': 'El recordatorio se repetirá todos los días.',
+    'select_calendar_date': 'Seleccionar fecha del calendario',
+    'date': 'Fecha',
+    'share_documents': 'Compartir documentos',
+    'manual_title': 'Guía médica de bolsillo SANA',
+    'manual_content':
+        '1. Gestione su salud de forma segura en un solo lugar.\n2. Registre medicamentos diarios y dosis exactas.\n3. Guarde contactos y especialidades de sus médicos.\n4. Guarde farmacias con dirección y teléfono.\n5. Configure recordatorios con múltiples horarios.\n6. Guarde documentos e informes médicos con fotos.\n7. Guarde fotos del anverso y reverso de tarjetas de seguro.\n8. Seleccione y comparta sus registros con su médico.',
   },
   'fr': {
     'add': 'Ajouter',
@@ -455,6 +506,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'Catégorie',
     'title': 'Titre',
     'policy': 'Police',
+    'policy_number': 'Numéro de police',
     'provider': 'Fournisseur',
     'expiry': 'Expiration',
     'specialist': 'Spécialiste',
@@ -507,6 +559,21 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - votre application de gestion de santé !',
     'opening_payment': 'Ouverture de la page de paiement...',
     'payment_error': 'Erreur de paiement',
+    'medicine_photo': 'Photo du médicament',
+    'no_medicine_photo': 'Aucune photo sélectionnée',
+    'upload_medicine_photo': 'Téléverser la photo du médicament',
+    'change_medicine_photo': 'Modifier la photo du médicament',
+    'select_reminder_times': 'Sélectionner les heures de rappel',
+    'selected': 'Sélectionné',
+    'medication_schedule': 'Programme du médicament',
+    'choose_schedule_repeat': 'Choisissez quand répéter ce rappel :',
+    'repeat_daily_msg': 'Le rappel se répétera tous les jours.',
+    'select_calendar_date': 'Sélectionner la date du calendrier',
+    'date': 'Date',
+    'share_documents': 'Partager les documents',
+    'manual_title': 'Guide médical de poche SANA',
+    'manual_content':
+        '1. Gérez vos dossiers médicaux en un seul endroit.\n2. Suivez vos médicaments quotidiens et vos dosages.\n3. Gardez les coordonnées de vos médecins à portée de main.\n4. Enregistrez vos pharmacies avec adresses et téléphones.\n5. Programmez des rappels de prise de médicaments.\n6. Conservez vos documents et analyses avec photos.\n7. Sauvegardez le recto et verso de vos cartes d’assurance.\n8. Sélectionnez et partagez vos dossiers avec votre médecin.',
   },
   'de': {
     'add': 'Hinzufügen',
@@ -573,6 +640,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'Kategorie',
     'title': 'Titel',
     'policy': 'Versicherung',
+    'policy_number': 'Policennummer',
     'provider': 'Anbieter',
     'expiry': 'Ablaufdatum',
     'specialist': 'Spezialist',
@@ -623,6 +691,22 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - Ihre App zur Gesundheitsverwaltung!',
     'opening_payment': 'Zahlungsseite wird geöffnet...',
     'payment_error': 'Zahlungsfehler',
+    'medicine_photo': 'Medikamentenfoto',
+    'no_medicine_photo': 'Kein Foto ausgewählt',
+    'upload_medicine_photo': 'Medikamentenfoto hochladen',
+    'change_medicine_photo': 'Medikamentenfoto ändern',
+    'select_reminder_times': 'Erinnerungszeiten auswählen',
+    'selected': 'Ausgewählt',
+    'medication_schedule': 'Medikamenten-Zeitplan',
+    'choose_schedule_repeat':
+        'Wählen Sie, wann diese Erinnerung wiederholt werden soll:',
+    'repeat_daily_msg': 'Die Erinnerung wird täglich wiederholt.',
+    'select_calendar_date': 'Kalenderdatum auswählen',
+    'date': 'Datum',
+    'share_documents': 'Dokumente teilen',
+    'manual_title': 'SANA Medizinisches Taschenbuch',
+    'manual_content':
+        '1. Verwalten Sie Ihre Gesundheitsdaten sicher an einem Ort.\n2. Verfolgen Sie tägliche Medikamente und Dosierungen.\n3. Speichern Sie Kontaktdaten Ihrer Ärzte und Fachgebiete.\n4. Speichern Sie Apotheken mit Adresse und Telefonnummer.\n5. Stellen Sie Erinnerungen für die Medikamenteneinnahme ein.\n6. Speichern Sie medizinische Dokumente und Berichte mit Fotos.\n7. Speichern Sie Vorder- und Rückseite Ihrer Versicherungskarten.\n8. Wählen Sie Datensätze aus und teilen Sie diese mit Ihrem Arzt.',
   },
   'tr': {
     'add': 'Ekle',
@@ -689,6 +773,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'Kategori',
     'title': 'Başlık',
     'policy': 'Poliçe',
+    'policy_number': 'Poliçe Numarası',
     'provider': 'Sağlayıcı',
     'expiry': 'Son Kullanma',
     'specialist': 'Uzman',
@@ -739,6 +824,22 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - sağlık yönetimi uygulamanız!',
     'opening_payment': 'Ödeme sayfası açılıyor...',
     'payment_error': 'Ödeme hatası',
+    'medicine_photo': 'İlaç fotoğrafı',
+    'no_medicine_photo': 'İlaç fotoğrafı seçilmedi',
+    'upload_medicine_photo': 'İlaç fotoğrafı yükle',
+    'change_medicine_photo': 'İlaç fotoğrafını değiştir',
+    'select_reminder_times': 'Hatırlatma saatlerini seçin',
+    'selected': 'Seçilen',
+    'medication_schedule': 'İlaç programı',
+    'choose_schedule_repeat':
+        'Bu hatırlatmanın ne zaman tekrarlanacağını seçin:',
+    'repeat_daily_msg': 'Hatırlatma her gün tekrarlanacak.',
+    'select_calendar_date': 'Takvim tarihini seçin',
+    'date': 'Tarih',
+    'share_documents': 'Belgeleri Paylaş',
+    'manual_title': 'SANA Cep Sağlık Rehberi',
+    'manual_content':
+        '1. Sağlık kayıtlarınızı tek bir yerden güvenle yönetin.\n2. Günlük ilaçlarınızı ve dozajlarınızı takip edin.\n3. Doktor iletişim ve uzmanlık bilgilerini kaydedin.\n4. Eczaneleri telefon ve adres bilgileriyle saklayın.\n5. Çoklu saat seçenekleriyle ilaç hatırlatıcıları kurun.\n6. Tıbbi rapor ve belgelerinizi fotoğraflarla kaydedin.\n7. Sigorta kartlarınızın ön ve arka fotoğraflarını saklayın.\n8. Kayıtlarınızı seçerek dilediğiniz zaman doktorunuzla paylaşın.',
   },
   'hi': {
     'add': 'जोड़ें',
@@ -805,6 +906,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': 'श्रेणी',
     'title': 'शीर्षक',
     'policy': 'पॉलिसी',
+    'policy_number': 'पॉलिसी संख्या',
     'provider': 'प्रदाता',
     'expiry': 'समाप्ति',
     'specialist': 'विशेषज्ञ',
@@ -855,6 +957,21 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - आपका स्वास्थ्य प्रबंधन ऐप!',
     'opening_payment': 'भुगतान पृष्ठ खोल रहा है...',
     'payment_error': 'भुगतान त्रुटि',
+    'medicine_photo': 'दवा की फ़ोटो',
+    'no_medicine_photo': 'कोई दवा फ़ोटो चयनित नहीं',
+    'upload_medicine_photo': 'दवा की फ़ोटो अपलोड करें',
+    'change_medicine_photo': 'दवा की फ़ोटो बदलें',
+    'select_reminder_times': 'रिमाइंडर समय चुनें',
+    'selected': 'चयनित',
+    'medication_schedule': 'दवा समय-सारणी',
+    'choose_schedule_repeat': 'चुनें कि यह रिमाइंडर कब दोहराया जाना चाहिए:',
+    'repeat_daily_msg': 'रिमाइंडर हर दिन दोहराया जाएगा।',
+    'select_calendar_date': 'कैलेंडर तारीख चुनें',
+    'date': 'तारीख',
+    'share_documents': 'दस्तावेज़ साझा करें',
+    'manual_title': 'साना मेडिकल पॉकेट बुक',
+    'manual_content':
+        '1. अपने स्वास्थ्य रिकॉर्ड को एक ही स्थान पर सुरक्षित रखें।\n2. दैनिक दवाइयाँ और उनकी खुराक आसानी से ट्रैक करें।\n3. अपने डॉक्टरों के संपर्क और विशेषता नोट रखें।\n4. अपनी पसंदीदा फार्मेसी का पता और फोन सेव करें।\n5. समय पर दवा लेने के लिए रिमाइंडर सेट करें।\n6. मेडिकल दस्तावेज़ और रिपोर्ट फोटो के साथ रखें।\n7. बीमा कार्ड की आगे और पीछे की फोटो सुरक्षित रखें।\n8. डॉक्टर के साथ कभी भी जरूरी रिकॉर्ड चुनें और साझा करें।',
   },
   'zh': {
     'add': '添加',
@@ -921,6 +1038,7 @@ const Map<String, Map<String, String>> _translations = {
     'category': '类别',
     'title': '标题',
     'policy': '保单',
+    'policy_number': '保单号码',
     'provider': '提供商',
     'expiry': '到期日',
     'specialist': '专家',
@@ -970,6 +1088,21 @@ const Map<String, Map<String, String>> _translations = {
     'share_app_message': 'SANA - 您的健康管理应用！',
     'opening_payment': '正在打开支付页面...',
     'payment_error': '支付错误',
+    'medicine_photo': '药物照片',
+    'no_medicine_photo': '未选择药物照片',
+    'upload_medicine_photo': '上传药物照片',
+    'change_medicine_photo': '更换药物照片',
+    'select_reminder_times': '选择提醒时间',
+    'selected': '已选',
+    'medication_schedule': '药物服药计划',
+    'choose_schedule_repeat': '选择何时重复此提醒：',
+    'repeat_daily_msg': '提醒将每天重复。',
+    'select_calendar_date': '选择日历日期',
+    'date': '日期',
+    'share_documents': '分享文档',
+    'manual_title': 'SANA 随身健康手册',
+    'manual_content':
+        '1. 在一个地方安全管理您的所有健康记录。\n2. 轻松添加并跟踪每日药物用量和频率。\n3. 保存医生专科信息与联系方式。\n4. 保存常用药房地址与联系电话。\n5. 设置多时间段服药提醒。\n6. 拍摄并保存医疗报告与检查单。\n7. 保存医保卡正面和反面照片。\n8. 随时勾选并向医生分享您的健康档案。',
   },
 };
 
@@ -983,6 +1116,17 @@ String tr(String code, String key) =>
 class LanguageButtons extends StatelessWidget {
   const LanguageButtons({super.key});
 
+  static const Map<String, Color> _langColors = {
+    'en': Color(0xFF00897B), // Teal
+    'ar': Color(0xFFE65100), // Orange
+    'es': Color(0xFFC2185B), // Pink/Magenta
+    'fr': Color(0xFF1E88E5), // Blue
+    'de': Color(0xFF6D4C41), // Brown
+    'tr': Color(0xFFE53935), // Red
+    'hi': Color(0xFFF57C00), // Amber
+    'zh': Color(0xFF5E35B1), // Purple
+  };
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<String>(
@@ -994,6 +1138,7 @@ class LanguageButtons extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: _languageNames.entries.map((entry) {
               final selected = currentLang == entry.key;
+              final color = _langColors[entry.key] ?? Colors.teal;
 
               return Expanded(
                 child: Padding(
@@ -1002,8 +1147,8 @@ class LanguageButtons extends StatelessWidget {
                     onPressed: () => languageNotifier.value = entry.key,
                     style: FilledButton.styleFrom(
                       backgroundColor:
-                          selected ? Colors.teal : Colors.grey.shade200,
-                      foregroundColor: selected ? Colors.white : Colors.teal,
+                          selected ? color : color.withValues(alpha: 0.15),
+                      foregroundColor: selected ? Colors.white : color,
                       minimumSize: const Size(0, 28),
                       maximumSize: const Size(double.infinity, 28),
                       padding: EdgeInsets.zero,
@@ -1012,7 +1157,7 @@ class LanguageButtons extends StatelessWidget {
                       ),
                       textStyle: const TextStyle(
                         fontSize: 8,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     child: FittedBox(
@@ -1083,11 +1228,18 @@ void main() async {
 
   await Supabase.initialize(
     url: _supabaseUrl,
-    publishableKey: _supabaseKey, // Replaces anonKey
+    publishableKey: _supabaseKey,
     headers: {
       'x-sana-guest-id': guestId,
     },
   );
+
+  // Required for private Storage access.
+  final client = Supabase.instance.client;
+
+  if (client.auth.currentUser == null) {
+    await client.auth.signInAnonymously();
+  }
 
   runApp(const SanaApp());
 }
@@ -1152,8 +1304,9 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final guestId = await GuestIdentityService.getGuestId();
       final user = _client.auth.currentUser;
+      final isRealUser = user != null && user.isAnonymous == false;
 
-      if (user == null) {
+      if (!isRealUser) {
         if (!mounted) return;
         setState(() {
           _profile = null;
@@ -1188,7 +1341,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _profile = null;
           _guestId = guestId;
-          _isGuest = _client.auth.currentUser == null;
+          _isGuest = true;
           _loading = false;
         });
       }
@@ -1356,8 +1509,45 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(Icons.health_and_safety,
-                                color: Colors.teal, size: 36),
+                            IconButton(
+                              icon: const Icon(Icons.health_and_safety,
+                                  color: Colors.teal, size: 36),
+                              tooltip: tr(language, 'manual_title'),
+                              onPressed: () {
+                                showDialog<void>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Row(
+                                      children: [
+                                        const Icon(Icons.menu_book,
+                                            color: Colors.teal),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            tr(language, 'manual_title'),
+                                            style:
+                                                const TextStyle(fontSize: 18),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    content: SingleChildScrollView(
+                                      child: Text(
+                                        tr(language, 'manual_content'),
+                                        style: const TextStyle(
+                                            fontSize: 14, height: 1.5),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: Text(tr(language, 'close')),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                             const Text(
                               'SANA',
                               style: TextStyle(
@@ -1366,7 +1556,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   letterSpacing: 4),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.share, size: 26),
+                              icon: const Icon(Icons.share,
+                                  size: 26, color: Colors.teal),
                               onPressed: _shareApp,
                               tooltip: tr(language, 'share_app'),
                             ),
@@ -1400,14 +1591,184 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildCardCustomIcon(String type) {
+    switch (type) {
+      case 'medications':
+        // Custom multi-colored capsules & round pill matching your screenshot 1
+        return SizedBox(
+          height: 38,
+          width: 44,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned(
+                left: 2,
+                top: 4,
+                child: Transform.rotate(
+                  angle: -0.4,
+                  child: Container(
+                    width: 14,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE53935), Color(0xFFFFB300)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 2,
+                          offset: const Offset(1, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 2,
+                bottom: 2,
+                child: Transform.rotate(
+                  angle: 0.5,
+                  child: Container(
+                    width: 14,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0288D1), Color(0xFF4FC3F7)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 2,
+                          offset: const Offset(1, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Center(
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey.shade400, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case 'doctors':
+        // Doctor silhouette with stethoscope and supportive hands matching your screenshot 2
+        return SizedBox(
+          height: 38,
+          width: 44,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Positioned(
+                top: 0,
+                child: Icon(
+                  Icons.person_pin,
+                  size: 30,
+                  color: Color(0xFF0288D1),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Transform.flip(
+                      flipX: true,
+                      child: const Icon(
+                        Icons.front_hand,
+                        size: 14,
+                        color: Color(0xFF29B6F6),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.front_hand,
+                      size: 14,
+                      color: Color(0xFF29B6F6),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case 'pharmacies':
+        // Green circular emblem with white cross matching your screenshot 3
+        return Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: Color(0xFF2E7D32),
+            shape: BoxShape.circle,
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 26,
+            ),
+          ),
+        );
+
+      case 'reminders':
+        return const Icon(
+          Icons.alarm_on,
+          size: 34,
+          color: Color(0xFFE65100),
+        );
+
+      case 'documents':
+        return const Icon(
+          Icons.folder_shared,
+          size: 34,
+          color: Color(0xFF6A1B9A),
+        );
+
+      case 'insurance_cards':
+        return const Icon(
+          Icons.badge,
+          size: 34,
+          color: Color(0xFFC2185B),
+        );
+
+      default:
+        return const Icon(Icons.circle, size: 34);
+    }
+  }
+
   Widget _buildMainGrid(String language) {
     final cards = [
-      _recordCard('medications', Icons.medication, Colors.teal.shade100),
-      _recordCard('doctors', Icons.person, Colors.blue.shade100),
-      _recordCard('pharmacies', Icons.local_pharmacy, Colors.green.shade100),
-      _recordCard('reminders', Icons.alarm, Colors.orange.shade100),
-      _recordCard('documents', Icons.folder, Colors.purple.shade100),
-      _recordCard('insurance_cards', Icons.badge, Colors.pink.shade100),
+      _recordCard('medications', Colors.teal.shade50),
+      _recordCard('doctors', Colors.blue.shade50),
+      _recordCard('pharmacies', Colors.green.shade50),
+      _recordCard('reminders', Colors.orange.shade50),
+      _recordCard('documents', Colors.purple.shade50),
+      _recordCard('insurance_cards', Colors.pink.shade50),
     ];
 
     return Column(
@@ -1427,7 +1788,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _recordCard(String type, IconData icon, Color color) {
+  Widget _recordCard(String type, Color color) {
     final language = languageNotifier.value;
     return Card(
       elevation: 2,
@@ -1454,7 +1815,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              Icon(icon, size: 30, color: Colors.teal.shade700),
+              _buildCardCustomIcon(type),
               const SizedBox(height: 4),
               Text(
                 tr(language, type),
@@ -1480,17 +1841,28 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.amber.shade100,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: _shareApp,
+          onTap: () {
+            final ownerId = _ownerId ?? 'guest';
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ShareScreen(
+                  ownerId: ownerId,
+                  guestMode: _isGuest,
+                ),
+              ),
+            );
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.share, size: 28, color: Colors.teal),
+                const Icon(Icons.folder_shared, size: 28, color: Colors.teal),
                 const SizedBox(width: 12),
                 Flexible(
                   child: Text(
-                    tr(language, 'share_app'),
+                    tr(language, 'share_documents'),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1519,22 +1891,16 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: _isGuest
-                    ? () async {
-                        final result = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginScreen()),
-                        );
-                        if (result == true) await _loadSession();
-                      }
-                    : () async {
-                        await _client.auth.signOut();
-                        await _loadSession();
-                      },
-                icon: Icon(_isGuest ? Icons.login : Icons.logout, size: 18),
+                onPressed: () async {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                  if (result == true) await _loadSession();
+                },
+                icon: const Icon(Icons.login, size: 18),
                 label: Text(
-                  _isGuest ? tr(language, 'login') : tr(language, 'logout'),
+                  tr(language, 'login'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1592,7 +1958,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    final email = _email.text.trim();
+    final email = _email.text
+        .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF\u00A0]'), '')
+        .trim()
+        .toLowerCase();
     final password = _password.text.trim();
     final language = languageNotifier.value;
 
@@ -1747,7 +2116,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _signUp() async {
     final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
+    final email = _emailController.text
+        .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF\u00A0]'), '')
+        .trim()
+        .toLowerCase();
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
     final language = languageNotifier.value;
@@ -2084,6 +2456,156 @@ class ImagePickerHelper {
 }
 
 // ============================================
+// SUPABASE STORAGE HELPER
+// ============================================
+
+class StorageHelper {
+  static final SupabaseClient _client = Supabase.instance.client;
+
+  static const String _bucket = 'medication_photos';
+
+  static const Uuid _uuid = Uuid();
+
+  static final Map<String, _CachedSignedUrl> _urlCache = {};
+
+  static Future<String> uploadMedicationPhoto({
+    required String base64Image,
+  }) async {
+    final user = _client.auth.currentUser;
+
+    if (user == null) {
+      throw Exception('No authenticated Supabase user');
+    }
+
+    var clean = base64Image.trim();
+
+    if (clean.isEmpty) {
+      throw const FormatException('Empty image data');
+    }
+
+    String mimeType = 'image/jpeg';
+
+    // Detect MIME type when Base64 contains a data URI.
+    if (clean.startsWith('data:')) {
+      final commaIndex = clean.indexOf(',');
+
+      if (commaIndex == -1) {
+        throw const FormatException('Invalid image data');
+      }
+
+      final header = clean.substring(0, commaIndex);
+
+      if (header.contains('image/png')) {
+        mimeType = 'image/png';
+      } else if (header.contains('image/webp')) {
+        mimeType = 'image/webp';
+      } else if (header.contains('image/gif')) {
+        mimeType = 'image/gif';
+      }
+
+      clean = clean.substring(commaIndex + 1);
+    } else if (clean.contains(',')) {
+      clean = clean.split(',').last;
+    }
+
+    clean = clean.replaceAll(RegExp(r'\s+'), '');
+
+    final bytes = base64Decode(clean);
+
+    final extension = switch (mimeType) {
+      'image/png' => 'png',
+      'image/webp' => 'webp',
+      'image/gif' => 'gif',
+      _ => 'jpg',
+    };
+
+    final fileId = _uuid.v4();
+
+    // IMPORTANT:
+    // Storage ownership is based on auth.uid().
+    final filePath = 'medications/${user.id}/$fileId.$extension';
+
+    await _client.storage.from(_bucket).uploadBinary(
+          filePath,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: mimeType,
+            cacheControl: '31536000',
+            upsert: false,
+          ),
+        );
+
+    return filePath;
+  }
+
+  static Future<String?> getSignedUrl(String? path) async {
+    if (path == null || path.trim().isEmpty) {
+      return null;
+    }
+
+    final cleanPath = path.trim();
+
+    final cached = _urlCache[cleanPath];
+
+    if (cached != null && !cached.isExpired) {
+      return cached.url;
+    }
+
+    try {
+      final url = await _client.storage.from(_bucket).createSignedUrl(
+            cleanPath,
+            3600,
+          );
+
+      _urlCache[cleanPath] = _CachedSignedUrl(
+        url: url,
+        // Expire our cache slightly before the actual signed URL.
+        expiresAt: DateTime.now().add(
+          const Duration(minutes: 55),
+        ),
+      );
+
+      return url;
+    } catch (e) {
+      debugPrint('Signed URL error: $e');
+      return null;
+    }
+  }
+
+  static Future<void> deleteMedicationPhoto(String? path) async {
+    if (path == null || path.trim().isEmpty) {
+      return;
+    }
+
+    final cleanPath = path.trim();
+
+    try {
+      await _client.storage.from(_bucket).remove([cleanPath]);
+
+      _urlCache.remove(cleanPath);
+    } catch (e) {
+      debugPrint('Storage delete error: $e');
+    }
+  }
+
+  static void clearCache() {
+    _urlCache.clear();
+  }
+}
+
+class _CachedSignedUrl {
+  final String url;
+  final DateTime expiresAt;
+
+  const _CachedSignedUrl({
+    required this.url,
+    required this.expiresAt,
+  });
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+}
+
+// ============================================
 // DISPLAY IMAGE
 // ============================================
 
@@ -2091,8 +2613,8 @@ class DisplayImage extends StatelessWidget {
   final Uint8List? bytes;
   final String? base64String;
   final String? url;
-  final double height;
-  final double width;
+  final double? height;
+  final double? width;
   final BoxFit fit;
 
   const DisplayImage({
@@ -2100,62 +2622,171 @@ class DisplayImage extends StatelessWidget {
     this.bytes,
     this.base64String,
     this.url,
-    this.height = 60,
-    this.width = 60,
-    this.fit = BoxFit.cover,
+    this.height,
+    this.width,
+    this.fit = BoxFit.contain,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (base64String != null && base64String!.isNotEmpty) {
-      try {
-        final value = base64String!.trim();
-        final encoded = value.contains(',') ? value.split(',').last : value;
-
-        final decoded = base64Decode(encoded);
-        return Image.memory(
-          decoded,
-          height: height,
-          width: width,
-          fit: fit,
-          errorBuilder: (_, __, ___) =>
-              Icon(Icons.broken_image, color: Colors.grey.shade400),
-        );
-      } catch (_) {}
-    }
-
     if (bytes != null && bytes!.isNotEmpty) {
       return Image.memory(
         bytes!,
         height: height,
         width: width,
         fit: fit,
-        errorBuilder: (_, __, ___) =>
-            Icon(Icons.broken_image, color: Colors.grey.shade400),
+        errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
+            size: height ?? 48, color: Colors.grey.shade400),
       );
     }
 
-    if (url != null && url!.isNotEmpty) {
-      final uri = Uri.tryParse(url!);
-      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+    final raw = (base64String != null && base64String!.trim().isNotEmpty)
+        ? base64String!.trim()
+        : (url != null && url!.trim().isNotEmpty ? url!.trim() : null);
+
+    if (raw != null && raw.isNotEmpty) {
+      if (raw.startsWith('http://') || raw.startsWith('https://')) {
         return Image.network(
-          url!,
+          raw,
           height: height,
           width: width,
           fit: fit,
-          errorBuilder: (_, __, ___) =>
-              Icon(Icons.broken_image, color: Colors.grey.shade400),
+          errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
+              size: height ?? 48, color: Colors.grey.shade400),
         );
+      }
+
+      try {
+        var clean = raw;
+        if (clean.contains(',')) {
+          clean = clean.split(',').last;
+        }
+        clean = clean.replaceAll(RegExp(r'\s+'), '');
+        clean = base64.normalize(clean);
+
+        final decoded = base64Decode(clean);
+        return Image.memory(
+          decoded,
+          height: height,
+          width: width,
+          fit: fit,
+          errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
+              size: height ?? 48, color: Colors.grey.shade400),
+        );
+      } catch (e) {
+        debugPrint('DisplayImage error: $e');
       }
     }
 
-    return Icon(Icons.broken_image, color: Colors.grey.shade400);
+    return Icon(Icons.broken_image,
+        size: height ?? 48, color: Colors.grey.shade400);
   }
 }
 
 // ============================================
-// ADD FORM DIALOG
+// SIGNED IMAGE WIDGET
 // ============================================
+
+class SignedImage extends StatefulWidget {
+  final String? path;
+  final double? height;
+  final double? width;
+  final BoxFit fit;
+
+  const SignedImage({
+    super.key,
+    this.path,
+    this.height,
+    this.width,
+    this.fit = BoxFit.contain,
+  });
+
+  @override
+  State<SignedImage> createState() => _SignedImageState();
+}
+
+class _SignedImageState extends State<SignedImage> {
+  String? _url;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant SignedImage oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.path != widget.path) {
+      _url = null;
+      _loading = true;
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final path = widget.path?.trim();
+
+    if (path == null || path.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+      return;
+    }
+
+    final url = await StorageHelper.getSignedUrl(path);
+
+    if (!mounted) return;
+
+    setState(() {
+      _url = url;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return SizedBox(
+        height: widget.height ?? 100,
+        width: widget.width,
+        child: const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (_url == null) {
+      return Icon(
+        Icons.medication,
+        size: widget.height ?? 48,
+        color: Colors.teal,
+      );
+    }
+
+    return Image.network(
+      _url!,
+      height: widget.height,
+      width: widget.width,
+      fit: widget.fit,
+      errorBuilder: (_, __, ___) {
+        return Icon(
+          Icons.medication,
+          size: widget.height ?? 48,
+          color: Colors.teal,
+        );
+      },
+    );
+  }
+}
 
 // ============================================
 // ADD FORM DIALOG
@@ -2304,9 +2935,9 @@ class _AddFormDialogState extends State<AddFormDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Medicine photo',
-            style: TextStyle(
+          Text(
+            tr(widget.language, 'medicine_photo'),
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
@@ -2323,7 +2954,7 @@ class _AddFormDialogState extends State<AddFormDialog> {
             )
           else
             Text(
-              'No medicine photo selected',
+              tr(widget.language, 'no_medicine_photo'),
               style: TextStyle(
                 color: Colors.grey.shade600,
               ),
@@ -2336,8 +2967,8 @@ class _AddFormDialogState extends State<AddFormDialog> {
               icon: const Icon(Icons.photo_camera),
               label: Text(
                 _medicinePhotoBase64 == null
-                    ? 'Upload medicine photo'
-                    : 'Change medicine photo',
+                    ? tr(widget.language, 'upload_medicine_photo')
+                    : tr(widget.language, 'change_medicine_photo'),
               ),
             ),
           ),
@@ -2367,14 +2998,11 @@ class _AddFormDialogState extends State<AddFormDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Select reminder times',
-                style: TextStyle(fontWeight: FontWeight.w500),
+              Text(
+                tr(widget.language, 'select_reminder_times'),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-
-              // Limited height prevents AlertDialog from receiving
-              // infinite/unbounded height on Flutter Web.
               SizedBox(
                 height: 190,
                 child: SingleChildScrollView(
@@ -2424,11 +3052,10 @@ class _AddFormDialogState extends State<AddFormDialog> {
                   ),
                 ),
               ),
-
               if (_selectedMedicationTimes.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Selected: ${_selectedMedicationTimes.map(_formatTimeOfDay).join(', ')}',
+                  '${tr(widget.language, 'selected')}: ${_selectedMedicationTimes.map(_formatTimeOfDay).join(', ')}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
                   ),
@@ -2459,31 +3086,31 @@ class _AddFormDialogState extends State<AddFormDialog> {
       builder: (fieldState) {
         return InputDecorator(
           decoration: InputDecoration(
-            labelText: 'Medication schedule',
+            labelText: tr(widget.language, 'medication_schedule'),
             border: const OutlineInputBorder(),
             errorText: fieldState.errorText,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Choose when this medication reminder should repeat:',
-                style: TextStyle(fontWeight: FontWeight.w500),
+              Text(
+                tr(widget.language, 'choose_schedule_repeat'),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: SegmentedButton<String>(
-                  segments: const [
+                  segments: [
                     ButtonSegment<String>(
                       value: 'daily',
-                      icon: Icon(Icons.today),
-                      label: Text('Daily'),
+                      icon: const Icon(Icons.today),
+                      label: Text(tr(widget.language, 'daily')),
                     ),
                     ButtonSegment<String>(
                       value: 'calendar',
-                      icon: Icon(Icons.calendar_month),
-                      label: Text('Calendar'),
+                      icon: const Icon(Icons.calendar_month),
+                      label: Text(tr(widget.language, 'calendar')),
                     ),
                   ],
                   selected: {_medicationScheduleType},
@@ -2501,9 +3128,9 @@ class _AddFormDialogState extends State<AddFormDialog> {
               ),
               if (_medicationScheduleType == 'daily') ...[
                 const SizedBox(height: 10),
-                const Text(
-                  'The reminder will repeat every day.',
-                  style: TextStyle(fontSize: 13),
+                Text(
+                  tr(widget.language, 'repeat_daily_msg'),
+                  style: const TextStyle(fontSize: 13),
                 ),
               ],
               if (_medicationScheduleType == 'calendar') ...[
@@ -2525,8 +3152,8 @@ class _AddFormDialogState extends State<AddFormDialog> {
                     icon: const Icon(Icons.calendar_today),
                     label: Text(
                       _medicationCalendarDate == null
-                          ? 'Select calendar date'
-                          : 'Date: ${_medicationCalendarDate!.year}-'
+                          ? tr(widget.language, 'select_calendar_date')
+                          : '${tr(widget.language, 'date')}: ${_medicationCalendarDate!.year}-'
                               '${_medicationCalendarDate!.month.toString().padLeft(2, '0')}-'
                               '${_medicationCalendarDate!.day.toString().padLeft(2, '0')}',
                     ),
@@ -2676,6 +3303,11 @@ class _AddFormDialogState extends State<AddFormDialog> {
       }
     }
 
+    if (widget.type == 'insurance_cards') {
+      payload['front_photo'] = _frontPhotoBase64;
+      payload['back_photo'] = _backPhotoBase64;
+    }
+
     await widget.onSave(payload);
 
     if (context.mounted) {
@@ -2740,70 +3372,116 @@ class _AddFormDialogState extends State<AddFormDialog> {
                   if (field == 'photo' ||
                       field == 'front_photo' ||
                       field == 'back_photo') {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    return Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            field == 'photo'
-                                ? 'Upload Photo'
-                                : tr(widget.language, field),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 6),
-                          ElevatedButton.icon(
-                            onPressed: () async {
-                              final base64 =
-                                  await ImagePickerHelper.pickImageAsBase64();
-                              if (base64 != null) {
-                                setState(() {
-                                  if (field == 'front_photo') {
-                                    _frontPhotoBase64 = base64;
-                                  } else if (field == 'back_photo') {
-                                    _backPhotoBase64 = base64;
-                                  } else {
-                                    _medicinePhotoBase64 = base64;
-                                  }
-                                });
-                              }
-                            },
-                            icon: const Icon(Icons.camera_alt),
-                            label: const Text('Upload Photo'),
-                          ),
-                          // Show image preview after upload
-                          if (_medicinePhotoBase64 != null &&
-                              field == 'photo') ...[
-                            const SizedBox(height: 8),
-                            DisplayImage(
-                              base64String: _medicinePhotoBase64,
-                              height: 80,
-                              width: 80,
+                            field == 'front_photo'
+                                ? tr(widget.language, 'front_photo')
+                                : field == 'back_photo'
+                                    ? tr(widget.language, 'back_photo')
+                                    : tr(widget.language, 'photo'),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                          ],
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Image preview thumbnail
                           if (_frontPhotoBase64 != null &&
                               field == 'front_photo') ...[
-                            const SizedBox(height: 8),
-                            DisplayImage(
-                              base64String: _frontPhotoBase64,
-                              height: 80,
-                              width: 80,
+                            Center(
+                              child: DisplayImage(
+                                base64String: _frontPhotoBase64,
+                                height: 120,
+                                width: 200,
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                          ],
-                          if (_backPhotoBase64 != null &&
+                            const SizedBox(height: 8),
+                          ] else if (_backPhotoBase64 != null &&
                               field == 'back_photo') ...[
-                            const SizedBox(height: 8),
-                            DisplayImage(
-                              base64String: _backPhotoBase64,
-                              height: 80,
-                              width: 80,
+                            Center(
+                              child: DisplayImage(
+                                base64String: _backPhotoBase64,
+                                height: 120,
+                                width: 200,
+                                fit: BoxFit.contain,
+                              ),
                             ),
-                          ],
+                            const SizedBox(height: 8),
+                          ] else if (_medicinePhotoBase64 != null &&
+                              field == 'photo') ...[
+                            Center(
+                              child: DisplayImage(
+                                base64String: _medicinePhotoBase64,
+                                height: 120,
+                                width: 200,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ] else
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                tr(widget.language, 'no_image_selected'),
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            ),
+
+                          // Full-width upload button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final base64 =
+                                    await ImagePickerHelper.pickImageAsBase64();
+                                if (base64 != null) {
+                                  setState(() {
+                                    if (field == 'front_photo') {
+                                      _frontPhotoBase64 = base64;
+                                    } else if (field == 'back_photo') {
+                                      _backPhotoBase64 = base64;
+                                    } else {
+                                      _medicinePhotoBase64 = base64;
+                                    }
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.photo_camera),
+                              label: Text(
+                                field == 'front_photo'
+                                    ? (_frontPhotoBase64 == null
+                                        ? tr(widget.language,
+                                            'upload_front_card')
+                                        : tr(widget.language, 'uploaded'))
+                                    : field == 'back_photo'
+                                        ? (_backPhotoBase64 == null
+                                            ? tr(widget.language,
+                                                'upload_back_card')
+                                            : tr(widget.language, 'uploaded'))
+                                        : (_medicinePhotoBase64 == null
+                                            ? tr(
+                                                widget.language, 'upload_photo')
+                                            : tr(widget.language, 'uploaded')),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     );
                   }
-
                   return _buildTextField(field);
                 }),
               ],
@@ -2816,13 +3494,13 @@ class _AddFormDialogState extends State<AddFormDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context, null),
           child: Text(
-            tr(widget.language, 'close'),
+            tr(widget.language, 'cancel'),
           ),
         ),
         FilledButton(
           onPressed: _save,
           child: Text(
-            tr(widget.language, 'add'),
+            tr(widget.language, 'save'),
           ),
         ),
       ],
@@ -2872,7 +3550,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _fileUrlController = TextEditingController();
 
-  String get _table => widget.type == 'reminders' ? 'reminders' : widget.type;
+  String get _table => widget.type == 'reminders' ? 'medications' : widget.type;
 
   @override
   void initState() {
@@ -2931,10 +3609,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
     //print('Guest Mode: ${widget.guestMode}');
 
     try {
-      String tableName = _table;
-      if (widget.type == 'reminders') {
-        tableName = 'medications';
-      }
+      final tableName = _table;
       final query = _client.from(tableName).select();
       final dynamic response = widget.guestMode
           ? await query.eq('guest_id', widget.ownerId)
@@ -3048,7 +3723,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
           //'description'
         ];
       case 'documents':
-        return ['title', 'category', 'photo', 'file_url'];
+        return ['title', 'category', 'photo'];
       case 'insurance_cards':
         return ['provider_name', 'front_photo', 'back_photo', 'policy_number'];
       default:
@@ -3057,8 +3732,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
   }
 
   Future<void> _add() async {
-    // ADD THIS FIRST LINE
-    //print('>>> _add() CALLED for ${widget.type} <<<');
     final language = languageNotifier.value;
     final fields = _getFields();
     final requiredFields = _getRequiredFields();
@@ -3072,13 +3745,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
         medicationsList: _medicationsList,
         fields: fields,
         requiredFields: requiredFields,
-
-        // IMPORTANT:
-        // When AddFormDialog successfully creates the payload,
-        // close the dialog and return that payload to _add().
-        onSave: (payload) async {
-          Navigator.pop(dialogContext, payload);
-        },
+        onSave: (payload) async {},
       ),
     );
 
@@ -3142,16 +3809,14 @@ class _RecordListScreenState extends State<RecordListScreen> {
 
       cleanPayload['policy_number'] = result['policy_number'] ?? '';
 
-      // FIX: Save front image as base64
       final front = result['front_photo'] ?? result['front_image_url'] ?? photo;
-      if (front != null && front.toString().isNotEmpty) {
-        cleanPayload['front_image_url'] = front.toString(); // Should be base64
+      if (front != null && front.toString().trim().isNotEmpty) {
+        cleanPayload['front_image_url'] = front.toString().trim();
       }
 
-      // FIX: Save back image as base64
       final back = result['back_photo'] ?? result['back_image_url'];
-      if (back != null && back.toString().isNotEmpty) {
-        cleanPayload['back_image_url'] = back.toString(); // Should be base64
+      if (back != null && back.toString().trim().isNotEmpty) {
+        cleanPayload['back_image_url'] = back.toString().trim();
       }
 
       if (widget.guestMode) {
@@ -3171,20 +3836,57 @@ class _RecordListScreenState extends State<RecordListScreen> {
       cleanPayload['phone'] = result['phone'] ?? '';
       cleanPayload['address'] = result['address'] ?? '';
     } else if (_table == 'medications') {
-      // FIX: Add name - REQUIRED field
-      cleanPayload['name'] = result['name'] ?? '';
+      cleanPayload['name'] = result['name']?.toString().trim() ?? '';
 
-      if (result['dosage'] != null) {
-        cleanPayload['dosage'] = result['dosage'];
+      if (result['dosage'] != null &&
+          result['dosage'].toString().trim().isNotEmpty) {
+        cleanPayload['dosage'] = result['dosage'].toString().trim();
       }
 
-      if (result['reminder_schedule_type'] != null) {
+      if (result['reminder_schedule_type'] != null &&
+          result['reminder_schedule_type'].toString().trim().isNotEmpty) {
         cleanPayload['reminder_schedule_type'] =
-            result['reminder_schedule_type'];
+            result['reminder_schedule_type'].toString().trim();
       }
 
       if (result['reminder_time'] != null) {
         cleanPayload['reminder_time'] = result['reminder_time'];
+      }
+
+      if (result['reminder_date'] != null &&
+          result['reminder_date'].toString().trim().isNotEmpty) {
+        cleanPayload['reminder_date'] =
+            result['reminder_date'].toString().trim();
+      }
+
+      // ------------------------------------------
+      // Upload photo to private Storage.
+      // Only the Storage path is saved in DB.
+      // ------------------------------------------
+      if (photo != null && photo.toString().trim().isNotEmpty) {
+        try {
+          final storagePath = await StorageHelper.uploadMedicationPhoto(
+            base64Image: photo.toString(),
+          );
+
+          cleanPayload['photo_url'] = storagePath;
+        } catch (e) {
+          debugPrint(
+            'Medication photo upload failed: $e',
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Photo upload failed. Medication was not saved.',
+                ),
+              ),
+            );
+          }
+
+          return;
+        }
       }
     }
 
@@ -3353,7 +4055,9 @@ class _RecordListScreenState extends State<RecordListScreen> {
   Future<void> _delete(Map<String, dynamic> row) async {
     final id = row['id'];
     if (id == null) return;
+
     final language = languageNotifier.value;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -3361,84 +4065,189 @@ class _RecordListScreenState extends State<RecordListScreen> {
         content: Text(tr(language, 'delete_confirm_msg')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(tr(language, 'cancel'))),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(tr(language, 'cancel')),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(tr(language, 'delete'))),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(tr(language, 'delete')),
+          ),
         ],
       ),
     );
+
     if (confirmed != true) return;
+
     try {
+      final photoPath = row['photo_url']?.toString();
+
+      // 1. Delete database record first.
       final query = _client.from(_table).delete().eq('id', id);
+
       if (widget.guestMode) {
         await query.eq('guest_id', widget.ownerId);
       } else {
         await query.eq('user_id', widget.ownerId);
       }
+
+      // 2. Delete the corresponding Storage image.
+      if (photoPath != null && photoPath.trim().isNotEmpty) {
+        await StorageHelper.deleteMedicationPhoto(photoPath);
+      }
+
       await _load();
-      if (widget.type == 'reminders') await _loadMedications();
+
+      if (widget.type == 'reminders') {
+        await _loadMedications();
+      }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+          ),
+        );
+      }
     }
   }
 
+  String _formatPreviewValue(String language, String key, dynamic value) {
+    if (value == null ||
+        value.toString().trim().isEmpty ||
+        value.toString().trim() == 'null') {
+      return '';
+    }
+    final raw = value.toString().trim();
+    if (raw == 'daily') {
+      return tr(language, 'daily');
+    }
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return decoded.join(', ');
+        }
+      } catch (_) {}
+    }
+    return raw;
+  }
+
+  Map<String, String> _getCleanDisplayEntries(
+      String language, Map<String, dynamic> row) {
+    final Map<String, String> clean = {};
+    const ignoredKeys = {
+      'id',
+      'user_id',
+      'guest_id',
+      'created_at',
+      'photo',
+      'photo_base64',
+      'photo_url',
+      'front_photo',
+      'front_image',
+      'front_image_url',
+      'front_card_base64',
+      'back_photo',
+      'back_image',
+      'back_image_url',
+      'back_card_base64',
+      'ringtone_path',
+      'reminder_schedule_type',
+      'file_type',
+      'file_url',
+      'medication_id',
+    };
+
+    for (final entry in row.entries) {
+      if (ignoredKeys.contains(entry.key)) continue;
+      final valStr = _formatPreviewValue(language, entry.key, entry.value);
+      if (valStr.isNotEmpty) {
+        clean[tr(language, entry.key)] = valStr;
+      }
+    }
+    return clean;
+  }
+
   Future<void> _shareRecord(Map<String, dynamic> row) async {
-    final text = row.entries
-        .where((e) => e.key != 'photo_base64' && e.key != 'photo')
-        .map((e) => '${e.key}: ${e.value}')
-        .join('\n');
+    final language = languageNotifier.value;
+    final title = (row['name'] ??
+            row['title'] ??
+            row['provider_name'] ??
+            tr(language, 'record'))
+        .toString();
 
-    String? base64Photo;
-    final photoField = row['photo'];
-    final photoBase64Field = row['photo_base64'];
-
-    if (photoField != null && photoField.toString().isNotEmpty) {
-      base64Photo = photoField.toString().trim();
-    } else if (photoBase64Field != null &&
-        photoBase64Field.toString().isNotEmpty) {
-      base64Photo = photoBase64Field.toString().trim();
+    final cleanEntries = _getCleanDisplayEntries(language, row);
+    final textBuffer = StringBuffer();
+    textBuffer.writeln('=== $title ===');
+    for (final entry in cleanEntries.entries) {
+      textBuffer.writeln('${entry.key}: ${entry.value}');
     }
 
-    if (base64Photo != null && base64Photo.isNotEmpty) {
+    final List<XFile> filesToShare = [];
+
+    // 1. Check for Medication private Storage Photo
+    final photoPath = row['photo_url']?.toString();
+    if (photoPath != null && photoPath.isNotEmpty) {
+      final signedUrl = await StorageHelper.getSignedUrl(photoPath);
+      if (signedUrl != null) {
+        try {
+          final response = await package_http.get(Uri.parse(signedUrl));
+          if (response.statusCode == 200) {
+            filesToShare.add(XFile.fromData(
+              response.bodyBytes,
+              name: 'medication_photo.jpg',
+              mimeType: 'image/jpeg',
+            ));
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 2. Helper to add Base64 images to share
+    void addBase64File(String? raw, String filename) {
+      if (raw == null || raw.trim().isEmpty) return;
       try {
-        final sanitized = base64Photo.contains(',')
-            ? base64Photo.split(',').last
-            : base64Photo;
-
-        final decoded = base64Decode(
-          sanitized.replaceAll(RegExp(r'\s+'), ''),
-        );
-
-        final file = XFile.fromData(
-          Uint8List.fromList(decoded),
-          name: 'medicine_photo.jpg',
+        var clean = raw.trim();
+        if (clean.contains(',')) clean = clean.split(',').last;
+        clean = clean.replaceAll(RegExp(r'\s+'), '');
+        clean = base64.normalize(clean);
+        final bytes = base64Decode(clean);
+        filesToShare.add(XFile.fromData(
+          Uint8List.fromList(bytes),
+          name: filename,
           mimeType: 'image/jpeg',
-        );
-
-        await SharePlus.instance.share(
-          ShareParams(
-            text: text,
-            files: [file],
-          ),
-        );
-        return;
+        ));
       } catch (_) {}
     }
 
-    await SharePlus.instance.share(
-      ShareParams(
-        text: text,
-      ),
-    );
+    // Add Base64 photos (Documents, Insurance Cards, Legacy meds)
+    addBase64File(row['photo']?.toString() ?? row['photo_base64']?.toString(),
+        'document_photo.jpg');
+    addBase64File(
+        row['front_image_url']?.toString() ?? row['front_photo']?.toString(),
+        'insurance_front.jpg');
+    addBase64File(
+        row['back_image_url']?.toString() ?? row['back_photo']?.toString(),
+        'insurance_back.jpg');
+
+    if (filesToShare.isNotEmpty) {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: textBuffer.toString(),
+          files: filesToShare,
+        ),
+      );
+    } else {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: textBuffer.toString(),
+        ),
+      );
+    }
   }
 
   Future<void> _preview(Map<String, dynamic> row) async {
     final language = languageNotifier.value;
-
     final title = (row['name'] ??
             row['title'] ??
             row['provider_name'] ??
@@ -3446,19 +4255,18 @@ class _RecordListScreenState extends State<RecordListScreen> {
         .toString();
 
     String? photoBase64;
-    final photoField = row['photo'];
-    final photoBase64Field = row['photo_base64'];
-
+    final photoField = row['photo'] ?? row['photo_base64'];
     if (photoField != null && photoField.toString().isNotEmpty) {
       photoBase64 = photoField.toString().trim();
-    } else if (photoBase64Field != null &&
-        photoBase64Field.toString().isNotEmpty) {
-      photoBase64 = photoBase64Field.toString().trim();
     }
 
-    final photoUrl = row['photo_url']?.toString();
-    final frontImageUrl = row['front_image_url']?.toString();
+    final photoPath = row['photo_url']?.toString();
+    final frontImageUrl =
+        (row['front_image_url'] ?? row['front_photo'])?.toString().trim();
+    final backImageUrl =
+        (row['back_image_url'] ?? row['back_photo'])?.toString().trim();
     final fileUrl = row['file_url']?.toString();
+    final cleanEntries = _getCleanDisplayEntries(language, row);
 
     await showDialog<void>(
       context: context,
@@ -3469,33 +4277,44 @@ class _RecordListScreenState extends State<RecordListScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (photoBase64 != null && photoBase64.isNotEmpty) ...[
-                const Text(
-                  'Medicine photo',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 12),
+              if (photoBase64 != null && photoBase64.isNotEmpty)
                 DisplayImage(
                   base64String: photoBase64,
                   height: 250,
                   width: 250,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 16),
+              if (photoPath != null && photoPath.isNotEmpty)
+                SignedImage(
+                  path: photoPath,
+                  height: 250,
+                  width: 250,
+                  fit: BoxFit.contain,
+                ),
+              if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
+                Text(tr(language, 'front_photo'),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                DisplayImage(
+                  base64String: frontImageUrl,
+                  height: 200,
+                  width: 250,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 8),
               ],
-              if (photoUrl != null && photoUrl.isNotEmpty)
-                SafeNetworkImage(
-                  imageUrl: photoUrl,
+              if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
+                Text(tr(language, 'back_photo'),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                DisplayImage(
+                  base64String: backImageUrl,
                   height: 200,
+                  width: 250,
+                  fit: BoxFit.contain,
                 ),
-              if (frontImageUrl != null && frontImageUrl.isNotEmpty)
-                SafeNetworkImage(
-                  imageUrl: frontImageUrl,
-                  height: 200,
-                ),
+                const SizedBox(height: 8),
+              ],
               if (fileUrl != null && fileUrl.isNotEmpty)
                 ListTile(
                   title: Text(fileUrl),
@@ -3508,22 +4327,18 @@ class _RecordListScreenState extends State<RecordListScreen> {
                   },
                 ),
               const Divider(),
-              ...row.entries
-                  .where(
-                    (e) => e.key != 'photo_base64' && e.key != 'photo',
-                  )
-                  .map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '${e.key}: ${e.value}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
+              ...cleanEntries.entries.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${e.key}: ${e.value}',
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ),
+                ),
+              ),
             ],
           ),
         ),
@@ -3593,6 +4408,21 @@ class _RecordListScreenState extends State<RecordListScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
+                                      // ========================================
+                                      // MEDICATION PHOTO - ADDED ONLY
+                                      // ========================================
+                                      if (widget.type == 'medications')
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 12),
+                                          child: SignedImage(
+                                            path: row['photo_url']?.toString(),
+                                            height: 50,
+                                            width: 50,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
@@ -3695,6 +4525,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
     );
   }
 }
+
 // ============================================
 // SHARE SCREEN
 // ============================================
@@ -3714,7 +4545,7 @@ class _ShareScreenState extends State<ShareScreen> {
   final Map<String, List<Map<String, dynamic>>> _allData = {};
   final Map<String, Set<String>> _selectedIds = {};
   bool _loading = true;
-
+  final Map<String, GlobalKey> _itemShareKeys = {};
   @override
   void initState() {
     super.initState();
@@ -3798,29 +4629,80 @@ class _ShareScreenState extends State<ShareScreen> {
   Future<void> _shareSelected() async {
     final language = languageNotifier.value;
     if (_getTotalSelected() == 0) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(tr(language, 'no_selection'))));
       return;
     }
-    final lines = <String>[];
-    for (final type in _allData.keys) {
-      final selectedRows = _allData[type]!
-          .where((row) => _selectedIds[type]!.contains(row['id'].toString()))
-          .toList();
 
-      if (selectedRows.isNotEmpty) {
-        lines.add('=== ${type.toUpperCase()} ===');
+    try {
+      await Future.delayed(const Duration(milliseconds: 400));
+      await WidgetsBinding.instance.endOfFrame;
+      final List<XFile> files = [];
+
+      for (final type in _allData.keys) {
+        final selectedRows = _allData[type]!
+            .where((row) => _selectedIds[type]!.contains(row['id'].toString()))
+            .toList();
+
         for (final row in selectedRows) {
-          lines.add(row.entries.map((e) => '${e.key}: ${e.value}').join(' | '));
+          final itemId = '${type}_${row['id']}';
+          final itemKey = _itemShareKeys[itemId];
+          if (itemKey == null) continue;
+
+          final itemContext = itemKey.currentContext;
+          if (itemContext == null) continue;
+
+          final renderObject = itemContext.findRenderObject();
+          if (renderObject is! RenderRepaintBoundary) continue;
+
+          if (renderObject.debugNeedsPaint) {
+            await Future.delayed(const Duration(milliseconds: 100));
+            await WidgetsBinding.instance.endOfFrame;
+          }
+
+          final ui.Image image = await renderObject.toImage(pixelRatio: 2.0);
+          final byteData =
+              await image.toByteData(format: ui.ImageByteFormat.png);
+
+          if (byteData == null) {
+            image.dispose();
+            continue;
+          }
+
+          files.add(
+            XFile.fromData(
+              byteData.buffer.asUint8List(),
+              name: 'SANA_${type}_${row['id']}.png',
+              mimeType: 'image/png',
+            ),
+          );
+
+          image.dispose();
         }
-        lines.add('');
       }
+
+      if (files.isEmpty) {
+        throw Exception('No previews could be captured.');
+      }
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: files,
+          subject: 'SANA Medical Records',
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Share preview error: $e');
+      debugPrint('$stackTrace');
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${tr(language, 'operation_failed')}: $e'),
+        ),
+      );
     }
-    await SharePlus.instance.share(
-      ShareParams(
-        text: lines.join('\n'),
-      ),
-    );
   }
 
   String _getSubtitle(String type, Map<String, dynamic> row) {
@@ -3838,50 +4720,166 @@ class _ShareScreenState extends State<ShareScreen> {
     return '';
   }
 
+  String _formatPreviewValue(String language, String key, dynamic value) {
+    if (value == null ||
+        value.toString().trim().isEmpty ||
+        value.toString().trim() == 'null') {
+      return '';
+    }
+    final raw = value.toString().trim();
+    if (raw == 'daily') {
+      return tr(language, 'daily');
+    }
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          return decoded.join(', ');
+        }
+      } catch (_) {}
+    }
+    return raw;
+  }
+
+  Map<String, String> _getCleanDisplayEntries(
+      String language, Map<String, dynamic> row) {
+    final Map<String, String> clean = {};
+    const ignoredKeys = {
+      'id',
+      'user_id',
+      'guest_id',
+      'created_at',
+      'photo',
+      'photo_base64',
+      'photo_url',
+      'front_photo',
+      'front_image',
+      'front_image_url',
+      'front_card_base64',
+      'back_photo',
+      'back_image',
+      'back_image_url',
+      'back_card_base64',
+      'ringtone_path',
+      'reminder_schedule_type',
+      'file_type',
+      'file_url',
+      'medication_id',
+    };
+
+    for (final entry in row.entries) {
+      if (ignoredKeys.contains(entry.key)) continue;
+      final valStr = _formatPreviewValue(language, entry.key, entry.value);
+      if (valStr.isNotEmpty) {
+        clean[tr(language, entry.key)] = valStr;
+      }
+    }
+    return clean;
+  }
+
   Future<void> _previewRecord(String type, Map<String, dynamic> row) async {
-    final base64Photo = row['photo_base64']?.toString();
-    final photo = row['photo_url'] ?? row['front_image_url'];
-    final url = row['file_url'];
     final language = languageNotifier.value;
+    final title = (row['name'] ??
+            row['title'] ??
+            row['provider_name'] ??
+            tr(language, 'record'))
+        .toString();
+
+    String? photoBase64;
+    final photoField = row['photo'] ?? row['photo_base64'];
+    if (photoField != null && photoField.toString().isNotEmpty) {
+      photoBase64 = photoField.toString().trim();
+    }
+
+    final photoPath = row['photo_url']?.toString();
+    final frontImageUrl =
+        (row['front_image_url'] ?? row['front_photo'])?.toString().trim();
+    final backImageUrl =
+        (row['back_image_url'] ?? row['back_photo'])?.toString().trim();
+    final fileUrl = row['file_url']?.toString();
+    final cleanEntries = _getCleanDisplayEntries(language, row);
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text((row['name'] ??
-                row['title'] ??
-                row['provider_name'] ??
-                tr(language, 'record'))
-            .toString()),
+        title: Text(title),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (base64Photo != null &&
-                  base64Photo.toString().trim().isNotEmpty)
+              // 1. Base64 Photo (Medications/Documents)
+              if (photoBase64 != null && photoBase64.isNotEmpty)
                 DisplayImage(
-                  base64String: base64Photo.toString(),
-                  height: 160,
-                  width: 160,
+                  base64String: photoBase64,
+                  height: 250,
+                  width: 250,
                   fit: BoxFit.contain,
                 ),
-              if (photo != null && photo.toString().isNotEmpty)
-                SafeNetworkImage(imageUrl: photo.toString(), height: 160),
-              if (url != null && url.toString().isNotEmpty)
+
+              // 2. Private Supabase Storage Photo (Loads actual image via SignedImage)
+              if (photoPath != null && photoPath.isNotEmpty)
+                SignedImage(
+                  path: photoPath,
+                  height: 250,
+                  width: 250,
+                  fit: BoxFit.contain,
+                ),
+
+              // 3. Insurance Card Front Photo
+              if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
+                Text(tr(language, 'front_photo'),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                DisplayImage(
+                  base64String: frontImageUrl,
+                  height: 200,
+                  width: 250,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // 4. Insurance Card Back Photo
+              if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
+                Text(tr(language, 'back_photo'),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                DisplayImage(
+                  base64String: backImageUrl,
+                  height: 200,
+                  width: 250,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // 5. File URL Link
+              if (fileUrl != null && fileUrl.isNotEmpty)
                 ListTile(
-                  title: Text(url.toString()),
+                  title: Text(fileUrl),
                   trailing: const Icon(Icons.open_in_new),
                   onTap: () async {
-                    final uri = Uri.parse(url.toString());
-                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                    final uri = Uri.tryParse(fileUrl);
+                    if (uri != null && await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    }
                   },
                 ),
+
               const Divider(),
-              ...row.entries.map(
+
+              // 6. Clean Translated Metadata List (Hides internal IDs/paths)
+              ...cleanEntries.entries.map(
                 (e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text('${e.key}: ${e.value}',
-                      style: const TextStyle(fontSize: 12)),
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${e.key}: ${e.value}',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -3889,8 +4887,9 @@ class _ShareScreenState extends State<ShareScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(tr(language, 'close'))),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(tr(language, 'close')),
+          ),
         ],
       ),
     );
@@ -3899,6 +4898,7 @@ class _ShareScreenState extends State<ShareScreen> {
   @override
   Widget build(BuildContext context) {
     final language = languageNotifier.value;
+
     return Directionality(
       textDirection: language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
@@ -3909,74 +4909,278 @@ class _ShareScreenState extends State<ShareScreen> {
               onPressed: _shareSelected,
               icon: const Icon(Icons.share),
               label: Text(
-                  '${_getTotalSelected()} ${tr(language, 'share_selected')}'),
-            )
+                '${_getTotalSelected()} ${tr(language, 'share_selected')}',
+              ),
+            ),
           ],
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(12),
-                children: _allData.keys.map((type) {
-                  final rows = _allData[type]!;
-                  final selected = _selectedIds[type]!;
-                  final allSelected =
-                      selected.length == rows.length && rows.isNotEmpty;
+            : Stack(
+                children: [
+                  ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: _allData.keys.map((type) {
+                      final rows = _allData[type]!;
+                      final selected = _selectedIds[type]!;
+                      final allSelected =
+                          selected.length == rows.length && rows.isNotEmpty;
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ExpansionTile(
-                      title: Text(
-                        '${tr(language, type)} (${rows.length})',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Checkbox(
-                            value: allSelected,
-                            onChanged: (_) => _toggleAll(type),
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ExpansionTile(
+                          title: Text(
+                            '${tr(language, type)} (${rows.length})',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Text('${selected.length}/${rows.length}',
-                              style: const TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                      children: rows.isEmpty
-                          ? [
-                              Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Text(tr(language, 'no_records')))
-                            ]
-                          : rows.map((row) {
-                              final id = row['id'].toString();
-                              final title = (row['name'] ??
-                                      row['title'] ??
-                                      row['provider_name'] ??
-                                      tr(language, 'record'))
-                                  .toString();
-                              return CheckboxListTile(
-                                value: selected.contains(id),
-                                onChanged: (_) => _toggleSelection(type, id),
-                                title: Text(title),
-                                subtitle: Text(_getSubtitle(type, row)),
-                                secondary: IconButton(
-                                  icon: const Icon(
-                                      Icons.remove_red_eye_outlined,
-                                      size: 18),
-                                  onPressed: () => _previewRecord(type, row),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: allSelected,
+                                onChanged: (_) => _toggleAll(type),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${selected.length}/${rows.length}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          children: rows.isEmpty
+                              ? [
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      tr(language, 'no_records'),
+                                    ),
+                                  ),
+                                ]
+                              : rows.map((row) {
+                                  final id = row['id'].toString();
+
+                                  final title = (row['name'] ??
+                                          row['title'] ??
+                                          row['provider_name'] ??
+                                          tr(language, 'record'))
+                                      .toString();
+
+                                  return CheckboxListTile(
+                                    value: selected.contains(id),
+                                    onChanged: (_) =>
+                                        _toggleSelection(type, id),
+                                    title: Text(title),
+                                    subtitle: Text(
+                                      _getSubtitle(type, row),
+                                    ),
+                                    secondary: IconButton(
+                                      icon: const Icon(
+                                        Icons.remove_red_eye_outlined,
+                                        size: 18,
+                                      ),
+                                      onPressed: () =>
+                                          _previewRecord(type, row),
+                                    ),
+                                  );
+                                }).toList(),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  Positioned(
+                    left: -9999,
+                    top: 0,
+                    child: UnconstrainedBox(
+                      alignment: Alignment.topLeft,
+                      constrainedAxis: Axis.horizontal,
+                      child: Container(
+                        width: 480,
+                        padding: const EdgeInsets.all(20),
+                        color: Colors.white,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.health_and_safety,
+                                  color: Colors.teal,
+                                  size: 28,
                                 ),
-                              );
-                            }).toList(),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'SANA - ${tr(language, 'share_documents')}',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            for (final type in _allData.keys)
+                              for (final row in _allData[type]!.where(
+                                (row) => _selectedIds[type]!.contains(
+                                  row['id'].toString(),
+                                ),
+                              ))
+                                Builder(
+                                  builder: (context) {
+                                    final title = (row['name'] ??
+                                            row['title'] ??
+                                            row['provider_name'] ??
+                                            tr(language, 'record'))
+                                        .toString();
+
+                                    final cleanEntries =
+                                        _getCleanDisplayEntries(language, row);
+
+                                    final photoPath =
+                                        row['photo_url']?.toString();
+
+                                    final base64Photo =
+                                        row['photo']?.toString() ??
+                                            row['photo_base64']?.toString();
+
+                                    final frontPhoto =
+                                        row['front_image_url']?.toString() ??
+                                            row['front_photo']?.toString();
+
+                                    final backPhoto =
+                                        row['back_image_url']?.toString() ??
+                                            row['back_photo']?.toString();
+
+                                    final itemId = '${type}_${row['id']}';
+
+                                    final itemKey = _itemShareKeys.putIfAbsent(
+                                      itemId,
+                                      () => GlobalKey(),
+                                    );
+
+                                    return RepaintBoundary(
+                                      key: itemKey,
+                                      child: Container(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 14,
+                                        ),
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.teal.shade300,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          color: Colors.teal.shade50
+                                              .withValues(alpha: 0.3),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${tr(language, type).toUpperCase()}: $title',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.teal,
+                                              ),
+                                            ),
+                                            const Divider(height: 12),
+                                            ...cleanEntries.entries.map(
+                                              (e) => Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  vertical: 2,
+                                                ),
+                                                child: Text(
+                                                  '• ${e.key}: ${e.value}',
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            if (photoPath != null &&
+                                                photoPath.isNotEmpty)
+                                              Container(
+                                                width: double.infinity,
+                                                margin: const EdgeInsets.only(
+                                                    top: 8),
+                                                color: Colors.white,
+                                                alignment: Alignment.center,
+                                                child: SignedImage(
+                                                  path: photoPath,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.fitWidth,
+                                                ),
+                                              ),
+                                            if (base64Photo != null &&
+                                                base64Photo.isNotEmpty)
+                                              Container(
+                                                width: double.infinity,
+                                                margin: const EdgeInsets.only(
+                                                    top: 8),
+                                                color: Colors.white,
+                                                alignment: Alignment.center,
+                                                child: DisplayImage(
+                                                  base64String: base64Photo,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.fitWidth,
+                                                ),
+                                              ),
+                                            if (frontPhoto != null &&
+                                                frontPhoto.isNotEmpty)
+                                              Container(
+                                                width: double.infinity,
+                                                margin: const EdgeInsets.only(
+                                                    top: 8),
+                                                color: Colors.white,
+                                                alignment: Alignment.center,
+                                                child: DisplayImage(
+                                                  base64String: frontPhoto,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.fitWidth,
+                                                ),
+                                              ),
+                                            if (backPhoto != null &&
+                                                backPhoto.isNotEmpty)
+                                              Container(
+                                                width: double.infinity,
+                                                margin: const EdgeInsets.only(
+                                                    top: 8),
+                                                color: Colors.white,
+                                                alignment: Alignment.center,
+                                                child: DisplayImage(
+                                                  base64String: backPhoto,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.fitWidth,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                          ],
+                        ),
+                      ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
       ),
     );
   }
 }
-
 // ============================================
 // ADMIN SCREEN
 // ============================================

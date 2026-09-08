@@ -1,0 +1,23 @@
+import 'package:flutter/material.dart';
+import '../../screens/splash_screen.dart';
+import '../../screens/home_screen.dart';
+import '../../screens/add_medication_screen.dart';
+import '../../screens/medication_detail_screen.dart';
+import '../../screens/profile_screen.dart';
+
+class AppRoutes {
+  AppRoutes._();
+
+  static const String splash = '/';
+  static const String home = '/home';
+  static const String addMedication = '/add-medication';
+  static const String medicationDetail = '/medication-detail';
+  static const String profile = '/profile';
+
+  static final Map<String, WidgetBuilder> routes = {
+    splash: (context) => const SplashScreen(),
+    home: (context) => const HomeScreen(),
+    addMedication: (context) => const AddMedicationScreen(),
+    profile: (context) => const ProfileScreen(),
+  };
+}

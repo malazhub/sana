@@ -1,0 +1,2 @@
+[functions.sana-auth]
+verify_jwt = false

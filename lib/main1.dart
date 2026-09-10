@@ -55,6 +55,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'View',
     'close': 'Close',
     'share': 'Share',
+    'help': 'Help',
+    'call': 'Call',
+    'chat': 'Chat',
+    'write_comment': 'Write your comment...',
+    'send': 'Send',
+    'comment_sent': 'Comment sent successfully',
+    'chat_date': 'Chat / Date',
+    'joining_date': 'Joining Date',
+    'last_login': 'Last Login',
     'login': 'Login',
     'logout': 'Logout',
     'admin': 'Admin',
@@ -188,6 +197,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'عرض',
     'close': 'إغلاق',
     'share': 'مشاركة',
+    'help': 'مساعدة',
+    'call': 'اتصال',
+    'chat': 'محادثة',
+    'write_comment': 'اكتب تعليقك...',
+    'send': 'إرسال',
+    'comment_sent': 'تم إرسال التعليق بنجاح',
+    'chat_date': 'المحادثة / التاريخ',
+    'joining_date': 'تاريخ الانضمام',
+    'last_login': 'آخر تسجيل دخول',
     'login': 'تسجيل الدخول',
     'logout': 'تسجيل الخروج',
     'admin': 'المسؤول',
@@ -321,6 +339,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'Ver',
     'close': 'Cerrar',
     'share': 'Compartir',
+    'help': 'Ayuda',
+    'call': 'Llamar',
+    'chat': 'Chat',
+    'write_comment': 'Escribe tu comentario...',
+    'send': 'Enviar',
+    'comment_sent': 'Comentario enviado con éxito',
+    'chat_date': 'Chat / Fecha',
+    'joining_date': 'Fecha de registro',
+    'last_login': 'Último inicio de sesión',
     'login': 'Iniciar sesión',
     'logout': 'Cerrar sesión',
     'admin': 'Administrador',
@@ -456,6 +483,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'Voir',
     'close': 'Fermer',
     'share': 'Partager',
+    'help': 'Aide',
+    'call': 'Appeler',
+    'chat': 'Discussion',
+    'write_comment': 'Écrivez votre commentaire...',
+    'send': 'Envoyer',
+    'comment_sent': 'Commentaire envoyé avec succès',
+    'chat_date': 'Discussion / Date',
+    'joining_date': "Date d'inscription",
+    'last_login': 'Dernière connexion',
     'login': 'Connexion',
     'logout': 'Déconnexion',
     'admin': 'Administrateur',
@@ -592,6 +628,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'Anzeigen',
     'close': 'Schließen',
     'share': 'Teilen',
+    'help': 'Hilfe',
+    'call': 'Anrufen',
+    'chat': 'Chat',
+    'write_comment': 'Schreiben Sie Ihren Kommentar...',
+    'send': 'Senden',
+    'comment_sent': 'Kommentar erfolgreich gesendet',
+    'chat_date': 'Chat / Datum',
+    'joining_date': 'Beitrittsdatum',
+    'last_login': 'Letzte Anmeldung',
     'login': 'Anmelden',
     'logout': 'Abmelden',
     'admin': 'Administrator',
@@ -727,6 +772,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'Görüntüle',
     'close': 'Kapat',
     'share': 'Paylaş',
+    'help': 'Yardım',
+    'call': 'Ara',
+    'chat': 'Sohbet',
+    'write_comment': 'Yorumunuzu yazın...',
+    'send': 'Gönder',
+    'comment_sent': 'Yorum başarıyla gönderildi',
+    'chat_date': 'Sohbet / Tarih',
+    'joining_date': 'Katılım Tarihi',
+    'last_login': 'Son Giriş',
     'login': 'Giriş Yap',
     'logout': 'Çıkış Yap',
     'admin': 'Yönetici',
@@ -862,6 +916,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': 'देखें',
     'close': 'बंद करें',
     'share': 'साझा करें',
+    'help': 'मदद',
+    'call': 'कॉल करें',
+    'chat': 'चैट',
+    'write_comment': 'अपनी टिप्पणी लिखें...',
+    'send': 'भेजें',
+    'comment_sent': 'टिप्पणी सफलतापूर्वक भेजी गई',
+    'chat_date': 'चैट / दिनांक',
+    'joining_date': 'शामिल होने की तिथि',
+    'last_login': 'अंतिम लॉगिन',
     'login': 'लॉग इन',
     'logout': 'लॉग आउट',
     'admin': 'व्यवस्थापक',
@@ -996,6 +1059,15 @@ const Map<String, Map<String, String>> _translations = {
     'view': '查看',
     'close': '关闭',
     'share': '分享',
+    'help': '帮助',
+    'call': '呼叫',
+    'chat': '聊天',
+    'write_comment': '输入您的评论...',
+    'send': '发送',
+    'comment_sent': '评论发送成功',
+    'chat_date': '聊天 / 日期',
+    'joining_date': '加入日期',
+    'last_login': '上次登录',
     'login': '登录',
     'logout': '退出登录',
     'admin': '管理员',
@@ -1293,6 +1365,97 @@ class SanaApp extends StatelessWidget {
 }
 
 // ============================================
+// CHAT SCREEN
+// ============================================
+
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final _controller = TextEditingController();
+  bool _sending = false;
+  final SupabaseClient _client = Supabase.instance.client;
+
+  Future<void> _sendComment() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _sending = true);
+    try {
+      await _client.rpc('save_user_chat', params: {'p_comment': text});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr(languageNotifier.value, 'comment_sent'))),
+      );
+      Navigator.of(context).pop(); // Returns directly to HomeScreen
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final language = languageNotifier.value;
+    return Directionality(
+      textDirection: language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        appBar: AppBar(title: Text(tr(language, 'chat'))),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  expands: true,
+                  maxLines: null,
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    hintText: tr(language, 'write_comment'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _sending ? null : _sendComment,
+                  child: _sending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(tr(language, 'send')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================
 // HOME SCREEN
 // ============================================
 
@@ -1347,10 +1510,20 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // 🛑 BLOCK DEACTIVATED USER FROM ENTERING THE APP:
-      final role = (data?['role'] ?? 'user').toString().toLowerCase();
       final isActive = data?['is_active'];
 
-      if (role != 'admin' && isActive == false) {
+      // Admin authorization MUST come from the server-side RPC.
+      // If the RPC fails or returns false, fail closed.
+      bool isAdmin = false;
+      try {
+        final rpcIsAdmin = await _client.rpc('sana_is_admin');
+        isAdmin = rpcIsAdmin == true;
+      } catch (e) {
+        debugPrint('sana_is_admin failed: $e');
+        isAdmin = false;
+      }
+
+      if (!isAdmin && isActive == false) {
         await _client.auth.signOut();
         StorageHelper.clearCache();
         if (!mounted) return;
@@ -1561,44 +1734,57 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.health_and_safety,
-                                  color: Colors.teal, size: 36),
-                              tooltip: tr(language, 'manual_title'),
-                              onPressed: () {
-                                showDialog<void>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: Row(
-                                      children: [
-                                        const Icon(Icons.menu_book,
-                                            color: Colors.teal),
-                                        const SizedBox(width: 8),
-                                        Expanded(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.health_and_safety,
+                                      color: Colors.teal, size: 36),
+                                  tooltip: tr(language, 'manual_title'),
+                                  onPressed: () {
+                                    showDialog<void>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: Row(
+                                          children: [
+                                            const Icon(Icons.menu_book,
+                                                color: Colors.teal),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                tr(language, 'manual_title'),
+                                                style: const TextStyle(
+                                                    fontSize: 18),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        content: SingleChildScrollView(
                                           child: Text(
-                                            tr(language, 'manual_title'),
-                                            style:
-                                                const TextStyle(fontSize: 18),
+                                            tr(language, 'manual_content'),
+                                            style: const TextStyle(
+                                                fontSize: 14, height: 1.5),
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                    content: SingleChildScrollView(
-                                      child: Text(
-                                        tr(language, 'manual_content'),
-                                        style: const TextStyle(
-                                            fontSize: 14, height: 1.5),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx),
+                                            child: Text(tr(language, 'close')),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: Text(tr(language, 'close')),
-                                      ),
-                                    ],
+                                    );
+                                  },
+                                ),
+                                Text(
+                                  tr(language, 'help'),
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal,
                                   ),
-                                );
-                              },
+                                ),
+                              ],
                             ),
                             const Text(
                               'SANA',
@@ -1607,11 +1793,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 4),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.share,
-                                  size: 26, color: Colors.teal),
-                              onPressed: _shareApp,
-                              tooltip: tr(language, 'share_app'),
+                            InkWell(
+                              onTap: _shareApp,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      tr(language, 'share'),
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.teal,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.share,
+                                      size: 26,
+                                      color: Colors.teal,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1626,6 +1835,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 .toString()
                                 .toLowerCase();
                             final email = user?.email ?? '';
+                            final nameValue = (_profile?['name'] ??
+                                    _profile?['username'] ??
+                                    '')
+                                .toString()
+                                .trim();
+                            final displayName =
+                                nameValue.isNotEmpty ? nameValue : email;
 
                             if (isRealUser && role == 'admin') {
                               return Container(
@@ -1647,7 +1863,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const SizedBox(width: 6),
                                     Flexible(
                                       child: Text(
-                                        'ADMIN: $email',
+                                        'ADMIN: $displayName',
                                         style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
@@ -1678,7 +1894,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const SizedBox(width: 6),
                                     Flexible(
                                       child: Text(
-                                        'USER: $email',
+                                        'USER: $displayName',
                                         style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
@@ -2063,10 +2279,18 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: FilledButton.icon(
-                onPressed: _getOwnCopy,
-                icon: const Icon(Icons.copy, size: 18),
+                onPressed: isLoggedIn
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ChatScreen()),
+                        )
+                    : _getOwnCopy,
+                icon: Icon(
+                  isLoggedIn ? Icons.chat : Icons.copy,
+                  size: 18,
+                ),
                 label: Text(
-                  tr(language, 'get_copy'),
+                  tr(language, isLoggedIn ? 'chat' : 'get_copy'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -4719,6 +4943,38 @@ class _RecordListScreenState extends State<RecordListScreen> {
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          if (widget.type == 'doctors' ||
+                                              widget.type == 'pharmacies')
+                                            IconButton(
+                                              key:
+                                                  ValueKey('call_${row['id']}'),
+                                              icon: const Icon(
+                                                Icons.phone,
+                                                size: 20,
+                                                color: Colors.green,
+                                              ),
+                                              tooltip: tr(language, 'call'),
+                                              onPressed: () async {
+                                                final rawPhone =
+                                                    (row['phone'] ?? '')
+                                                        .toString();
+                                                final number =
+                                                    rawPhone.replaceAll(
+                                                  RegExp(r'[^0-9]'),
+                                                  '',
+                                                );
+                                                if (number.isEmpty) return;
+                                                final uri = Uri.parse(
+                                                    'https://wa.me/$number');
+                                                if (await canLaunchUrl(uri)) {
+                                                  await launchUrl(
+                                                    uri,
+                                                    mode: LaunchMode
+                                                        .externalApplication,
+                                                  );
+                                                }
+                                              },
+                                            ),
                                           IconButton(
                                             key: ValueKey('view_${row['id']}'),
                                             onPressed: () => _preview(row),
@@ -4826,7 +5082,6 @@ class _ShareScreenState extends State<ShareScreen> {
       'medications',
       'doctors',
       'pharmacies',
-      'reminders',
       'documents',
       'insurance_cards'
     ];
@@ -5475,18 +5730,45 @@ class _AdminScreenState extends State<AdminScreen> {
     setState(() => _loading = true);
 
     try {
-      final dynamic result = await _client.rpc('admin_list_users');
+      // 1. Call existing untouched RPC (all 9 user fields preserved)
+      final dynamic result = await _client.rpc('admin_list_users_with_login');
+      final List<dynamic> list = (result as List<dynamic>?) ?? [];
+      final List<Map<String, dynamic>> users =
+          list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+
+      // 2. Call new separate chat RPC
+      try {
+        final dynamic chatResult = await _client.rpc('admin_get_user_chats');
+        if (chatResult != null) {
+          final chatList = chatResult as List<dynamic>;
+          final chatMap = <String, Map<String, dynamic>>{};
+          for (final item in chatList) {
+            final m = Map<String, dynamic>.from(item as Map);
+            final uid = m['user_id']?.toString();
+            if (uid != null) {
+              chatMap[uid] = m;
+            }
+          }
+          for (final u in users) {
+            final uid = u['id']?.toString();
+            if (uid != null && chatMap.containsKey(uid)) {
+              u['chat'] = chatMap[uid]!['chat'];
+              u['chat_date'] = chatMap[uid]!['chat_date'];
+            }
+          }
+        }
+      } catch (chatError) {
+        debugPrint('admin_get_user_chats notice: $chatError');
+      }
+
       if (mounted) {
-        final List<dynamic> list = result as List<dynamic>;
-        final List<Map<String, dynamic>> users =
-            list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
         setState(() {
           _users = users;
           _loading = false;
         });
       }
     } catch (e) {
-      debugPrint('admin_list_users failed: $e');
+      debugPrint('admin_list_users_with_login failed: $e');
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -5614,37 +5896,20 @@ class _AdminScreenState extends State<AdminScreen> {
                             scrollDirection: Axis.horizontal,
                             child: DataTable(
                               columns: [
+                                DataColumn(label: Text(tr(language, 'name'))),
+                                DataColumn(label: Text(tr(language, 'email'))),
+                                DataColumn(label: Text(tr(language, 'phone'))),
+                                DataColumn(label: Text(tr(language, 'role'))),
                                 DataColumn(
-                                  label: Text(
-                                    tr(language, 'name'),
-                                  ),
-                                ),
+                                    label: Text(tr(language, 'joining_date'))),
                                 DataColumn(
-                                  label: Text(
-                                    tr(language, 'email'),
-                                  ),
-                                ),
+                                    label: Text(tr(language, 'last_login'))),
                                 DataColumn(
-                                  label: Text(
-                                    tr(language, 'phone'),
-                                  ),
-                                ),
+                                    label: Text(tr(language, 'chat_date'))),
+                                DataColumn(label: Text(tr(language, 'status'))),
                                 DataColumn(
-                                  label: Text(
-                                    tr(language, 'role'),
-                                  ),
-                                ),
-                                DataColumn(
-                                  label: Text(
-                                    tr(language, 'status'),
-                                  ),
-                                ),
-                                const DataColumn(
-                                  label: Text(''),
-                                ),
-                                const DataColumn(
-                                  label: Text(''),
-                                ),
+                                    label: Text(tr(language, 'activate'))),
+                                DataColumn(label: Text(tr(language, 'delete'))),
                               ],
                               rows: _users.map((u) {
                                 final active = u['is_active'] == true;
@@ -5655,10 +5920,8 @@ class _AdminScreenState extends State<AdminScreen> {
 
                                 final nameValue =
                                     u['name']?.toString().trim() ?? '';
-
                                 final usernameValue =
                                     u['username']?.toString().trim() ?? '';
-
                                 final displayName = nameValue.isNotEmpty
                                     ? nameValue
                                     : usernameValue.isNotEmpty
@@ -5667,6 +5930,16 @@ class _AdminScreenState extends State<AdminScreen> {
                                             language,
                                             'guest',
                                           );
+
+                                String formatDate(dynamic value) {
+                                  if (value == null) return 'N/A';
+
+                                  return value
+                                      .toString()
+                                      .split('.')
+                                      .first
+                                      .replaceFirst('T', ' ');
+                                }
 
                                 return DataRow(
                                   cells: [
@@ -5685,6 +5958,105 @@ class _AdminScreenState extends State<AdminScreen> {
                                     ),
                                     DataCell(
                                       Text(role),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatDate(
+                                          u['joining_date'],
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        formatDate(
+                                          u['last_login_at'],
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      (u['chat'] ?? '')
+                                              .toString()
+                                              .trim()
+                                              .isEmpty
+                                          ? const Text('—')
+                                          : InkWell(
+                                              onTap: () {
+                                                showDialog<void>(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                    title: Text(
+                                                        '${tr(language, 'chat')} - $displayName'),
+                                                    content:
+                                                        SingleChildScrollView(
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            u['chat']
+                                                                .toString(),
+                                                            style:
+                                                                const TextStyle(
+                                                                    fontSize:
+                                                                        15),
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 12),
+                                                          Text(
+                                                            formatDate(
+                                                                u['chat_date']),
+                                                            style: TextStyle(
+                                                                fontSize: 12,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade600),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(ctx),
+                                                        child: Text(tr(
+                                                            language, 'close')),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                              child: SizedBox(
+                                                width: 130,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      u['chat'].toString(),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w500),
+                                                    ),
+                                                    Text(
+                                                      formatDate(
+                                                          u['chat_date']),
+                                                      style: TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors
+                                                              .grey.shade600),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
                                     ),
                                     DataCell(
                                       Text(

@@ -3859,12 +3859,7 @@ class _AddFormDialogState extends State<AddFormDialog> {
                   }
 
                   if (field == 'medication_name') {
-                    // Already handled above for reminders.
-                    if (widget.type == 'reminders') {
-                      return const SizedBox.shrink();
-                    }
-
-                    return _buildMedicationDropdown();
+                    return const SizedBox.shrink();
                   }
 
                   // PHOTO UPLOAD BLOCK - For Documents and Insurance Cards
@@ -4333,9 +4328,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
 
       cleanPayload['reminder_date'] = result['reminder_date'];
 
-      cleanPayload['reminder_schedule_type'] =
-          result['reminder_schedule_type'] ?? 'daily';
-
       if (photo != null && photo.toString().trim().isNotEmpty) {
         cleanPayload['photo_base64'] = photo.toString().trim();
       }
@@ -4354,12 +4346,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
       if (result['dosage'] != null &&
           result['dosage'].toString().trim().isNotEmpty) {
         cleanPayload['dosage'] = result['dosage'].toString().trim();
-      }
-
-      if (result['reminder_schedule_type'] != null &&
-          result['reminder_schedule_type'].toString().trim().isNotEmpty) {
-        cleanPayload['reminder_schedule_type'] =
-            result['reminder_schedule_type'].toString().trim();
       }
 
       if (result['reminder_time'] != null) {
@@ -4961,22 +4947,49 @@ class _RecordListScreenState extends State<RecordListScreen> {
                                                         .toString()
                                                         .trim();
 
-                                                final number =
+                                                if (rawPhone.isEmpty) return;
+
+                                                // Clean phone: keep only digits and +
+                                                String cleaned =
                                                     rawPhone.replaceAll(
-                                                  RegExp(r'[^0-9+]'),
-                                                  '',
-                                                );
+                                                        RegExp(r'[^0-9+]'), '');
 
-                                                if (number.isEmpty) return;
+                                                if (cleaned.isEmpty) return;
 
-                                                final uri = Uri.parse(
-                                                    'https://wa.me/$number');
-                                                if (await canLaunchUrl(uri)) {
+                                                // Convert 00 international prefix to +
+                                                if (cleaned.startsWith('00')) {
+                                                  cleaned =
+                                                      '+${cleaned.substring(2)}';
+                                                }
+
+                                                // WhatsApp wa.me requires digits only without '+'
+                                                final waNumber =
+                                                    cleaned.startsWith('+')
+                                                        ? cleaned.substring(1)
+                                                        : cleaned;
+
+                                                final waUri = Uri.parse(
+                                                    'https://wa.me/$waNumber');
+
+                                                // 1. Try WhatsApp first
+                                                if (await canLaunchUrl(waUri)) {
                                                   await launchUrl(
-                                                    uri,
+                                                    waUri,
                                                     mode: LaunchMode
                                                         .externalApplication,
                                                   );
+                                                } else {
+                                                  // 2. Fallback to native phone dialer if WhatsApp cannot be launched
+                                                  final telUri =
+                                                      Uri.parse('tel:$cleaned');
+                                                  if (await canLaunchUrl(
+                                                      telUri)) {
+                                                    await launchUrl(
+                                                      telUri,
+                                                      mode: LaunchMode
+                                                          .externalApplication,
+                                                    );
+                                                  }
                                                 }
                                               },
                                             ),

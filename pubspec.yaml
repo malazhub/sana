@@ -1,6 +1,6 @@
 name: sana
 description: AI Medical Records & Smart Medication Reminder
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+
+  country_codes: ^3.0.0
 
   cupertino_icons: ^1.0.8
 

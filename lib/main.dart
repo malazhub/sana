@@ -3840,8 +3840,9 @@ class _AddFormDialogState extends State<AddFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Medicine photo appears only when adding medication.
-                if (isMedication) _buildMedicinePhotoSection(),
+                // Medicine photo appears for medications and reminders.
+                if (isMedication || widget.type == 'reminders')
+                  _buildMedicinePhotoSection(),
 
                 ...widget.fields.map((field) {
                   if (field == 'reminder_time') {
@@ -4381,6 +4382,36 @@ class _RecordListScreenState extends State<RecordListScreen> {
       print('Inserting into $_table: $cleanPayload');
       await _client.from(_table).insert(cleanPayload);
       await _load();
+
+      // Show confirmation when reminder alarm is saved
+      if (mounted && _table == 'reminders') {
+        final reminderName = cleanPayload['name'] ?? '';
+        final reminderTime = cleanPayload['reminder_time'] ?? '';
+        final reminderDate =
+            cleanPayload['reminder_date'] ?? tr(language, 'daily');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.teal.shade700,
+            duration: const Duration(seconds: 4),
+            content: Row(
+              children: [
+                const Icon(Icons.alarm_on, color: Colors.white, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    language == 'ar'
+                        ? 'تم تفعيل منبه "$reminderName" بنجاح للموعد: $reminderDate $reminderTime'
+                        : 'Alarm for "$reminderName" activated for $reminderDate at $reminderTime',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
     } catch (e) {
       print('========== ERROR in _saveRecord ==========');
       print(e);
@@ -4888,7 +4919,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
                                         CrossAxisAlignment.center,
                                     children: [
                                       // ========================================
-                                      // MEDICATION PHOTO - ADDED ONLY
+                                      // MEDICATION & REMINDER PHOTO THUMBNAIL
                                       // ========================================
                                       if (widget.type == 'medications')
                                         Padding(
@@ -4899,6 +4930,26 @@ class _RecordListScreenState extends State<RecordListScreen> {
                                             height: 50,
                                             width: 50,
                                             fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      if (widget.type == 'reminders' &&
+                                          (row['photo_base64'] != null ||
+                                              row['photo'] != null))
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 12),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: DisplayImage(
+                                              base64String:
+                                                  (row['photo_base64'] ??
+                                                          row['photo'])
+                                                      ?.toString(),
+                                              height: 50,
+                                              width: 50,
+                                              fit: BoxFit.cover,
+                                            ),
                                           ),
                                         ),
 

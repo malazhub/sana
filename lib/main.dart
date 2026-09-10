@@ -83,6 +83,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'Email or username',
     'show_password': 'Show password',
     'password': 'Password',
+    'password_6_digit': '6 digits',
     'sign_in': 'Sign In',
     'new_user': 'New User',
     'register': 'Register',
@@ -225,6 +226,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'البريد الإلكتروني أو اسم المستخدم',
     'show_password': 'إظهار كلمة المرور',
     'password': 'كلمة المرور',
+    'password_6_digit': '6 أرقام',
     'sign_in': 'تسجيل الدخول',
     'new_user': 'مستخدم جديد',
     'register': 'تسجيل',
@@ -367,6 +369,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'Correo electrónico o nombre de usuario',
     'show_password': 'Mostrar contraseña',
     'password': 'Contraseña',
+    'password_6_digit': '6 dígitos',
     'sign_in': 'Iniciar sesión',
     'new_user': 'Nuevo usuario',
     'register': 'Registrarse',
@@ -511,6 +514,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'E-mail ou nom d’utilisateur',
     'show_password': 'Afficher le mot de passe',
     'password': 'Mot de passe',
+    'password_6_digit': '6 chiffres',
     'sign_in': 'Se connecter',
     'new_user': 'Nouvel utilisateur',
     'register': 'S’inscrire',
@@ -656,6 +660,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'E-Mail oder Benutzername',
     'show_password': 'Passwort anzeigen',
     'password': 'Passwort',
+    'password_6_digit': '6 Ziffern',
     'sign_in': 'Anmelden',
     'new_user': 'Neuer Benutzer',
     'register': 'Registrieren',
@@ -800,6 +805,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'E-posta veya kullanıcı adı',
     'show_password': 'Şifreyi göster',
     'password': 'Şifre',
+    'password_6_digit': '6 hane',
     'sign_in': 'Giriş Yap',
     'new_user': 'Yeni Kullanıcı',
     'register': 'Kayıt Ol',
@@ -944,6 +950,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': 'ईमेल या उपयोगकर्ता नाम',
     'show_password': 'पासवर्ड दिखाएँ',
     'password': 'पासवर्ड',
+    'password_6_digit': '6 अंक',
     'sign_in': 'साइन इन',
     'new_user': 'नया उपयोगकर्ता',
     'register': 'पंजीकरण',
@@ -1087,6 +1094,7 @@ const Map<String, Map<String, String>> _translations = {
     'email': '电子邮件或用户名',
     'show_password': '显示密码',
     'password': '密码',
+    'password_6_digit': '6 位数字',
     'sign_in': '登录',
     'new_user': '新用户',
     'register': '注册',
@@ -2486,7 +2494,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _password,
                       obscureText: !_showPassword,
                       decoration: InputDecoration(
-                        labelText: tr(language, 'password'),
+                        labelText:
+                            '${tr(language, 'password')} (${tr(language, 'password_6_digit')})',
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -2693,7 +2702,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _passwordController,
                       obscureText: !_showPassword,
                       decoration: InputDecoration(
-                        labelText: tr(language, 'password'),
+                        labelText:
+                            '${tr(language, 'password')} (${tr(language, 'password_6_digit')})',
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -3755,7 +3765,7 @@ class _AddFormDialogState extends State<AddFormDialog> {
     }
 
     // Medication schedule.
-    if (widget.type == 'medications') {
+    if (widget.type == 'medications' || widget.type == 'reminders') {
       payload['reminder_schedule_type'] = _medicationScheduleType;
 
       if (_medicationScheduleType == 'daily') {
@@ -3832,9 +3842,6 @@ class _AddFormDialogState extends State<AddFormDialog> {
               children: [
                 // Medicine photo appears only when adding medication.
                 if (isMedication) _buildMedicinePhotoSection(),
-
-                // Medication selection is only needed for reminders.
-                if (widget.type == 'reminders') _buildMedicationDropdown(),
 
                 ...widget.fields.map((field) {
                   if (field == 'reminder_time') {
@@ -4042,13 +4049,12 @@ class _RecordListScreenState extends State<RecordListScreen> {
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _fileUrlController = TextEditingController();
 
-  String get _table => widget.type == 'reminders' ? 'medications' : widget.type;
+  String get _table => widget.type;
 
   @override
   void initState() {
     super.initState();
     _load();
-    if (widget.type == 'reminders') _loadMedications();
     if (widget.autoOpenAdd && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _add());
     }
@@ -4181,7 +4187,7 @@ class _RecordListScreenState extends State<RecordListScreen> {
       case 'pharmacies':
         return ['name'];
       case 'reminders':
-        return ['medication_name', 'reminder_time', 'reminder_date'];
+        return ['name', 'reminder_time'];
       case 'documents':
         return ['title'];
       case 'insurance_cards':
@@ -4318,6 +4324,21 @@ class _RecordListScreenState extends State<RecordListScreen> {
         cleanPayload['user_id'] = widget.ownerId;
         cleanPayload['guest_id'] = null;
       }
+    } else if (_table == 'reminders') {
+      cleanPayload['name'] = result['name']?.toString().trim() ?? '';
+
+      cleanPayload['dosage'] = result['dosage']?.toString().trim() ?? '';
+
+      cleanPayload['reminder_time'] = result['reminder_time'];
+
+      cleanPayload['reminder_date'] = result['reminder_date'];
+
+      cleanPayload['reminder_schedule_type'] =
+          result['reminder_schedule_type'] ?? 'daily';
+
+      if (photo != null && photo.toString().trim().isNotEmpty) {
+        cleanPayload['photo_base64'] = photo.toString().trim();
+      }
     } else if (_table == 'pharmacies') {
       cleanPayload['name'] = result['name'] ?? '';
       cleanPayload['phone'] = result['phone'] ?? '';
@@ -4364,20 +4385,8 @@ class _RecordListScreenState extends State<RecordListScreen> {
           cleanPayload['photo_url'] = storagePath;
         } catch (e) {
           debugPrint(
-            'Medication photo upload failed: $e',
+            'Medication photo upload failed; continuing without photo: $e',
           );
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Photo upload failed. Medication was not saved.',
-                ),
-              ),
-            );
-          }
-
-          return;
         }
       }
     }
@@ -4386,10 +4395,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
       print('Inserting into $_table: $cleanPayload');
       await _client.from(_table).insert(cleanPayload);
       await _load();
-
-      if (widget.type == 'reminders') {
-        await _loadMedications();
-      }
     } catch (e) {
       print('========== ERROR in _saveRecord ==========');
       print(e);
@@ -4588,10 +4593,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
       }
 
       await _load();
-
-      if (widget.type == 'reminders') {
-        await _loadMedications();
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -4957,13 +4958,17 @@ class _RecordListScreenState extends State<RecordListScreen> {
                                               onPressed: () async {
                                                 final rawPhone =
                                                     (row['phone'] ?? '')
-                                                        .toString();
+                                                        .toString()
+                                                        .trim();
+
                                                 final number =
                                                     rawPhone.replaceAll(
-                                                  RegExp(r'[^0-9]'),
+                                                  RegExp(r'[^0-9+]'),
                                                   '',
                                                 );
+
                                                 if (number.isEmpty) return;
+
                                                 final uri = Uri.parse(
                                                     'https://wa.me/$number');
                                                 if (await canLaunchUrl(uri)) {

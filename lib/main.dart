@@ -2447,10 +2447,10 @@ class _LoginScreenState extends State<LoginScreen> {
             .eq('id', res.user!.id)
             .maybeSingle();
 
-        final isActive = profile?['is_active'] ?? true;
+        final isActive = profile?['is_active'];
         final role = (profile?['role'] ?? 'user').toString().toLowerCase();
 
-        // Block inactive users
+        // Only block if explicitly deactivated by admin (is_active == false)
         if (role != 'admin' && isActive == false) {
           await Supabase.instance.client.auth.signOut();
 
@@ -2458,7 +2458,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              backgroundColor: Colors.teal.shade700,
+              backgroundColor: Colors.red.shade700,
               content: Text(
                 tr(language, 'expired'),
                 style: const TextStyle(
@@ -2672,6 +2672,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         throw Exception(tr(language, 'signup_failed'));
       }
 
+      // Ensure active by default in public.users
+      try {
+        await client.from('users').upsert({
+          'id': response.user!.id,
+          'name': name,
+          'username': rawUsername,
+          'phone': phone,
+          'role': 'user',
+          'is_active': true,
+          'is_paid': false,
+          'joining_date': DateTime.now().toIso8601String(),
+        });
+      } catch (_) {}
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2681,7 +2695,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             style: const TextStyle(
                 fontWeight: FontWeight.bold, color: Colors.white),
           ),
-          duration: const Duration(seconds: 5),
+          duration: const Duration(seconds: 4),
         ),
       );
       Navigator.pop(context);
@@ -5929,10 +5943,32 @@ class _AdminScreenState extends State<AdminScreen> {
     final id = user['id'];
     if (id == null) return;
     try {
-      await _client.from('users').update({'is_paid': isPaid}).eq('id', id);
-      if (mounted) setState(() => user['is_paid'] = isPaid);
+      final now = DateTime.now();
+      final paidAt = isPaid ? now.toIso8601String() : null;
+      final expiryDate = isPaid
+          ? DateTime(now.year + 1, now.month, now.day).toIso8601String()
+          : null;
+
+      await _client.from('users').update({
+        'is_paid': isPaid,
+        'paid_at': paidAt,
+        'expiry_date': expiryDate,
+      }).eq('id', id);
+
+      if (mounted) {
+        setState(() {
+          user['is_paid'] = isPaid;
+          user['paid_at'] = paidAt;
+          user['expiry_date'] = expiryDate;
+        });
+      }
     } catch (e) {
       debugPrint('Error updating paid: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating paid: $e')),
+        );
+      }
     }
   }
 
@@ -6130,38 +6166,53 @@ class _AdminScreenState extends State<AdminScreen> {
                                       ),
                                     ),
                                     DataCell(
-                                      Checkbox(
-                                        value: u['is_paid'] == true,
-                                        onChanged: isAdmin
-                                            ? (v) => _setPaid(u, v ?? false)
-                                            : null,
-                                      ),
+                                      isAdmin
+                                          ? const Text('—')
+                                          : Checkbox(
+                                              value: u['is_paid'] == true,
+                                              onChanged: (v) =>
+                                                  _setPaid(u, v ?? false),
+                                            ),
                                     ),
                                     DataCell(
                                       Builder(
                                         builder: (_) {
-                                          final act = u['activated_at'] ??
-                                              u['joining_date'];
-                                          if (act == null)
-                                            return const Text('N/A');
+                                          if (isAdmin) {
+                                            return const Text('—');
+                                          }
+                                          if (u['is_paid'] != true) {
+                                            return const Text('—');
+                                          }
+                                          final rawExp =
+                                              u['expiry_date'] ?? u['paid_at'];
+                                          if (rawExp == null)
+                                            return const Text('—');
                                           try {
-                                            final d =
-                                                DateTime.parse(act.toString());
-                                            final exp = DateTime(
-                                                d.year + 1, d.month, d.day);
+                                            DateTime expDate;
+                                            if (u['expiry_date'] != null) {
+                                              expDate = DateTime.parse(
+                                                  u['expiry_date'].toString());
+                                            } else {
+                                              final p = DateTime.parse(
+                                                  u['paid_at'].toString());
+                                              expDate = DateTime(
+                                                  p.year + 1, p.month, p.day);
+                                            }
                                             final isExp =
-                                                DateTime.now().isAfter(exp);
+                                                DateTime.now().isAfter(expDate);
                                             final f =
-                                                '${exp.year}-${exp.month.toString().padLeft(2, '0')}-${exp.day.toString().padLeft(2, '0')}';
-                                            return Text(f,
-                                                style: TextStyle(
-                                                    color: isExp
-                                                        ? Colors.red
-                                                        : Colors.green.shade800,
-                                                    fontWeight:
-                                                        FontWeight.bold));
+                                                '${expDate.year}-${expDate.month.toString().padLeft(2, '0')}-${expDate.day.toString().padLeft(2, '0')}';
+                                            return Text(
+                                              f,
+                                              style: TextStyle(
+                                                color: isExp
+                                                    ? Colors.red
+                                                    : Colors.green.shade800,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            );
                                           } catch (_) {
-                                            return const Text('N/A');
+                                            return const Text('—');
                                           }
                                         },
                                       ),

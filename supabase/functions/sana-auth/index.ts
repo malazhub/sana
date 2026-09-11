@@ -199,11 +199,17 @@ serve(async (req) => {
         : "";
 
 
-    // Empty string is rejected.
+    // Empty username/password are required for login/register,
+    // but admin deleteUser uses the authenticated caller token
+    // and therefore does not send username/password.
+    //
     // Whitespace is NOT normalized.
     if (
-      username.length === 0 ||
-      password.length === 0
+      action !== "deleteUser" &&
+      (
+        username.length === 0 ||
+        password.length === 0
+      )
     ) {
       return json(
         {

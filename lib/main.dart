@@ -6152,8 +6152,26 @@ class _AdminScreenState extends State<AdminScreen> {
     if (confirmed != true) return;
 
     try {
-      await _client.rpc('admin_delete_user', params: {'target_user': id});
+      final response = await _client.functions.invoke(
+        'sana-auth',
+        body: {
+          'action': 'deleteUser',
+          'userId': id.toString(),
+        },
+      );
+
+      final data = response.data;
+
+      if (data is! Map || data['success'] != true) {
+        throw Exception(
+          data is Map
+              ? data['error']?.toString() ?? 'User deletion failed'
+              : 'User deletion failed',
+        );
+      }
+
       await _loadUsers();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -6164,6 +6182,7 @@ class _AdminScreenState extends State<AdminScreen> {
       }
     } catch (e) {
       debugPrint('Error deleting user: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

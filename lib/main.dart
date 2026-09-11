@@ -116,9 +116,9 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'Role',
     'active_user': 'Active User',
     'inactive_guest': 'Inactive User',
-    'expired': 'Please get your own copy, then wait 48 hours to be activated.',
+    'expired': 'Please get your own copy, and wait 48 hours until activated.',
     'pending_activation':
-        'Please get your own copy, then wait 48 hours to be activated.',
+        'Please get your own copy, and wait 48 hours until activated.',
     'paid': 'Paid',
     'expiry_date': 'Expiry Date',
     'provider_name': 'Provider Name',
@@ -262,8 +262,10 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'الدور',
     'active_user': 'مستخدم نشط',
     'inactive_guest': 'مستخدم غير نشط',
-    'expired': 'سيتم تفعيل حسابك خلال 48 ساعة.',
-    'pending_activation': 'سيتم تفعيل حسابك خلال 48 ساعة.',
+    'expired':
+        'يرجى الحصول على نسختك الخاصة، والانتظار 48 ساعة حتى يتم تفعيلها.',
+    'pending_activation':
+        'يرجى الحصول على نسختك الخاصة، والانتظار 48 ساعة حتى يتم تفعيلها.',
     'paid': 'تم الدفع',
     'expiry_date': 'تاريخ الانتهاء',
     'provider_name': 'اسم مقدم الخدمة',
@@ -407,8 +409,10 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'Rol',
     'active_user': 'Usuario activo',
     'inactive_guest': 'Usuario inactivo',
-    'expired': 'Su perfil será activado en un plazo de 48 horas.',
-    'pending_activation': 'Su perfil será activado en un plazo de 48 horas.',
+    'expired':
+        'Obtenga su propia copia y espere 48 horas hasta que sea activada.',
+    'pending_activation':
+        'Obtenga su propia copia y espere 48 horas hasta que sea activada.',
     'paid': 'Pagado',
     'expiry_date': 'Fecha de vencimiento',
     'provider_name': 'Nombre del proveedor',
@@ -554,8 +558,10 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'Rôle',
     'active_user': 'Utilisateur actif',
     'inactive_guest': 'Utilisateur inactif',
-    'expired': 'Votre profil sera activé dans les 48 heures.',
-    'pending_activation': 'Votre profil sera activé dans les 48 heures.',
+    'expired':
+        'Veuillez obtenir votre propre copie et attendre 48 heures jusqu’à son activation.',
+    'pending_activation':
+        'Veuillez obtenir votre propre copie et attendre 48 heures jusqu’à son activation.',
     'paid': 'Payé',
     'expiry_date': "Date d'expiration",
     'provider_name': 'Nom du fournisseur',
@@ -702,8 +708,10 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'Rolle',
     'active_user': 'Aktiver Benutzer',
     'inactive_guest': 'Inaktiver Benutzer',
-    'expired': 'Ihr Profil wird innerhalb von 48 Stunden aktiviert.',
-    'pending_activation': 'Ihr Profil wird innerhalb von 48 Stunden aktiviert.',
+    'expired':
+        'Bitte holen Sie sich Ihre eigene Kopie und warten Sie 48 Stunden, bis sie aktiviert wird.',
+    'pending_activation':
+        'Bitte holen Sie sich Ihre eigene Kopie und warten Sie 48 Stunden, bis sie aktiviert wird.',
     'paid': 'Bezahlt',
     'expiry_date': 'Ablaufdatum',
     'provider_name': 'Anbietername',
@@ -849,8 +857,10 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'Rol',
     'active_user': 'Aktif Kullanıcı',
     'inactive_guest': 'Pasif Kullanıcı',
-    'expired': 'Profiliniz 48 saat içinde etkinleştirilecektir.',
-    'pending_activation': 'Profiliniz 48 saat içinde etkinleştirilecektir.',
+    'expired':
+        'Lütfen kendi kopyanızı alın ve etkinleştirilene kadar 48 saat bekleyin.',
+    'pending_activation':
+        'Lütfen kendi kopyanızı alın ve etkinleştirilene kadar 48 saat bekleyin.',
     'paid': 'Ödendi',
     'expiry_date': 'Son Kullanma Tarihi',
     'provider_name': 'Sağlayıcı Adı',
@@ -996,8 +1006,10 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'भूमिका',
     'active_user': 'सक्रिय उपयोगकर्ता',
     'inactive_guest': 'निष्क्रिय उपयोगकर्ता',
-    'expired': 'आपकी प्रोफ़ाइल 48 घंटों के भीतर सक्रिय कर दी जाएगी।',
-    'pending_activation': 'आपकी प्रोफ़ाइल 48 घंटों के भीतर सक्रिय कर दी जाएगी।',
+    'expired':
+        'कृपया अपनी प्रति प्राप्त करें और सक्रिय होने तक 48 घंटे प्रतीक्षा करें।',
+    'pending_activation':
+        'कृपया अपनी प्रति प्राप्त करें और सक्रिय होने तक 48 घंटे प्रतीक्षा करें।',
     'paid': 'भुगतान किया गया',
     'expiry_date': 'समाप्ति तिथि',
     'provider_name': 'प्रदाता का नाम',
@@ -1142,8 +1154,8 @@ const Map<String, Map<String, String>> _translations = {
     'role': '角色',
     'active_user': '活跃用户',
     'inactive_guest': '非活跃用户',
-    'expired': '您的个人资料将在48小时内激活。',
-    'pending_activation': '您的个人资料将在48小时内激活。',
+    'expired': '请获取您自己的副本，并等待48小时直到激活。',
+    'pending_activation': '请获取您自己的副本，并等待48小时直到激活。',
     'paid': '已付款',
     'expiry_date': '到期日',
     'provider_name': '提供商名称',
@@ -1535,41 +1547,58 @@ class _HomeScreenState extends State<HomeScreen> {
         data = null;
       }
 
-      // 🛑 BLOCK DEACTIVATED USER FROM ENTERING THE APP:
-      final isActive = data?['is_active'];
+      // 🛑 ADMIN IS PERMANENTLY EXEMPT FROM DEACTIVATION AND EXPIRY:
+      final userEmail = (user.email ?? '').trim().toLowerCase();
+      final role = (data?['role'] ?? '').toString().toLowerCase();
 
-      // Admin authorization MUST come from the server-side RPC.
-      // If the RPC fails or returns false, fail closed.
-      bool isAdmin = false;
-      try {
-        final rpcIsAdmin = await _client.rpc('sana_is_admin');
-        isAdmin = rpcIsAdmin == true;
-      } catch (e) {
-        debugPrint('sana_is_admin failed: $e');
-        isAdmin = false;
+      // The authenticated Admin email and the server-side Admin role
+      // both identify the existing Admin account.
+      bool isAdmin = userEmail == 'malazjanbeih@gmail.com' || role == 'admin';
+
+      // Use the server-side RPC as an additional Admin confirmation.
+      // If the RPC is temporarily unavailable, DO NOT kick out an Admin
+      // who is already identified by the authenticated email or role.
+      if (!isAdmin) {
+        try {
+          final rpcIsAdmin = await _client.rpc('sana_is_admin');
+          if (rpcIsAdmin == true) {
+            isAdmin = true;
+          }
+        } catch (e) {
+          debugPrint('sana_is_admin notice: $e');
+        }
       }
 
+      final isActive = data?['is_active'];
+
+      // ONLY NON-ADMIN USERS CAN BE BLOCKED BY is_active == false.
       if (!isAdmin && isActive == false) {
         await _client.auth.signOut();
         StorageHelper.clearCache();
+
         if (!mounted) return;
+
         setState(() {
           _profile = null;
           _guestId = guestId;
           _isGuest = true;
           _loading = false;
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: Colors.teal.shade700,
+            backgroundColor: Colors.red.shade700,
             content: Text(
               tr(languageNotifier.value, 'expired'),
               style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.white),
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             duration: const Duration(seconds: 5),
           ),
         );
+
         return;
       }
 
@@ -2380,6 +2409,12 @@ String usernameToAuthEmail(String rawInput) {
       .toLowerCase();
 
   if (clean.isEmpty) return '';
+
+  // Admin username aliases map to the existing Supabase Admin Auth account.
+  if (clean == 'admin' || clean == 'malaz' || clean == 'malazjanbeih') {
+    return 'malazjanbeih@gmail.com';
+  }
+
   if (clean.contains('@') && clean.contains('.')) return clean;
 
   // 32-hex SHA-256 hash guarantees the internal email is ALWAYS valid and fixed-length
@@ -2387,12 +2422,17 @@ String usernameToAuthEmail(String rawInput) {
   return 'u_$hash@sana.local';
 }
 
-/// Allows ANY password length (1 char, 2 chars, etc.) without failing Supabase GoTrue length rules
+/// Allows ANY password length and automatically trims trailing spaces/invisible characters.
 String formatAuthPassword(String rawPassword) {
-  if (rawPassword.length >= 6) {
-    return rawPassword;
+  final clean = rawPassword
+      .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF\u00A0]'), '')
+      .trim();
+
+  if (clean.length >= 6) {
+    return clean;
   }
-  return sha256.convert(utf8.encode(rawPassword)).toString();
+
+  return sha256.convert(utf8.encode(clean)).toString();
 }
 
 // ============================================
@@ -2419,73 +2459,123 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     final rawInput = _email.text.trim();
-    final password = _password.text;
+    final password = _password.text.trim();
     final language = languageNotifier.value;
 
     if (rawInput.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr(language, 'please_fill_all'))),
+        SnackBar(
+          content: Text(tr(language, 'please_fill_all')),
+        ),
       );
       return;
     }
 
-    // Resolves username and short passwords to deterministic Auth credentials
     final authEmail = usernameToAuthEmail(rawInput);
     final authPassword = formatAuthPassword(password);
 
     setState(() => _busy = true);
+
     try {
       final res = await Supabase.instance.client.auth.signInWithPassword(
         email: authEmail,
         password: authPassword,
       );
 
-      if (res.user != null) {
-        final profile = await Supabase.instance.client
+      if (res.user == null) {
+        throw Exception('User null');
+      }
+
+      // ADMIN AUTH BYPASS:
+      // Once the existing Admin Auth account has successfully authenticated,
+      // it is never blocked by is_active, paid status, or expiry.
+      if (authEmail.toLowerCase() == 'malazjanbeih@gmail.com') {
+        if (!mounted) return;
+        Navigator.pop(context, true);
+        return;
+      }
+
+      Map<String, dynamic>? profile;
+
+      try {
+        profile = await Supabase.instance.client
             .from('users')
             .select('is_active, role')
             .eq('id', res.user!.id)
             .maybeSingle();
+      } catch (pe) {
+        debugPrint('Error fetching user profile: $pe');
 
-        final isActive = profile?['is_active'];
-        final role = (profile?['role'] ?? 'user').toString().toLowerCase();
-
-        // Only block if explicitly deactivated by admin (is_active == false)
-        if (role != 'admin' && isActive == false) {
-          await Supabase.instance.client.auth.signOut();
-
-          if (!mounted) return;
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red.shade700,
-              content: Text(
-                tr(language, 'expired'),
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              duration: const Duration(seconds: 5),
-            ),
-          );
-          return;
-        }
+        // Do not expose the technical Supabase error to the user.
+        // Do not treat a failed profile lookup as deactivation.
+        await Supabase.instance.client.auth.signOut();
 
         if (!mounted) return;
-        Navigator.pop(context, true);
-      } else {
-        throw Exception(tr(language, 'login_failed'));
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tr(language, 'login_failed'),
+            ),
+          ),
+        );
+        return;
       }
+
+      final role = (profile?['role'] ?? 'user').toString().toLowerCase();
+
+      // ADMIN IS NEVER RESTRICTED.
+      if (role == 'admin') {
+        if (!mounted) return;
+        Navigator.pop(context, true);
+        return;
+      }
+
+      final isActive = profile?['is_active'];
+
+      // ONLY AN EXPLICIT ADMIN DEACTIVATION BLOCKS A NORMAL USER.
+      if (isActive == false) {
+        await Supabase.instance.client.auth.signOut();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red.shade700,
+            content: Text(
+              tr(language, 'expired'),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+
+        return;
+      }
+
+      // NORMAL ACTIVE USER:
+      // New users are active by default and can enter immediately.
+      if (!mounted) return;
+      Navigator.pop(context, true);
     } catch (e) {
+      debugPrint('Login exception: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                '${tr(language, 'login_failed')}: ${e.toString().replaceAll('Exception: ', '')}'),
+              tr(language, 'login_failed'),
+            ),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 

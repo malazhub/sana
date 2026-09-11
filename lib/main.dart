@@ -2465,6 +2465,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _busy = true);
 
     try {
+      // LOGIN ONLY:
+      // This call authenticates an account that already exists.
+      // It NEVER creates a new account.
       final res = await Supabase.instance.client.auth.signInWithPassword(
         email: authEmail,
         password: authPassword,
@@ -2474,9 +2477,9 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('User null');
       }
 
-      // ADMIN AUTH BYPASS:
-      // Once the existing Admin Auth account has successfully authenticated,
-      // it is never blocked by is_active, paid status, or expiry.
+      // EXISTING ADMIN ACCOUNT:
+      // Successful authentication is sufficient.
+      // Admin is never restricted by active/expiry/paid status.
       if (authEmail.toLowerCase() == 'malazjanbeih@gmail.com') {
         if (!mounted) return;
         Navigator.pop(context, true);
@@ -2494,8 +2497,8 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (pe) {
         debugPrint('Error fetching user profile: $pe');
 
-        // Do not expose the technical Supabase error to the user.
-        // Do not treat a failed profile lookup as deactivation.
+        // A login is valid only when the corresponding SANA
+        // user profile can also be found.
         await Supabase.instance.client.auth.signOut();
 
         if (!mounted) return;
@@ -2510,7 +2513,25 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final role = (profile?['role'] ?? 'user').toString().toLowerCase();
+      // IMPORTANT:
+      // Authentication alone is not enough for a normal SANA user.
+      // The user must have an existing public.users profile.
+      if (profile == null) {
+        await Supabase.instance.client.auth.signOut();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tr(language, 'login_failed'),
+            ),
+          ),
+        );
+        return;
+      }
+
+      final role = (profile['role'] ?? 'user').toString().toLowerCase();
 
       // ADMIN IS NEVER RESTRICTED.
       if (role == 'admin') {
@@ -2519,9 +2540,9 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final isActive = profile?['is_active'];
+      final isActive = profile['is_active'];
 
-      // ONLY AN EXPLICIT ADMIN DEACTIVATION BLOCKS A NORMAL USER.
+      // ONLY A USER EXPLICITLY DEACTIVATED BY ADMIN IS BLOCKED.
       if (isActive == false) {
         await Supabase.instance.client.auth.signOut();
 
@@ -2544,8 +2565,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // NORMAL ACTIVE USER:
-      // New users are active by default and can enter immediately.
+      // EXISTING ACTIVE USER:
+      // Allow entry immediately.
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {

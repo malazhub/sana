@@ -116,8 +116,11 @@ const Map<String, Map<String, String>> _translations = {
     'role': 'Role',
     'active_user': 'Active User',
     'inactive_guest': 'Inactive User',
-    'expired': 'Your profile will be activated within 48 hours.',
-    'pending_activation': 'Your profile will be activated within 48 hours.',
+    'expired': 'Please get your own copy, then wait 48 hours to be activated.',
+    'pending_activation':
+        'Please get your own copy, then wait 48 hours to be activated.',
+    'paid': 'Paid',
+    'expiry_date': 'Expiry Date',
     'provider_name': 'Provider Name',
     'front_image': 'Front Image',
     'back_image': 'Back Image',
@@ -261,6 +264,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': 'مستخدم غير نشط',
     'expired': 'سيتم تفعيل حسابك خلال 48 ساعة.',
     'pending_activation': 'سيتم تفعيل حسابك خلال 48 ساعة.',
+    'paid': 'تم الدفع',
+    'expiry_date': 'تاريخ الانتهاء',
     'provider_name': 'اسم مقدم الخدمة',
     'front_image': 'الصورة الأمامية',
     'back_image': 'الصورة الخلفية',
@@ -404,6 +409,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': 'Usuario inactivo',
     'expired': 'Su perfil será activado en un plazo de 48 horas.',
     'pending_activation': 'Su perfil será activado en un plazo de 48 horas.',
+    'paid': 'Pagado',
+    'expiry_date': 'Fecha de vencimiento',
     'provider_name': 'Nombre del proveedor',
     'front_image': 'Imagen frontal',
     'back_image': 'Imagen trasera',
@@ -549,6 +556,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': 'Utilisateur inactif',
     'expired': 'Votre profil sera activé dans les 48 heures.',
     'pending_activation': 'Votre profil sera activé dans les 48 heures.',
+    'paid': 'Payé',
+    'expiry_date': "Date d'expiration",
     'provider_name': 'Nom du fournisseur',
     'front_image': 'Image avant',
     'back_image': 'Image arrière',
@@ -695,6 +704,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': 'Inaktiver Benutzer',
     'expired': 'Ihr Profil wird innerhalb von 48 Stunden aktiviert.',
     'pending_activation': 'Ihr Profil wird innerhalb von 48 Stunden aktiviert.',
+    'paid': 'Bezahlt',
+    'expiry_date': 'Ablaufdatum',
     'provider_name': 'Anbietername',
     'front_image': 'Vorderseite',
     'back_image': 'Rückseite',
@@ -840,6 +851,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': 'Pasif Kullanıcı',
     'expired': 'Profiliniz 48 saat içinde etkinleştirilecektir.',
     'pending_activation': 'Profiliniz 48 saat içinde etkinleştirilecektir.',
+    'paid': 'Ödendi',
+    'expiry_date': 'Son Kullanma Tarihi',
     'provider_name': 'Sağlayıcı Adı',
     'front_image': 'Ön Görsel',
     'back_image': 'Arka Görsel',
@@ -985,6 +998,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': 'निष्क्रिय उपयोगकर्ता',
     'expired': 'आपकी प्रोफ़ाइल 48 घंटों के भीतर सक्रिय कर दी जाएगी।',
     'pending_activation': 'आपकी प्रोफ़ाइल 48 घंटों के भीतर सक्रिय कर दी जाएगी।',
+    'paid': 'भुगतान किया गया',
+    'expiry_date': 'समाप्ति तिथि',
     'provider_name': 'प्रदाता का नाम',
     'front_image': 'सामने की छवि',
     'back_image': 'पीछे की छवि',
@@ -1129,6 +1144,8 @@ const Map<String, Map<String, String>> _translations = {
     'inactive_guest': '非活跃用户',
     'expired': '您的个人资料将在48小时内激活。',
     'pending_activation': '您的个人资料将在48小时内激活。',
+    'paid': '已付款',
+    'expiry_date': '到期日',
     'provider_name': '提供商名称',
     'front_image': '正面图片',
     'back_image': '背面图片',
@@ -1349,6 +1366,7 @@ class SanaApp extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: languageNotifier,
       builder: (context, language, _) => MaterialApp(
+        title: 'SANA',
         debugShowCheckedModeBanner: false,
         locale: Locale(language),
         supportedLocales: _languageNames.keys.map(Locale.new).toList(),
@@ -1767,11 +1785,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ],
                                         ),
-                                        content: SingleChildScrollView(
-                                          child: Text(
-                                            tr(language, 'manual_content'),
-                                            style: const TextStyle(
-                                                fontSize: 14, height: 1.5),
+                                        content: SizedBox(
+                                          width: 700,
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.70,
+                                          child: InteractiveViewer(
+                                            minScale: 1.0,
+                                            maxScale: 4.0,
+                                            panEnabled: true,
+                                            scaleEnabled: true,
+                                            boundaryMargin:
+                                                const EdgeInsets.all(80),
+                                            child: SingleChildScrollView(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child: Text(
+                                                  tr(language,
+                                                      'manual_content'),
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    height: 1.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                         actions: [
@@ -2186,13 +2226,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               _buildCardCustomIcon(type),
               const SizedBox(height: 4),
-              Text(
-                tr(language, type),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: Text(
+                    tr(language, type),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -2611,7 +2661,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           'username': rawUsername,
           'phone': phone,
           'role': 'user',
-          'is_active': false, // Awaiting admin activation
+          'is_active': true,
+          'is_paid': false,
+          'joining_date': DateTime.now().toIso8601String(),
+          'activated_at': DateTime.now().toIso8601String(),
         },
       );
 
@@ -2624,7 +2677,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         SnackBar(
           backgroundColor: Colors.teal.shade700,
           content: Text(
-            tr(language, 'expired'),
+            tr(language, 'account_created_success'),
             style: const TextStyle(
                 fontWeight: FontWeight.bold, color: Colors.white),
           ),
@@ -3832,154 +3885,159 @@ class _AddFormDialogState extends State<AddFormDialog> {
       content: SizedBox(
         width: 650,
         height: MediaQuery.of(context).size.height * 0.75,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(right: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Medicine photo appears for medications and reminders.
-                if (isMedication || widget.type == 'reminders')
-                  _buildMedicinePhotoSection(),
+        child: InteractiveViewer(
+          minScale: 1.0,
+          maxScale: 3.0,
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(right: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Medicine photo appears for medications and reminders.
+                  if (isMedication || widget.type == 'reminders')
+                    _buildMedicinePhotoSection(),
 
-                ...widget.fields.map((field) {
-                  if (field == 'reminder_time') {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildReminderTimes(),
-                    );
-                  }
+                  ...widget.fields.map((field) {
+                    if (field == 'reminder_time') {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildReminderTimes(),
+                      );
+                    }
 
-                  if (field == 'reminder_date') {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _buildMedicationSchedule(),
-                    );
-                  }
+                    if (field == 'reminder_date') {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildMedicationSchedule(),
+                      );
+                    }
 
-                  if (field == 'medication_name') {
-                    return const SizedBox.shrink();
-                  }
+                    if (field == 'medication_name') {
+                      return const SizedBox.shrink();
+                    }
 
-                  // PHOTO UPLOAD BLOCK - For Documents and Insurance Cards
-                  if (field == 'photo' ||
-                      field == 'front_photo' ||
-                      field == 'back_photo') {
-                    return Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            field == 'front_photo'
-                                ? tr(widget.language, 'front_photo')
-                                : field == 'back_photo'
-                                    ? tr(widget.language, 'back_photo')
-                                    : tr(widget.language, 'photo'),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Image preview thumbnail
-                          if (_frontPhotoBase64 != null &&
-                              field == 'front_photo') ...[
-                            Center(
-                              child: DisplayImage(
-                                base64String: _frontPhotoBase64,
-                                height: 120,
-                                width: 200,
-                                fit: BoxFit.contain,
+                    // PHOTO UPLOAD BLOCK - For Documents and Insurance Cards
+                    if (field == 'photo' ||
+                        field == 'front_photo' ||
+                        field == 'back_photo') {
+                      return Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              field == 'front_photo'
+                                  ? tr(widget.language, 'front_photo')
+                                  : field == 'back_photo'
+                                      ? tr(widget.language, 'back_photo')
+                                      : tr(widget.language, 'photo'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                             const SizedBox(height: 8),
-                          ] else if (_backPhotoBase64 != null &&
-                              field == 'back_photo') ...[
-                            Center(
-                              child: DisplayImage(
-                                base64String: _backPhotoBase64,
-                                height: 120,
-                                width: 200,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ] else if (_medicinePhotoBase64 != null &&
-                              field == 'photo') ...[
-                            Center(
-                              child: DisplayImage(
-                                base64String: _medicinePhotoBase64,
-                                height: 120,
-                                width: 200,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ] else
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Text(
-                                tr(widget.language, 'no_image_selected'),
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
-                            ),
 
-                          // Full-width upload button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final base64 =
-                                    await ImagePickerHelper.pickImageAsBase64();
-                                if (base64 != null) {
-                                  setState(() {
-                                    if (field == 'front_photo') {
-                                      _frontPhotoBase64 = base64;
-                                    } else if (field == 'back_photo') {
-                                      _backPhotoBase64 = base64;
-                                    } else {
-                                      _medicinePhotoBase64 = base64;
-                                    }
-                                  });
-                                }
-                              },
-                              icon: const Icon(Icons.photo_camera),
-                              label: Text(
-                                field == 'front_photo'
-                                    ? (_frontPhotoBase64 == null
-                                        ? tr(widget.language,
-                                            'upload_front_card')
-                                        : tr(widget.language, 'uploaded'))
-                                    : field == 'back_photo'
-                                        ? (_backPhotoBase64 == null
-                                            ? tr(widget.language,
-                                                'upload_back_card')
-                                            : tr(widget.language, 'uploaded'))
-                                        : (_medicinePhotoBase64 == null
-                                            ? tr(
-                                                widget.language, 'upload_photo')
-                                            : tr(widget.language, 'uploaded')),
+                            // Image preview thumbnail
+                            if (_frontPhotoBase64 != null &&
+                                field == 'front_photo') ...[
+                              Center(
+                                child: DisplayImage(
+                                  base64String: _frontPhotoBase64,
+                                  height: 120,
+                                  width: 200,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ] else if (_backPhotoBase64 != null &&
+                                field == 'back_photo') ...[
+                              Center(
+                                child: DisplayImage(
+                                  base64String: _backPhotoBase64,
+                                  height: 120,
+                                  width: 200,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ] else if (_medicinePhotoBase64 != null &&
+                                field == 'photo') ...[
+                              Center(
+                                child: DisplayImage(
+                                  base64String: _medicinePhotoBase64,
+                                  height: 120,
+                                  width: 200,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ] else
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  tr(widget.language, 'no_image_selected'),
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              ),
+
+                            // Full-width upload button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final base64 = await ImagePickerHelper
+                                      .pickImageAsBase64();
+                                  if (base64 != null) {
+                                    setState(() {
+                                      if (field == 'front_photo') {
+                                        _frontPhotoBase64 = base64;
+                                      } else if (field == 'back_photo') {
+                                        _backPhotoBase64 = base64;
+                                      } else {
+                                        _medicinePhotoBase64 = base64;
+                                      }
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.photo_camera),
+                                label: Text(
+                                  field == 'front_photo'
+                                      ? (_frontPhotoBase64 == null
+                                          ? tr(widget.language,
+                                              'upload_front_card')
+                                          : tr(widget.language, 'uploaded'))
+                                      : field == 'back_photo'
+                                          ? (_backPhotoBase64 == null
+                                              ? tr(widget.language,
+                                                  'upload_back_card')
+                                              : tr(widget.language, 'uploaded'))
+                                          : (_medicinePhotoBase64 == null
+                                              ? tr(widget.language,
+                                                  'upload_photo')
+                                              : tr(
+                                                  widget.language, 'uploaded')),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return _buildTextField(field);
-                }),
-              ],
+                          ],
+                        ),
+                      );
+                    }
+                    return _buildTextField(field);
+                  }),
+                ],
+              ),
             ),
           ),
         ),
@@ -4296,8 +4354,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
         cleanPayload['file_url'] = url.toString();
       }
     } else if (_table == 'insurance_cards') {
-      cleanPayload['id'] = 'ic_${DateTime.now().millisecondsSinceEpoch}';
-
       cleanPayload['provider_name'] =
           result['provider_name'] ?? result['name'] ?? 'Insurance Card';
 
@@ -4311,14 +4367,6 @@ class _RecordListScreenState extends State<RecordListScreen> {
       final back = result['back_photo'] ?? result['back_image_url'];
       if (back != null && back.toString().trim().isNotEmpty) {
         cleanPayload['back_image_url'] = back.toString().trim();
-      }
-
-      if (widget.guestMode) {
-        cleanPayload['user_id'] = null;
-        cleanPayload['guest_id'] = widget.ownerId;
-      } else {
-        cleanPayload['user_id'] = widget.ownerId;
-        cleanPayload['guest_id'] = null;
       }
     } else if (_table == 'reminders') {
       cleanPayload['name'] = result['name']?.toString().trim() ?? '';
@@ -4483,13 +4531,8 @@ class _RecordListScreenState extends State<RecordListScreen> {
 
       final cleanPayload = RecordSanitizer.sanitize(payload);
 
-      if (widget.guestMode) {
-        cleanPayload['user_id'] = null;
-        cleanPayload['guest_id'] = widget.ownerId;
-      } else {
-        cleanPayload['user_id'] = widget.ownerId;
-        cleanPayload['guest_id'] = null;
-      }
+      cleanPayload['user_id'] = widget.guestMode ? null : widget.ownerId;
+      cleanPayload['guest_id'] = widget.guestMode ? widget.ownerId : null;
 
       await _client.from(_table).insert(cleanPayload);
       await _load();
@@ -4536,13 +4579,8 @@ class _RecordListScreenState extends State<RecordListScreen> {
 
       final cleanPayload = RecordSanitizer.sanitize(payload);
 
-      if (widget.guestMode) {
-        cleanPayload['user_id'] = null;
-        cleanPayload['guest_id'] = widget.ownerId;
-      } else {
-        cleanPayload['user_id'] = widget.ownerId;
-        cleanPayload['guest_id'] = null;
-      }
+      cleanPayload['user_id'] = widget.guestMode ? null : widget.ownerId;
+      cleanPayload['guest_id'] = widget.guestMode ? widget.ownerId : null;
 
       await _client.from(_table).insert(cleanPayload);
       await _load();
@@ -4782,74 +4820,81 @@ class _RecordListScreenState extends State<RecordListScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (photoBase64 != null && photoBase64.isNotEmpty)
-                DisplayImage(
-                  base64String: photoBase64,
-                  height: 250,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-              if (photoPath != null && photoPath.isNotEmpty)
-                SignedImage(
-                  path: photoPath,
-                  height: 250,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-              if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
-                Text(tr(language, 'front_photo'),
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                DisplayImage(
-                  base64String: frontImageUrl,
-                  height: 200,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
-                Text(tr(language, 'back_photo'),
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                DisplayImage(
-                  base64String: backImageUrl,
-                  height: 200,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (fileUrl != null && fileUrl.isNotEmpty)
-                ListTile(
-                  title: Text(fileUrl),
-                  trailing: const Icon(Icons.open_in_new),
-                  onTap: () async {
-                    final uri = Uri.tryParse(fileUrl);
-                    if (uri != null && await canLaunchUrl(uri)) {
-                      await launchUrl(uri);
-                    }
-                  },
-                ),
-              const Divider(),
-              ...cleanEntries.entries.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '${e.key}: ${e.value}',
-                      style: const TextStyle(fontSize: 15),
+        content: InteractiveViewer(
+          minScale: 1.0,
+          maxScale: 2.5,
+          panEnabled: true,
+          scaleEnabled: true,
+          boundaryMargin: const EdgeInsets.all(60),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (photoBase64 != null && photoBase64.isNotEmpty)
+                  DisplayImage(
+                    base64String: photoBase64,
+                    height: 250,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
+                if (photoPath != null && photoPath.isNotEmpty)
+                  SignedImage(
+                    path: photoPath,
+                    height: 250,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
+                if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
+                  Text(tr(language, 'front_photo'),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  DisplayImage(
+                    base64String: frontImageUrl,
+                    height: 200,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
+                  Text(tr(language, 'back_photo'),
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  DisplayImage(
+                    base64String: backImageUrl,
+                    height: 200,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (fileUrl != null && fileUrl.isNotEmpty)
+                  ListTile(
+                    title: Text(fileUrl),
+                    trailing: const Icon(Icons.open_in_new),
+                    onTap: () async {
+                      final uri = Uri.tryParse(fileUrl);
+                      if (uri != null && await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                  ),
+                const Divider(),
+                ...cleanEntries.entries.map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${e.key}: ${e.value}',
+                        style: const TextStyle(fontSize: 15),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -5369,8 +5414,12 @@ class _ShareScreenState extends State<ShareScreen> {
     return clean;
   }
 
-  Future<void> _previewRecord(String type, Map<String, dynamic> row) async {
+  Future<void> _previewRecord(
+    String type,
+    Map<String, dynamic> row,
+  ) async {
     final language = languageNotifier.value;
+
     final title = (row['name'] ??
             row['title'] ??
             row['provider_name'] ??
@@ -5379,108 +5428,135 @@ class _ShareScreenState extends State<ShareScreen> {
 
     String? photoBase64;
     final photoField = row['photo'] ?? row['photo_base64'];
+
     if (photoField != null && photoField.toString().isNotEmpty) {
       photoBase64 = photoField.toString().trim();
     }
 
     final photoPath = row['photo_url']?.toString();
+
     final frontImageUrl =
         (row['front_image_url'] ?? row['front_photo'])?.toString().trim();
+
     final backImageUrl =
         (row['back_image_url'] ?? row['back_photo'])?.toString().trim();
+
     final fileUrl = row['file_url']?.toString();
+
     final cleanEntries = _getCleanDisplayEntries(language, row);
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 1. Base64 Photo (Medications/Documents)
-              if (photoBase64 != null && photoBase64.isNotEmpty)
-                DisplayImage(
-                  base64String: photoBase64,
-                  height: 250,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
 
-              // 2. Private Supabase Storage Photo (Loads actual image via SignedImage)
-              if (photoPath != null && photoPath.isNotEmpty)
-                SignedImage(
-                  path: photoPath,
-                  height: 250,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
+        content: InteractiveViewer(
+          minScale: 1.0,
+          maxScale: 4.0,
+          panEnabled: true,
+          scaleEnabled: true,
+          boundaryMargin: const EdgeInsets.all(80),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 1. Base64 Photo (Medications/Documents)
+                if (photoBase64 != null && photoBase64.isNotEmpty)
+                  DisplayImage(
+                    base64String: photoBase64,
+                    height: 250,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
 
-              // 3. Insurance Card Front Photo
-              if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
-                Text(tr(language, 'front_photo'),
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                DisplayImage(
-                  base64String: frontImageUrl,
-                  height: 200,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 8),
-              ],
+                // 2. Private Supabase Storage Photo
+                if (photoPath != null && photoPath.isNotEmpty)
+                  SignedImage(
+                    path: photoPath,
+                    height: 250,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
 
-              // 4. Insurance Card Back Photo
-              if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
-                Text(tr(language, 'back_photo'),
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                DisplayImage(
-                  base64String: backImageUrl,
-                  height: 200,
-                  width: 250,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 8),
-              ],
+                // 3. Insurance Card Front Photo
+                if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
+                  Text(
+                    tr(language, 'front_photo'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  DisplayImage(
+                    base64String: frontImageUrl,
+                    height: 200,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 8),
+                ],
 
-              // 5. File URL Link
-              if (fileUrl != null && fileUrl.isNotEmpty)
-                ListTile(
-                  title: Text(fileUrl),
-                  trailing: const Icon(Icons.open_in_new),
-                  onTap: () async {
-                    final uri = Uri.tryParse(fileUrl);
-                    if (uri != null && await canLaunchUrl(uri)) {
-                      await launchUrl(uri);
-                    }
-                  },
-                ),
+                // 4. Insurance Card Back Photo
+                if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
+                  Text(
+                    tr(language, 'back_photo'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  DisplayImage(
+                    base64String: backImageUrl,
+                    height: 200,
+                    width: 250,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 8),
+                ],
 
-              const Divider(),
+                // 5. File URL Link
+                if (fileUrl != null && fileUrl.isNotEmpty)
+                  ListTile(
+                    title: Text(fileUrl),
+                    trailing: const Icon(Icons.open_in_new),
+                    onTap: () async {
+                      final uri = Uri.tryParse(fileUrl);
 
-              // 6. Clean Translated Metadata List (Hides internal IDs/paths)
-              ...cleanEntries.entries.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '${e.key}: ${e.value}',
-                      style: const TextStyle(fontSize: 15),
+                      if (uri != null && await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                  ),
+
+                const Divider(),
+
+                // 6. Clean Translated Metadata List
+                ...cleanEntries.entries.map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${e.key}: ${e.value}',
+                        style: const TextStyle(fontSize: 15),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+
+        // AlertDialog actions must be here,
+        // after content's closing parenthesis.
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(tr(language, 'close')),
+            child: Text(
+              tr(language, 'close'),
+            ),
           ),
         ],
       ),
@@ -5849,6 +5925,17 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  Future<void> _setPaid(Map<String, dynamic> user, bool isPaid) async {
+    final id = user['id'];
+    if (id == null) return;
+    try {
+      await _client.from('users').update({'is_paid': isPaid}).eq('id', id);
+      if (mounted) setState(() => user['is_paid'] = isPaid);
+    } catch (e) {
+      debugPrint('Error updating paid: $e');
+    }
+  }
+
   Future<void> _setActive(Map<String, dynamic> user, bool active) async {
     final id = user['id'];
     try {
@@ -5859,6 +5946,10 @@ class _AdminScreenState extends State<AdminScreen> {
           'activate': active,
         },
       );
+      if (active) {
+        await _client.from('users').update(
+            {'activated_at': DateTime.now().toIso8601String()}).eq('id', id);
+      }
       await _loadUsers();
     } catch (e) {
       debugPrint('Error setting active state: $e');
@@ -5971,6 +6062,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                 DataColumn(label: Text(tr(language, 'role'))),
                                 DataColumn(
                                     label: Text(tr(language, 'joining_date'))),
+                                DataColumn(label: Text(tr(language, 'paid'))),
+                                DataColumn(
+                                    label: Text(tr(language, 'expiry_date'))),
                                 DataColumn(
                                     label: Text(tr(language, 'last_login'))),
                                 DataColumn(
@@ -6036,6 +6130,43 @@ class _AdminScreenState extends State<AdminScreen> {
                                       ),
                                     ),
                                     DataCell(
+                                      Checkbox(
+                                        value: u['is_paid'] == true,
+                                        onChanged: isAdmin
+                                            ? (v) => _setPaid(u, v ?? false)
+                                            : null,
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Builder(
+                                        builder: (_) {
+                                          final act = u['activated_at'] ??
+                                              u['joining_date'];
+                                          if (act == null)
+                                            return const Text('N/A');
+                                          try {
+                                            final d =
+                                                DateTime.parse(act.toString());
+                                            final exp = DateTime(
+                                                d.year + 1, d.month, d.day);
+                                            final isExp =
+                                                DateTime.now().isAfter(exp);
+                                            final f =
+                                                '${exp.year}-${exp.month.toString().padLeft(2, '0')}-${exp.day.toString().padLeft(2, '0')}';
+                                            return Text(f,
+                                                style: TextStyle(
+                                                    color: isExp
+                                                        ? Colors.red
+                                                        : Colors.green.shade800,
+                                                    fontWeight:
+                                                        FontWeight.bold));
+                                          } catch (_) {
+                                            return const Text('N/A');
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    DataCell(
                                       Text(
                                         formatDate(
                                           u['last_login_at'],
@@ -6055,35 +6186,39 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   builder: (ctx) => AlertDialog(
                                                     title: Text(
                                                         '${tr(language, 'chat')} - $displayName'),
-                                                    content:
-                                                        SingleChildScrollView(
-                                                      child: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            u['chat']
-                                                                .toString(),
-                                                            style:
-                                                                const TextStyle(
-                                                                    fontSize:
-                                                                        15),
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 12),
-                                                          Text(
-                                                            formatDate(
-                                                                u['chat_date']),
-                                                            style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: Colors
-                                                                    .grey
-                                                                    .shade600),
-                                                          ),
-                                                        ],
+                                                    content: InteractiveViewer(
+                                                      minScale: 1.0,
+                                                      maxScale: 3.5,
+                                                      child:
+                                                          SingleChildScrollView(
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              u['chat']
+                                                                  .toString(),
+                                                              style:
+                                                                  const TextStyle(
+                                                                      fontSize:
+                                                                          15),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 12),
+                                                            Text(
+                                                              formatDate(u[
+                                                                  'chat_date']),
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade600),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
                                                     ),
                                                     actions: [

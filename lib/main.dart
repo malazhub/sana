@@ -1838,55 +1838,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                       ),
-                                          children: [
-                                            const Icon(Icons.menu_book,
-                                                color: Colors.teal),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                tr(language, 'manual_title'),
-                                                style: const TextStyle(
-                                                    fontSize: 18),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        content: SizedBox(
-                                          width: 700,
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.70,
-                                          child: InteractiveViewer(
-                                            minScale: 1.0,
-                                            maxScale: 4.0,
-                                            panEnabled: true,
-                                            scaleEnabled: true,
-                                            boundaryMargin:
-                                                const EdgeInsets.all(80),
-                                            child: SingleChildScrollView(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(16),
-                                                child: Text(
-                                                  tr(language,
-                                                      'manual_content'),
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    height: 1.5,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(ctx),
-                                            child: Text(tr(language, 'close')),
-                                          ),
-                                        ],
-                                      ),
                                     );
                                   },
                                 ),
@@ -5048,12 +4999,12 @@ class _RecordListScreenState extends State<RecordListScreen> {
                   ),
                 ),
               ],
-            ],
             ),
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   String _subtitle(Map<String, dynamic> row) {
@@ -5700,12 +5651,12 @@ class _ShareScreenState extends State<ShareScreen> {
                   ),
                 ),
               ],
-            ],
             ),
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   @override

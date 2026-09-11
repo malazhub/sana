@@ -1822,8 +1822,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             boundaryMargin:
                                                 const EdgeInsets.all(80),
                                             child: SingleChildScrollView(
-                                              padding:
-                                                  const EdgeInsets.all(16),
+                                              padding: const EdgeInsets.all(16),
                                               child: Text(
                                                 tr(
                                                   language,
@@ -4947,85 +4946,85 @@ class _RecordListScreenState extends State<RecordListScreen> {
             ),
           ),
           body: InteractiveViewer(
-          minScale: 1.0,
-          maxScale: 2.5,
-          panEnabled: true,
-          scaleEnabled: true,
-          boundaryMargin: const EdgeInsets.all(60),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (photoBase64 != null && photoBase64.isNotEmpty)
-                  DisplayImage(
-                    base64String: photoBase64,
-                    height: 250,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-                if (photoPath != null && photoPath.isNotEmpty)
-                  SignedImage(
-                    path: photoPath,
-                    height: 250,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-                if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
-                  Text(tr(language, 'front_photo'),
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  DisplayImage(
-                    base64String: frontImageUrl,
-                    height: 200,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
-                  Text(tr(language, 'back_photo'),
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  DisplayImage(
-                    base64String: backImageUrl,
-                    height: 200,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                if (fileUrl != null && fileUrl.isNotEmpty)
-                  ListTile(
-                    title: Text(fileUrl),
-                    trailing: const Icon(Icons.open_in_new),
-                    onTap: () async {
-                      final uri = Uri.tryParse(fileUrl);
-                      if (uri != null && await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
-                      }
-                    },
-                  ),
-                const Divider(),
-                ...cleanEntries.entries.map(
-                  (e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${e.key}: ${e.value}',
-                        style: const TextStyle(fontSize: 15),
+            minScale: 1.0,
+            maxScale: 2.5,
+            panEnabled: true,
+            scaleEnabled: true,
+            boundaryMargin: const EdgeInsets.all(60),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (photoBase64 != null && photoBase64.isNotEmpty)
+                    DisplayImage(
+                      base64String: photoBase64,
+                      height: 250,
+                      width: 250,
+                      fit: BoxFit.contain,
+                    ),
+                  if (photoPath != null && photoPath.isNotEmpty)
+                    SignedImage(
+                      path: photoPath,
+                      height: 250,
+                      width: 250,
+                      fit: BoxFit.contain,
+                    ),
+                  if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
+                    Text(tr(language, 'front_photo'),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    DisplayImage(
+                      base64String: frontImageUrl,
+                      height: 200,
+                      width: 250,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
+                    Text(tr(language, 'back_photo'),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    DisplayImage(
+                      base64String: backImageUrl,
+                      height: 200,
+                      width: 250,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (fileUrl != null && fileUrl.isNotEmpty)
+                    ListTile(
+                      title: Text(fileUrl),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () async {
+                        final uri = Uri.tryParse(fileUrl);
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      },
+                    ),
+                  const Divider(),
+                  ...cleanEntries.entries.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${e.key}: ${e.value}',
+                          style: const TextStyle(fontSize: 15),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   String _subtitle(Map<String, dynamic> row) {
@@ -5578,106 +5577,106 @@ class _ShareScreenState extends State<ShareScreen> {
             ),
           ),
           body: InteractiveViewer(
-          minScale: 1.0,
-          maxScale: 4.0,
-          panEnabled: true,
-          scaleEnabled: true,
-          boundaryMargin: const EdgeInsets.all(80),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // 1. Base64 Photo (Medications/Documents)
-                if (photoBase64 != null && photoBase64.isNotEmpty)
-                  DisplayImage(
-                    base64String: photoBase64,
-                    height: 250,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-
-                // 2. Private Supabase Storage Photo
-                if (photoPath != null && photoPath.isNotEmpty)
-                  SignedImage(
-                    path: photoPath,
-                    height: 250,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-
-                // 3. Insurance Card Front Photo
-                if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
-                  Text(
-                    tr(language, 'front_photo'),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+            minScale: 1.0,
+            maxScale: 4.0,
+            panEnabled: true,
+            scaleEnabled: true,
+            boundaryMargin: const EdgeInsets.all(80),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 1. Base64 Photo (Medications/Documents)
+                  if (photoBase64 != null && photoBase64.isNotEmpty)
+                    DisplayImage(
+                      base64String: photoBase64,
+                      height: 250,
+                      width: 250,
+                      fit: BoxFit.contain,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  DisplayImage(
-                    base64String: frontImageUrl,
-                    height: 200,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 8),
-                ],
 
-                // 4. Insurance Card Back Photo
-                if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
-                  Text(
-                    tr(language, 'back_photo'),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                  // 2. Private Supabase Storage Photo
+                  if (photoPath != null && photoPath.isNotEmpty)
+                    SignedImage(
+                      path: photoPath,
+                      height: 250,
+                      width: 250,
+                      fit: BoxFit.contain,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  DisplayImage(
-                    base64String: backImageUrl,
-                    height: 200,
-                    width: 250,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 8),
-                ],
 
-                // 5. File URL Link
-                if (fileUrl != null && fileUrl.isNotEmpty)
-                  ListTile(
-                    title: Text(fileUrl),
-                    trailing: const Icon(Icons.open_in_new),
-                    onTap: () async {
-                      final uri = Uri.tryParse(fileUrl);
+                  // 3. Insurance Card Front Photo
+                  if (frontImageUrl != null && frontImageUrl.isNotEmpty) ...[
+                    Text(
+                      tr(language, 'front_photo'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    DisplayImage(
+                      base64String: frontImageUrl,
+                      height: 200,
+                      width: 250,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
 
-                      if (uri != null && await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
-                      }
-                    },
-                  ),
+                  // 4. Insurance Card Back Photo
+                  if (backImageUrl != null && backImageUrl.isNotEmpty) ...[
+                    Text(
+                      tr(language, 'back_photo'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    DisplayImage(
+                      base64String: backImageUrl,
+                      height: 200,
+                      width: 250,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
 
-                const Divider(),
+                  // 5. File URL Link
+                  if (fileUrl != null && fileUrl.isNotEmpty)
+                    ListTile(
+                      title: Text(fileUrl),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () async {
+                        final uri = Uri.tryParse(fileUrl);
 
-                // 6. Clean Translated Metadata List
-                ...cleanEntries.entries.map(
-                  (e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${e.key}: ${e.value}',
-                        style: const TextStyle(fontSize: 15),
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      },
+                    ),
+
+                  const Divider(),
+
+                  // 6. Clean Translated Metadata List
+                  ...cleanEntries.entries.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${e.key}: ${e.value}',
+                          style: const TextStyle(fontSize: 15),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   @override
@@ -5989,56 +5988,56 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _loadUsers() async {
     if (!mounted) return;
+
     setState(() => _loading = true);
 
     try {
-      // 1. Call existing untouched RPC (all 9 user fields preserved)
-      final dynamic result = await _client.rpc('admin_list_users_with_login');
-      final List<dynamic> list = (result as List<dynamic>?) ?? [];
-      final List<Map<String, dynamic>> users =
-          list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      await _client.rpc(
+        'admin_repair_missing_user_profiles',
+      );
 
-      // 2. Call new separate chat RPC
-      try {
-        final dynamic chatResult = await _client.rpc('admin_get_user_chats');
-        if (chatResult != null) {
-          final chatList = chatResult as List<dynamic>;
-          final chatMap = <String, Map<String, dynamic>>{};
-          for (final item in chatList) {
-            final m = Map<String, dynamic>.from(item as Map);
-            final uid = m['user_id']?.toString();
-            if (uid != null) {
-              chatMap[uid] = m;
-            }
-          }
-          for (final u in users) {
-            final uid = u['id']?.toString();
-            if (uid != null && chatMap.containsKey(uid)) {
-              u['chat'] = chatMap[uid]!['chat'];
-              u['chat_date'] = chatMap[uid]!['chat_date'];
-            }
-          }
-        }
-      } catch (chatError) {
-        debugPrint('admin_get_user_chats notice: $chatError');
-      }
+      final dynamic result = await _client.rpc(
+        'admin_list_registered_users',
+      );
 
-      if (mounted) {
-        setState(() {
-          _users = users;
-          _loading = false;
-        });
-      }
+      final List<dynamic> list = result is List ? result : <dynamic>[];
+
+      final List<Map<String, dynamic>> users = list
+          .map(
+            (item) => Map<String, dynamic>.from(
+              item as Map,
+            ),
+          )
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        _users = users;
+        _loading = false;
+      });
     } catch (e) {
-      debugPrint('admin_list_users_with_login failed: $e');
-      if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading users: $e'),
+      debugPrint(
+        'admin registered users load failed: $e',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _users = [];
+        _loading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tr(
+              languageNotifier.value,
+              'operation_failed',
+            ),
           ),
-        );
-      }
+        ),
+      );
     }
   }
 
@@ -6363,53 +6362,60 @@ class _AdminScreenState extends State<AdminScreen> {
                                               onTap: () {
                                                 showDialog<void>(
                                                   context: context,
-                                                  builder: (ctx) => Dialog.fullscreen(
+                                                  builder: (ctx) =>
+                                                      Dialog.fullscreen(
                                                     child: Scaffold(
                                                       appBar: AppBar(
                                                         title: Text(
                                                           '${tr(language, 'chat')} - $displayName',
                                                         ),
                                                         leading: IconButton(
-                                                          icon: const Icon(Icons.close),
-                                                          onPressed: () => Navigator.pop(ctx),
+                                                          icon: const Icon(
+                                                              Icons.close),
+                                                          onPressed: () =>
+                                                              Navigator.pop(
+                                                                  ctx),
                                                         ),
                                                       ),
                                                       body: InteractiveViewer(
                                                         minScale: 1.0,
                                                         maxScale: 3.5,
-                                                        child: SingleChildScrollView(
-                                                        child: Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              u['chat']
-                                                                  .toString(),
-                                                              style:
-                                                                  const TextStyle(
-                                                                      fontSize:
-                                                                          15),
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 12),
-                                                            Text(
-                                                              formatDate(u[
-                                                                  'chat_date']),
-                                                              style: TextStyle(
-                                                                  fontSize: 12,
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade600),
-                                                            ),
-                                                          ],
+                                                        child:
+                                                            SingleChildScrollView(
+                                                          child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Text(
+                                                                u['chat']
+                                                                    .toString(),
+                                                                style:
+                                                                    const TextStyle(
+                                                                        fontSize:
+                                                                            15),
+                                                              ),
+                                                              const SizedBox(
+                                                                  height: 12),
+                                                              Text(
+                                                                formatDate(u[
+                                                                    'chat_date']),
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .grey
+                                                                        .shade600),
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ),
-                                                      ),
-                                                   ),
-                                                 ),
+                                                    ),
+                                                  ),
                                                 );
                                               },
                                               child: SizedBox(

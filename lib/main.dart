@@ -1799,8 +1799,45 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onPressed: () {
                                     showDialog<void>(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: Row(
+                                      builder: (ctx) => Dialog.fullscreen(
+                                        child: Scaffold(
+                                          appBar: AppBar(
+                                            title: Text(
+                                              tr(
+                                                language,
+                                                'manual_title',
+                                              ),
+                                            ),
+                                            leading: IconButton(
+                                              icon: const Icon(Icons.close),
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx),
+                                            ),
+                                          ),
+                                          body: InteractiveViewer(
+                                            minScale: 1.0,
+                                            maxScale: 4.0,
+                                            panEnabled: true,
+                                            scaleEnabled: true,
+                                            boundaryMargin:
+                                                const EdgeInsets.all(80),
+                                            child: SingleChildScrollView(
+                                              padding:
+                                                  const EdgeInsets.all(16),
+                                              child: Text(
+                                                tr(
+                                                  language,
+                                                  'manual_content',
+                                                ),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  height: 1.5,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                           children: [
                                             const Icon(Icons.menu_book,
                                                 color: Colors.teal),
@@ -2752,9 +2789,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           'phone': phone,
           'role': 'user',
           'is_active': true,
-          'is_paid': false,
-          'joining_date': DateTime.now().toIso8601String(),
-          'activated_at': DateTime.now().toIso8601String(),
         },
       );
 
@@ -2762,7 +2796,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         throw Exception(tr(language, 'signup_failed'));
       }
 
-      // Ensure active by default in public.users
+      // Ensure every new user is ACTIVE immediately.
+      // Only use columns required by the existing users profile flow.
       try {
         await client.from('users').upsert({
           'id': response.user!.id,
@@ -2771,10 +2806,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           'phone': phone,
           'role': 'user',
           'is_active': true,
-          'is_paid': false,
-          'joining_date': DateTime.now().toIso8601String(),
         });
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error creating active user profile: $e');
+        rethrow;
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -3978,18 +4014,40 @@ class _AddFormDialogState extends State<AddFormDialog> {
   Widget build(BuildContext context) {
     final isMedication = widget.type == 'medications';
 
-    return AlertDialog(
-      title: Text(
-        '${tr(widget.language, 'add')} '
-        '${tr(widget.language, widget.type)}',
-      ),
-
-      // The dialog gets a finite maximum height.
-      // The inside content can then scroll safely.
-      content: SizedBox(
-        width: 650,
-        height: MediaQuery.of(context).size.height * 0.75,
-        child: InteractiveViewer(
+    return Dialog.fullscreen(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            '${tr(widget.language, 'add')} '
+            '${tr(widget.language, widget.type)}',
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context, null),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text(
+                tr(widget.language, 'cancel'),
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 8,
+              ),
+              child: FilledButton(
+                onPressed: _save,
+                child: Text(
+                  tr(widget.language, 'save'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: InteractiveViewer(
           minScale: 1.0,
           maxScale: 3.0,
           child: Form(
@@ -4146,21 +4204,6 @@ class _AddFormDialogState extends State<AddFormDialog> {
           ),
         ),
       ),
-
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, null),
-          child: Text(
-            tr(widget.language, 'cancel'),
-          ),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(
-            tr(widget.language, 'save'),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -4922,9 +4965,16 @@ class _RecordListScreenState extends State<RecordListScreen> {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: InteractiveViewer(
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(title),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+          ),
+          body: InteractiveViewer(
           minScale: 1.0,
           maxScale: 2.5,
           panEnabled: true,
@@ -4998,15 +5048,10 @@ class _RecordListScreenState extends State<RecordListScreen> {
                   ),
                 ),
               ],
+            ],
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(tr(language, 'close')),
-          ),
-        ],
       ),
     );
   }
@@ -5551,10 +5596,16 @@ class _ShareScreenState extends State<ShareScreen> {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-
-        content: InteractiveViewer(
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(title),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+          ),
+          body: InteractiveViewer(
           minScale: 1.0,
           maxScale: 4.0,
           panEnabled: true,
@@ -5649,20 +5700,10 @@ class _ShareScreenState extends State<ShareScreen> {
                   ),
                 ),
               ],
+            ],
             ),
           ),
         ),
-
-        // AlertDialog actions must be here,
-        // after content's closing parenthesis.
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(
-              tr(language, 'close'),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -6032,31 +6073,45 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _setPaid(Map<String, dynamic> user, bool isPaid) async {
     final id = user['id'];
     if (id == null) return;
+
+    // Admin itself is never subject to Paid/Expiry.
+    final role = (user['role'] ?? 'user').toString().toLowerCase();
+    if (role == 'admin') return;
+
     try {
       final now = DateTime.now();
-      final paidAt = isPaid ? now.toIso8601String() : null;
+
       final expiryDate = isPaid
-          ? DateTime(now.year + 1, now.month, now.day).toIso8601String()
+          ? DateTime(
+              now.year + 1,
+              now.month,
+              now.day,
+            ).toIso8601String()
           : null;
 
+      // public.users uses expiry_date for the subscription state.
+      // Do NOT write is_paid or paid_at because those columns are not
+      // available in the current users table.
       await _client.from('users').update({
-        'is_paid': isPaid,
-        'paid_at': paidAt,
         'expiry_date': expiryDate,
       }).eq('id', id);
 
       if (mounted) {
         setState(() {
           user['is_paid'] = isPaid;
-          user['paid_at'] = paidAt;
           user['expiry_date'] = expiryDate;
         });
       }
     } catch (e) {
-      debugPrint('Error updating paid: $e');
+      debugPrint('Error updating paid/expiry: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating paid: $e')),
+          SnackBar(
+            content: Text(
+              'Error updating paid/expiry: $e',
+            ),
+          ),
         );
       }
     }
@@ -6064,6 +6119,12 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _setActive(Map<String, dynamic> user, bool active) async {
     final id = user['id'];
+    if (id == null) return;
+
+    // Admin itself must never be deactivated.
+    final role = (user['role'] ?? 'user').toString().toLowerCase();
+    if (role == 'admin') return;
+
     try {
       await _client.rpc(
         'admin_set_user_active',
@@ -6072,13 +6133,17 @@ class _AdminScreenState extends State<AdminScreen> {
           'activate': active,
         },
       );
-      if (active) {
-        await _client.from('users').update(
-            {'activated_at': DateTime.now().toIso8601String()}).eq('id', id);
+
+      if (mounted) {
+        setState(() {
+          user['is_active'] = active;
+        });
       }
+
       await _loadUsers();
     } catch (e) {
       debugPrint('Error setting active state: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -6260,8 +6325,10 @@ class _AdminScreenState extends State<AdminScreen> {
                                           ? const Text('—')
                                           : Checkbox(
                                               value: u['is_paid'] == true,
-                                              onChanged: (v) =>
-                                                  _setPaid(u, v ?? false),
+                                              onChanged: (v) {
+                                                if (v == null) return;
+                                                _setPaid(u, v);
+                                              },
                                             ),
                                     ),
                                     DataCell(
@@ -6324,14 +6391,21 @@ class _AdminScreenState extends State<AdminScreen> {
                                               onTap: () {
                                                 showDialog<void>(
                                                   context: context,
-                                                  builder: (ctx) => AlertDialog(
-                                                    title: Text(
-                                                        '${tr(language, 'chat')} - $displayName'),
-                                                    content: InteractiveViewer(
-                                                      minScale: 1.0,
-                                                      maxScale: 3.5,
-                                                      child:
-                                                          SingleChildScrollView(
+                                                  builder: (ctx) => Dialog.fullscreen(
+                                                    child: Scaffold(
+                                                      appBar: AppBar(
+                                                        title: Text(
+                                                          '${tr(language, 'chat')} - $displayName',
+                                                        ),
+                                                        leading: IconButton(
+                                                          icon: const Icon(Icons.close),
+                                                          onPressed: () => Navigator.pop(ctx),
+                                                        ),
+                                                      ),
+                                                      body: InteractiveViewer(
+                                                        minScale: 1.0,
+                                                        maxScale: 3.5,
+                                                        child: SingleChildScrollView(
                                                         child: Column(
                                                           mainAxisSize:
                                                               MainAxisSize.min,
@@ -6361,16 +6435,9 @@ class _AdminScreenState extends State<AdminScreen> {
                                                           ],
                                                         ),
                                                       ),
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(ctx),
-                                                        child: Text(tr(
-                                                            language, 'close')),
                                                       ),
-                                                    ],
-                                                  ),
+                                                   ),
+                                                 ),
                                                 );
                                               },
                                               child: SizedBox(
